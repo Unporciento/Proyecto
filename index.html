@@ -3,433 +3,479 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Materiales LHD - 3D Interactivo</title>
+    <title>LHD - Análisis de Materiales (Edición Final)</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&family=Rajdhani:wght@500;700&display=swap');
+        /* Fuentes */
+        @import url('https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@300;500;700;800&display=swap');
 
         :root {
-            --bg-base: #0a0a0c;
-            --surface: rgba(25, 28, 35, 0.85);
-            --surface-light: rgba(45, 50, 60, 0.9);
-            --primary: #fca311; 
-            --primary-glow: rgba(252, 163, 17, 0.3);
-            --secondary: #e5e5e5;
-            --text-muted: #9ca3af;
-            --danger: #ef233c;
-            
-            --font-main: 'Montserrat', sans-serif;
-            --font-tech: 'Rajdhani', sans-serif;
+            --font-huge: 'Anton', sans-serif;
+            --font-text: 'Montserrat', sans-serif;
+            --accent: #ff9800;
+            --accent-danger: #ff4a4a;
         }
 
         body, html {
-            margin: 0; padding: 0; width: 100%; height: 100%;
-            background-color: var(--bg-base); color: var(--secondary);
-            font-family: var(--font-main); overflow: hidden;
-            /* Necesario para la perspectiva 3D global */
-            perspective: 2000px; 
+            margin: 0; padding: 0; width: 100vw; height: 100vh;
+            overflow: hidden; font-family: var(--font-text);
+            color: #ffffff; background-color: #080a0f; 
+            transition: background-color 1.2s cubic-bezier(0.76, 0, 0.24, 1);
         }
 
-        .bg-grid {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;
-            background-image: 
-                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
-            background-size: 50px 50px;
+        /* COLORES DE FONDO POR DIAPOSITIVA */
+        body[data-slide="0"] { background-color: #080a0f; }
+        body[data-slide="1"] { background-color: #150a0a; }
+        body[data-slide="2"] { background-color: #08120d; }
+        body[data-slide="3"] { background-color: #121212; }
+        body[data-slide="4"] { background-color: #000000; }
+        body[data-slide="5"] { background-color: #1a0505; }
+        body[data-slide="6"] { background-color: #050505; }
+
+        /* =========================================
+           LA CAPA MÁGICA (Match and Move)
+           ========================================= */
+        #magic-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none;
         }
 
-        #app-container {
-            width: 100vw; height: 100vh;
-            display: flex; justify-content: center; align-items: center;
-            position: relative; z-index: 1;
+        .bubble {
+            position: absolute; border-radius: 50%; overflow: hidden;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.8);
+            transition: all 1.2s cubic-bezier(0.76, 0, 0.24, 1); 
+            top: 50%; left: 50%; transform: translate(-50%, -50%);
+            opacity: 0; width: 0; height: 0; background: #000;
+            pointer-events: auto; /* Permite que la burbuja reciba clics */
         }
 
-        .slide {
-            width: 1920px; height: 1080px;
-            position: absolute; top: 50%; left: 50%;
-            transform: translate(-50%, -50%) scale(var(--scale-factor, 1));
-            opacity: 0; transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-            pointer-events: none; padding: 70px 90px; box-sizing: border-box;
+        .bubble::after {
+            content: ''; position: absolute; inset: 0;
+            background: rgba(0,0,0,0);
+            transition: background 1.2s ease, backdrop-filter 1.2s ease;
+            z-index: 2; pointer-events: none;
+        }
+
+        /* Control de los videos/imágenes internos */
+        .bubble video, .bubble img {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover; 
+            transition: opacity 0.8s ease, transform 1.2s ease;
+            opacity: 0; transform: scale(1.15); 
+            z-index: 1;
+            cursor: pointer;
+            pointer-events: none; /* ¡SOLUCIÓN! Desactivamos el clic por defecto para que las imágenes invisibles no bloqueen los videos */
+        }
+
+        /* LÓGICA DE APARICIÓN DE MEDIOS POR SLIDE (Activamos el clic solo en los visibles) */
+        body[data-slide="0"] #b1-lhd,
+        body[data-slide="1"] #b1-lhd,
+        body[data-slide="4"] #b1-lhd,
+        body[data-slide="6"] #b1-lhd { opacity: 1; transform: scale(1); pointer-events: auto; }
+
+        body[data-slide="2"] #b1-balde,
+        body[data-slide="3"] #b1-balde { opacity: 1; transform: scale(1); pointer-events: auto; }
+
+        body[data-slide="5"] #b1-fail1 { opacity: 1; transform: scale(1); pointer-events: auto; }
+        body[data-slide="2"] #b2-vastago { opacity: 1; transform: scale(1); pointer-events: auto; }
+        body[data-slide="5"] #b2-fail2 { opacity: 1; transform: scale(1); pointer-events: auto; }
+        body[data-slide="2"] #b3-neumatico { opacity: 1; transform: scale(1); pointer-events: auto; }
+
+        /* LÓGICA DE GEOMETRÍA DE LAS BURBUJAS */
+        body[data-slide="0"] #b1 { opacity: 1; width: 100vw; height: 100vh; left: 50%; top: 50%; border-radius: 0; box-shadow: none; z-index: 0; }
+        body[data-slide="0"] #b1::after { background: linear-gradient(90deg, #080a0f 0%, rgba(8,10,15,0.9) 45%, transparent 100%); }
+        body[data-slide="0"] #b1-lhd { filter: contrast(1.1) brightness(0.85); }
+
+        body[data-slide="1"] #b1 { opacity: 1; width: 40vw; height: 85vh; left: 75%; border-radius: 200px; box-shadow: -20px 0 50px rgba(0,0,0,0.8); }
+        body[data-slide="1"] #b1-lhd { filter: contrast(1.1) brightness(0.8); }
+        body[data-slide="1"] #b1::after { background: rgba(0,0,0,0); }
+
+        body[data-slide="2"] #b1 { opacity: 1; width: 20vw; height: 20vw; left: 20%; top: 48%; border-radius: 50%; }
+        body[data-slide="2"] #b2 { opacity: 1; width: 20vw; height: 20vw; left: 50%; top: 48%; border-radius: 50%; }
+        body[data-slide="2"] #b3 { opacity: 1; width: 20vw; height: 20vw; left: 80%; top: 48%; border-radius: 50%; }
+
+        body[data-slide="3"] #b1 { opacity: 1; width: 45vw; height: 80vh; left: 25%; border-radius: 40px; }
+
+        body[data-slide="4"] #b1 { opacity: 1; width: 100vw; height: 100vh; left: 50%; top: 50%; border-radius: 0; box-shadow: none; z-index: 0; }
+        body[data-slide="4"] #b1::after { background: rgba(0,0,0,0.85); }
+        body[data-slide="4"] #b1-lhd { filter: grayscale(1); }
+
+        body[data-slide="5"] #b1 { opacity: 1; width: 32vw; height: 45vh; left: 30%; top: 55%; border-radius: 15px; }
+        body[data-slide="5"] #b2 { opacity: 1; width: 32vw; height: 45vh; left: 70%; top: 55%; border-radius: 15px; }
+
+        body[data-slide="6"] #b1 { opacity: 1; width: 100vw; height: 100vh; left: 50%; top: 50%; border-radius: 0; box-shadow: none; z-index: 0; }
+        body[data-slide="6"] #b1::after { background: rgba(0,0,0,0.6); backdrop-filter: blur(12px); }
+
+
+        /* =========================================
+           CAPA DE CONTENIDO (Textos)
+           ========================================= */
+        #content-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none;
+        }
+
+        .slide-content {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            opacity: 0; pointer-events: none;
             display: flex; flex-direction: column;
+            padding: 60px 80px; box-sizing: border-box;
+            transform: translateY(30px); 
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .slide-content.active {
+            opacity: 1; 
+            transform: translateY(0);
+            transition-delay: 0.4s;
         }
 
-        .slide.active { opacity: 1; pointer-events: all; z-index: 10; }
-
-        h1 { font-size: 75px; font-weight: 900; text-transform: uppercase; color: #fff; margin: 0 0 15px 0; letter-spacing: 2px; text-shadow: 0 0 30px rgba(0,0,0,0.8); }
-        h1 span { color: var(--primary); }
-        h2 { font-size: 50px; font-weight: 800; margin: 0 0 40px 0; border-left: 8px solid var(--primary); padding-left: 20px; text-transform: uppercase; letter-spacing: 1px;}
-        h3 { font-size: 32px; color: var(--primary); font-family: var(--font-tech); margin: 0 0 15px 0; font-weight: 700; text-transform: uppercase;}
-        p, li { font-size: 22px; line-height: 1.6; color: var(--text-muted); margin-bottom: 15px;}
-        strong { color: #fff; font-weight: 600; }
+        .huge-title { font-family: var(--font-huge); font-size: 15vw; line-height: 0.85; text-transform: uppercase; margin: 0; letter-spacing: -2px; text-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .big-title { font-family: var(--font-huge); font-size: 6vw; line-height: 0.95; text-transform: uppercase; margin: 0; letter-spacing: 1px; color: #ffffff; }
         
-        ul.tech-list { padding-left: 25px; }
-        ul.tech-list li { margin-bottom: 20px; }
+        .subtitle { font-size: 1.2rem; font-weight: 800; letter-spacing: 5px; text-transform: uppercase; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 15px;}
+        .subtitle::before { content: ''; display: block; width: 40px; height: 3px; background: var(--accent); }
+        
+        p { font-size: 1.25rem; line-height: 1.7; max-width: 500px; color: #d0d0d0; font-weight: 300;}
 
-        /* LOS PANELES AHORA TIENEN PROPIEDADES 3D */
+        .center-layout { justify-content: center; align-items: center; text-align: center; }
+        .center-layout .subtitle { justify-content: center; }
+        .center-layout .subtitle::before { display: none; }
+        .left-layout { justify-content: center; align-items: flex-start; text-align: left; }
+        .right-layout { justify-content: center; align-items: flex-end; text-align: right; }
+
+        /* Panel Institucional */
         .panel {
-            background: var(--surface);
+            background: rgba(25, 28, 35, 0.5); 
             border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px; padding: 40px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
-            position: relative; overflow: hidden;
+            border-radius: 12px; padding: 35px 40px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6);
+            position: relative;
             display: flex; flex-direction: column;
-            
-            /* Magia 3D */
-            transform-style: preserve-3d;
-            will-change: transform;
-            /* La transición solo actúa cuando el mouse sale de la caja para devolverla a su lugar suavemente */
-            transition: transform 0.5s ease, box-shadow 0.5s ease;
+            backdrop-filter: blur(12px);
         }
-        
-        /* Efecto de sombra más profunda al pasar el cursor */
-        .panel:hover {
-            box-shadow: 0 40px 60px -10px rgba(0,0,0,0.8), 0 0 20px rgba(252, 163, 17, 0.1);
-            z-index: 50; /* Lo trae al frente */
-        }
-
         .panel::before {
             content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
-            background: var(--primary);
-            /* Para que la barra amarilla no flote raro en 3D */
-            transform: translateZ(1px); 
+            background: var(--accent); border-radius: 12px 12px 0 0;
         }
 
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 50px; flex: 1; min-height: 0; }
-        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px; flex: 1; min-height: 0; }
+        .bubble-captions { position: absolute; top: 70%; left: 0; width: 100%; height: auto; display: block; }
+        .caption { position: absolute; width: 20vw; text-align: center; transform: translateX(-50%); }
+        .caption:nth-child(1) { left: 20%; }
+        .caption:nth-child(2) { left: 50%; }
+        .caption:nth-child(3) { left: 80%; }
+        .caption h3 { font-family: var(--font-huge); font-size: 2.2rem; margin: 0 0 8px 0; letter-spacing: 1px;}
+        .caption p { margin: 0 auto; font-size: 0.95rem; max-width: 100%; color: #a0a0a0; line-height: 1.4;}
 
-        .media-box {
-            width: 100%; border-radius: 12px; overflow: hidden;
-            position: relative; border: 1px solid rgba(255,255,255,0.15);
-            background: #000; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            /* Hace que el video/imagen "salga" un poco hacia adelante respecto al panel */
-            transform: translateZ(20px);
+        .cinematic-table { width: 100%; max-width: 1200px; border-collapse: collapse; margin-top: 50px; }
+        .cinematic-table th { color: var(--accent); font-family: var(--font-huge); font-size: 2.2rem; text-align: left; padding-bottom: 20px; border-bottom: 2px solid rgba(255, 152, 0, 0.4); letter-spacing: 1px;}
+        .cinematic-table td { padding: 30px 20px 30px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 1.2rem; color: #ccc; }
+        .cinematic-table strong { color: #fff; font-weight: 700; }
+
+        /* UI SUPERIOR Y DINÁMICA */
+        #top-progress { position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: rgba(255,255,255,0.05); z-index: 100;}
+        #progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.8s cubic-bezier(0.76, 0, 0.24, 1); }
+
+        #floating-ui {
+            position: absolute; top: 25px; right: 40px; 
+            display: flex; align-items: center; gap: 20px; z-index: 100; pointer-events: none;
+            transition: opacity 0.5s ease; 
         }
-        .media-box video, .media-box img { width: 100%; height: 100%; object-fit: cover; }
-        .media-label {
-            position: absolute; bottom: 20px; left: 20px; background: rgba(0,0,0,0.8);
-            color: var(--primary); padding: 8px 15px; border-radius: 6px;
-            font-family: var(--font-tech); font-weight: bold; font-size: 20px; letter-spacing: 1px;
-            border-left: 3px solid var(--primary);
+        .ui-hidden { opacity: 0; }
+
+        .brand-tag { font-family: var(--font-text); font-weight: 800; font-size: 0.85rem; letter-spacing: 4px; color: rgba(255,255,255,0.3); text-transform: uppercase; }
+        .slide-counter { font-family: var(--font-huge); font-size: 2rem; color: #fff; letter-spacing: 2px;}
+        .slide-counter span { color: var(--accent); }
+
+        /* NOMBRE DEL EXPOSITOR INFERIOR DERECHO */
+        #presenter-info {
+            position: absolute; bottom: 30px; right: 40px;
+            font-family: var(--font-text); font-size: 1rem; color: #a0a0a0;
+            text-transform: uppercase; letter-spacing: 2px;
+            z-index: 100; pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+        #presenter-info span { font-weight: 800; color: var(--accent); }
+
+        .fail-card {
+            width: 35vw; text-align: left; background: rgba(15, 5, 5, 0.7); 
+            padding: 30px; border-radius: 15px; border-left: 4px solid var(--accent-danger);
+            backdrop-filter: blur(10px);
         }
 
-        .tech-table { width: 100%; border-collapse: collapse; margin-top: 10px; transform: translateZ(15px); }
-        .tech-table th { background: rgba(252, 163, 17, 0.15); color: var(--primary); padding: 20px; text-align: left; font-family: var(--font-tech); font-size: 26px; border-bottom: 2px solid var(--primary); }
-        .tech-table td { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); color: var(--secondary); font-size: 22px; background: rgba(0,0,0,0.2);}
-        .tech-table tr:hover td { background: rgba(255,255,255,0.02); }
-
-        /* Que los textos también floten un poco */
-        h3, p, ul { transform: translateZ(30px); }
-
-        #ui-bar {
-            position: absolute; bottom: 30px; left: 90px; right: 90px;
-            display: flex; justify-content: space-between; align-items: center; z-index: 100;
+        #pause-indicator {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 4rem; color: rgba(255,255,255,0.8); z-index: 100;
+            pointer-events: none; opacity: 0; transition: opacity 0.3s ease;
+            text-shadow: 0 10px 20px rgba(0,0,0,0.5);
         }
-        .progress-bg { flex-grow: 1; height: 4px; background: rgba(255,255,255,0.1); margin: 0 40px; position: relative; }
-        #progress-fill { height: 100%; background: var(--primary); width: 0%; transition: width 0.3s ease; box-shadow: 0 0 10px var(--primary-glow); }
-        .slide-counter { font-family: var(--font-tech); font-size: 24px; font-weight: 700; color: var(--primary); }
     </style>
 </head>
-<body>
-    <div class="bg-grid"></div>
-    <div id="app-container">
+<body data-slide="0">
 
-        <!-- 1. PORTADA -->
-        <div class="slide active" style="padding: 0;">
-            <div style="position: absolute; width: 100%; height: 100%; z-index: -1; pointer-events: none;">
-                <video autoplay loop muted src="2.mp4" style="width: 100%; height: 100%; object-fit: cover; opacity: 0.6;"></video>
-                <div style="position: absolute; top:0; left:0; width:100%; height:100%; background: linear-gradient(90deg, rgba(10,10,12,1) 0%, rgba(10,10,12,0.8) 40%, transparent 100%);"></div>
+    <div id="top-progress"><div id="progress-fill"></div></div>
+    <div id="pause-indicator">⏸</div>
+
+    <div id="floating-ui">
+        <span class="brand-tag">INACAP_LHD</span>
+        <span class="slide-counter" id="counter"><span>01</span> / 07</span>
+    </div>
+
+    <div id="presenter-info">Expositor: <span id="current-presenter">Julio Sinisterra</span></div>
+
+    <div id="magic-layer">
+        <div id="b1" class="bubble">
+            <video id="b1-lhd" src="2.mp4" autoplay loop muted playsinline></video>
+            <video id="b1-balde" src="4.mp4" autoplay loop muted playsinline></video>
+            <img id="b1-fail1" src="fisura_balde.jpg" alt="Fisura por Fatiga">
+        </div>
+        <div id="b2" class="bubble">
+            <video id="b2-vastago" src="1.mp4" autoplay loop muted playsinline></video>
+            <img id="b2-fail2" src="desgarro_neumatico.jpg" alt="Desgarro Masivo">
+        </div>
+        <div id="b3" class="bubble">
+            <video id="b3-neumatico" src="3.mp4" autoplay loop muted playsinline></video>
+        </div>
+    </div>
+
+    <div id="content-layer">
+        
+        <div class="slide-content left-layout active" style="padding-left: 80px; width: 55%; justify-content: center;">
+            <div style="display:flex; gap:18px; align-items:center; margin-bottom:25px; background:rgba(255,255,255,0.08); padding:12px 25px; border-radius:8px; backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.12); width: fit-content;">
+                <span style="font-family:var(--font-text); font-weight: 800; font-size:1.4rem; color:#fff; letter-spacing: 1px;">INACAP</span>
+                <span style="color:var(--accent); font-size:1.4rem;">|</span>
+                <span style="font-family:var(--font-text); font-size:1.1rem; color:#ccc; font-weight: 600;">Área Mecánica</span>
             </div>
+
+            <h1 class="huge-title" style="font-size: 5.5vw; text-align: left; line-height: 1.05; margin-bottom: 10px; text-transform: uppercase;">
+                ANÁLISIS DE <br><span style="color: var(--accent);">MATERIALES</span><br>EN MAQUINARIA PESADA
+            </h1>
+            <h3 style="font-size: 1.5rem; color: #ccc; margin-bottom: 40px; font-weight: 500; letter-spacing: 1px;">Cargador Frontal de Bajo Perfil (LHD)</h3>
+
+            <div class="panel" style="width: 100%;">
+                <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:20px; font-size: 1rem;">
+                    <div>
+                        <p style="margin:0; max-width: 100%;"><strong>Asignatura:</strong> Materiales en Maquinaria Pesada</p>
+                        <p style="margin:8px 0 0; max-width: 100%;"><strong>Sección:</strong> V-O20-N5-P4-C2/V</p>
+                        <p style="margin:20px 0 0; max-width: 100%;"><strong>Docente:</strong> Gerardo Garrido Fernández</p>
+                        <p style="margin:8px 0 0; max-width: 100%;"><strong>Entrega:</strong> 12 / 05 / 2026</p>
+                    </div>
+                    <div>
+                        <p style="margin:0; color:var(--accent); font-weight:700;">Equipo de Trabajo:</p>
+                        <ul style="list-style:none; padding:0; margin-top:10px; color:#d0d0d0; line-height: 1.7;">
+                            <li>• Aguirre, Millaray</li>
+                            <li>• Bórquez, Renato</li>
+                            <li>• Mamani, Wiljer</li>
+                            <li>• Olivares, Simón</li>
+                            <li>• Sinisterra, Julio</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide-content left-layout">
+            <div class="subtitle">01. Contexto Operativo</div>
+            <h2 class="big-title">EL DESAFÍO<br>ESTRUCTURAL</h2>
+            <p style="margin-top: 30px;">El equipo opera bajo condiciones extremas en la minería subterránea. La abrasión constante y los impactos directos contra la roca fragmentada dictan su desgaste.</p>
+            <p>El objetivo es identificar las propiedades mecánicas para comprender la relación de <strong>Cargas y Deformaciones</strong>.</p>
+        </div>
+
+        <div class="slide-content center-layout" style="justify-content: flex-start; padding-top: 3%;">
+            <div class="subtitle" style="margin-bottom: 5px;">02. Componentes Clave</div>
+            <h2 class="big-title" style="font-size: 4.5vw;">MATERIA PRIMA</h2>
             
-            <div style="padding: 100px; display: flex; flex-direction: column; justify-content: center; height: 100%; width: 55%;">
-                <div style="display: flex; gap: 20px; align-items: center; margin-bottom: 30px; background: rgba(255,255,255,0.1); padding: 15px 30px; border-radius: 8px; width: fit-content; backdrop-filter: blur(5px);">
-                    <span style="font-family: var(--font-tech); font-size: 28px; color: #fff; font-weight: bold;">INACAP</span>
-                    <span style="color: var(--primary);">|</span>
-                    <span style="font-family: var(--font-tech); font-size: 24px; color: var(--text-muted);">Área Mecánica</span>
+            <div class="bubble-captions">
+                <div class="caption">
+                    <h3>ACERO AL BORO</h3>
+                    <p style="color: var(--accent); font-weight: 700; margin-bottom: 10px; letter-spacing: 2px;">CUCHARA</p>
+                    <p>Alta tenacidad en el núcleo y extrema dureza superficial.</p>
                 </div>
+                <div class="caption">
+                    <h3>CROMO DURO</h3>
+                    <p style="color: var(--accent); font-weight: 700; margin-bottom: 10px; letter-spacing: 2px;">VÁSTAGO</p>
+                    <p>Acero bonificado con coeficiente de fricción casi nulo.</p>
+                </div>
+                <div class="caption">
+                    <h3>ELASTÓMERO</h3>
+                    <p style="color: var(--accent); font-weight: 700; margin-bottom: 10px; letter-spacing: 2px;">NEUMÁTICOS</p>
+                    <p>Polímero vulcanizado de alta memoria elástica.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="slide-content right-layout">
+            <div style="text-align: left; max-width: 500px;">
+                <div class="subtitle">03. Comportamiento</div>
+                <h2 class="big-title" style="font-size: 5vw; line-height: 0.9;">FÍSICA DEL<br>MOVIMIENTO</h2>
+                <p style="margin-top: 30px;">El equipo falla cuando las cargas dinámicas superan los límites de diseño de sus aleaciones.</p>
                 
-                <h1>Análisis de <span>Materiales</span> en Maquinaria Pesada</h1>
-                <h3 style="font-size: 38px; color: #fff; margin-bottom: 60px; transform: translateZ(0);">Cargador Frontal de Bajo Perfil (LHD)</h3>
-                
-                <div class="panel" style="background: rgba(25, 28, 35, 0.6); flex: none;">
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; transform: translateZ(20px);">
-                        <div>
-                            <p style="margin:0; transform: translateZ(0);"><strong>Asignatura:</strong> Materiales en Maquinaria Pesada</p>
-                            <p style="margin:5px 0 0 0; transform: translateZ(0);"><strong>Sección:</strong> V-O20-N5-P4-C2/V</p>
-                            <p style="margin:20px 0 0 0; transform: translateZ(0);"><strong>Docente:</strong> Gerardo Humberto Garrido Fernández</p>
-                            <p style="margin:5px 0 0 0; transform: translateZ(0);"><strong>Fecha de Entrega:</strong> 12/05/2026</p>
-                        </div>
-                        <div>
-                            <p style="margin:0; color: var(--primary); font-weight: bold; transform: translateZ(0);">Equipo de Trabajo:</p>
-                            <ul style="list-style: none; padding: 0; margin-top: 10px; transform: translateZ(0);">
-                                <li>• Aguirre, Millaray</li>
-                                <li>• Bórquez, Renato</li>
-                                <li>• Mamani, Wiljer</li>
-                                <li>• Olivares, Simón</li>
-                                <li>• Sinisterra, Julio</li>
-                            </ul>
-                        </div>
-                    </div>
+                <div style="margin-top: 40px;">
+                    <h3 style="font-family: var(--font-huge); font-size: 2rem; margin: 0; color: #fff;">BALDE</h3>
+                    <p style="margin: 5px 0 20px; color: var(--accent);">Levanta material mediante <strong>cilindros hidráulicos de doble efecto</strong>. Sometido a Flexión y Cizalle constante.</p>
+                    
+                    <h3 style="font-family: var(--font-huge); font-size: 2rem; margin: 0; color: #fff;">CILINDRO</h3>
+                    <p style="margin: 5px 0 20px; color: var(--accent);">Tracción y Pandeo. En mantenimiento, se manda a <strong>duro cromar el vástago</strong> para quitar las impurezas del trabajo.</p>
+
+                    <h3 style="font-family: var(--font-huge); font-size: 2rem; margin: 0; color: #fff;">NEUMÁTICO</h3>
+                    <p style="margin: 5px 0 0; color: var(--accent);">Compresión Reversible bajo toneladas de carga dinámica.</p>
                 </div>
             </div>
         </div>
 
-        <!-- 2. INTRODUCCIÓN -->
-        <div class="slide">
-            <h2>Introducción y Contexto</h2>
-            <div class="grid-2">
-                <div class="panel" style="justify-content: center;">
-                    <h3>El Desafío Estructural</h3>
-                    <ul class="tech-list">
-                        <li><strong>Entorno Operativo:</strong> Operación en minería subterránea bajo abrasión extrema e impactos contra roca fragmentada.</li>
-                        <li><strong>Objetivo del Informe:</strong> Identificar propiedades mecánicas de metales y polímeros que componen el equipo LHD.</li>
-                        <li><strong>Relevancia:</strong> Comprender la relación de "Cargas y Deformaciones" para predecir fallas, seleccionar aleaciones y evitar detenciones.</li>
-                    </ul>
+        <div class="slide-content center-layout">
+            <div class="subtitle">04. Análisis Comparativo</div>
+            <h2 class="big-title" style="font-size: 4vw;">LÍMITES DE DEFORMACIÓN</h2>
+            
+            <table class="cinematic-table">
+                <thead>
+                    <tr>
+                        <th>COMPONENTE</th>
+                        <th>MECÁNICA DE CARGA</th>
+                        <th>DEFORMACIÓN ADMITIDA</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong style="color: var(--accent);">VÁSTAGO</strong></td>
+                        <td>Compresión / Tracción axial.</td>
+                        <td><strong>Elástica Mínima.</strong> La flexión destruye los sellos.</td>
+                    </tr>
+                    <tr>
+                        <td><strong style="color: var(--accent);">BALDE (LABIO)</strong></td>
+                        <td>Flexión / Cizalle al levantar mineral.</td>
+                        <td><strong>Elástica.</strong> Bajo el Límite de Fluencia.</td>
+                    </tr>
+                    <tr>
+                        <td><strong style="color: var(--accent);">NEUMÁTICOS</strong></td>
+                        <td>Gravedad sumada al torque de tracción.</td>
+                        <td><strong>Alta y Reversible.</strong> Absorbe impactos y vibración.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="slide-content center-layout" style="justify-content: flex-start; padding-top: 40px;">
+            <div class="subtitle" style="margin-bottom: 5px; color: var(--accent-danger);">05. Evidencia de Ruptura</div>
+            <h2 class="big-title" style="font-size: 4.5vw; color: #fff; z-index: 20;">ANÁLISIS DE FALLAS</h2>
+            
+            <div style="display: flex; width: 100%; justify-content: space-around; position: absolute; bottom: 8%; left: 0;">
+                <div class="fail-card">
+                    <h3 style="font-family: var(--font-huge); font-size: 2.5rem; margin: 0; color: #fff;">FISURA POR FATIGA</h3>
+                    <p style="margin: 10px 0;">La fricción abrasiva adelgaza la plancha. Los impactos cíclicos generan la grieta.</p>
+                    <p style="color: var(--accent-danger); font-weight: 700; margin: 0;">> MEJORA: Planchas Bimetálicas</p>
                 </div>
-                <div class="media-box tilt-media">
-                    <img src="( 2 ).png" alt="Contexto LHD">
-                    <div class="media-label">Tren de Potencia y Rodado LHD</div>
+                <div class="fail-card">
+                    <h3 style="font-family: var(--font-huge); font-size: 2.5rem; margin: 0; color: #fff;">DESGARRO MASIVO</h3>
+                    <p style="margin: 10px 0;">Tracción forzada sobre cantos vivos que supera la resistencia estructural del caucho.</p>
+                    <p style="color: var(--accent-danger); font-weight: 700; margin: 0;">> MEJORA: Compuesto L-5S</p>
                 </div>
             </div>
         </div>
 
-        <!-- 3. IDENTIFICACIÓN DE MATERIALES -->
-        <div class="slide">
-            <h2>1. Propiedades Mecánicas por Componente</h2>
-            <div class="grid-3">
-                <div class="panel" style="padding: 25px;">
-                    <div class="media-box" style="height: 250px; flex: none; margin-bottom: 20px;">
-                        <video autoplay loop muted src="2.mp4"></video>
-                        <div class="media-label">1. Balde / Cuchara</div>
-                    </div>
-                    <h3>Acero de Alta Resistencia</h3>
-                    <p><strong>Clasificación:</strong> Aleación ferrosa (Ej: Hardox).</p>
-                    <p><strong>Propiedades:</strong> Alta dureza superficial contra el rayado y núcleo tenaz para absorber impactos sin fractura frágil.</p>
-                </div>
-                <div class="panel" style="padding: 25px;">
-                    <div class="media-box" style="height: 250px; flex: none; margin-bottom: 20px;">
-                        <video autoplay loop muted src="1.mp4"></video>
-                        <div class="media-label">2. Vástago de Cilindro</div>
-                    </div>
-                    <h3>Acero al Carbono + Cromo</h3>
-                    <p><strong>Clasificación:</strong> Acero bonificado con recubrimiento superficial.</p>
-                    <p><strong>Propiedades:</strong> Alto límite de fluencia y superficie de extrema dureza y baja fricción (cromo duro).</p>
-                </div>
-                <div class="panel" style="padding: 25px;">
-                    <div class="media-box" style="height: 250px; flex: none; margin-bottom: 20px;">
-                        <video autoplay loop muted src="3.mp4"></video>
-                        <div class="media-label">3. Neumáticos LHD</div>
-                    </div>
-                    <h3>Elastómero (Caucho)</h3>
-                    <p><strong>Clasificación:</strong> Polímero vulcanizado no ferroso.</p>
-                    <p><strong>Propiedades:</strong> Elevada resiliencia. Almacena energía de deformación y recupera su geometría de forma instantánea.</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- 4. COMPORTAMIENTO FRENTE A CARGAS -->
-        <div class="slide">
-            <h2>2. Comportamiento frente a Esfuerzos</h2>
-            <div class="grid-2">
-                <div class="media-box tilt-media">
-                    <video autoplay loop muted src="4.mp4"></video>
-                    <div class="media-label">Impacto y Abrasión Dinámica</div>
-                </div>
-                <div class="panel" style="gap: 20px; padding: 30px; justify-content: center;">
-                    <div>
-                        <h3 style="font-size: 24px;">Balde (Acero de Alta Resistencia)</h3>
-                        <p style="font-size: 20px;">Comportamiento <strong>elástico</strong> ante la penetración. Sufre desgaste abrasivo microscópico constante por fricción de la roca.</p>
-                    </div>
-                    <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
-                        <h3 style="font-size: 24px;">Cilindro Hidráulico (Vástago)</h3>
-                        <p style="font-size: 20px;">Soporta tensión interna para evitar estiramiento (tracción) o curvatura (pandeo) bajo alta presión de trabajo.</p>
-                    </div>
-                    <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 15px;">
-                        <h3 style="font-size: 24px;">Neumático (Elastómero)</h3>
-                        <p style="font-size: 20px;">Aplastamiento por carga estática y dinámica. Modifica su forma física drásticamente pero la recupera por su <strong>memoria elástica</strong>.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 5. TABLA COMPARATIVA -->
-        <div class="slide">
-            <h2>3. Diferenciación de Cargas y Deformación</h2>
-            <div class="panel" style="padding: 20px;">
-                <table class="tech-table">
-                    <thead>
-                        <tr>
-                            <th>Componente</th>
-                            <th>Tipo de Esfuerzo</th>
-                            <th>Mecánica de Carga</th>
-                            <th>Deformación Admitida</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td><strong>Vástago</strong></td>
-                            <td>Compresión / Tracción</td>
-                            <td>Fuerza axial a lo largo del eje longitudinal.</td>
-                            <td><strong>Elástica Mínima.</strong> La flexión permanente destruye el sistema de sellos.</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Balde (Labio)</strong></td>
-                            <td>Flexión / Cizalle</td>
-                            <td>Fuerzas cortantes al levantar carga anclada en un extremo.</td>
-                            <td><strong>Elástica.</strong> Bajo el Límite de Fluencia (Yield Strength).</td>
-                        </tr>
-                        <tr>
-                            <td><strong>Neumáticos</strong></td>
-                            <td>Compresión / Torsión</td>
-                            <td>Gravedad sumada al torque de tracción.</td>
-                            <td><strong>Alta (Reversible).</strong> Diseñado para absorber y disipar vibraciones.</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- 6. FALLAS Y MEJORAS -->
-        <div class="slide">
-            <h2>4. Análisis Crítico y Propuestas de Mejora</h2>
-            <div class="grid-2">
-                
-                <div class="panel" style="padding: 30px; gap: 15px;">
-                    <div class="media-box" style="flex: 1; min-height: 0; border-radius: 8px;">
-                        <img src="fisura_balde.jpg" alt="Fisura en Balde LHD">
-                        <div class="media-label" style="font-size: 16px; bottom: 10px; left: 10px;">Evidencia: Fisura Estructural</div>
-                    </div>
-                    <div>
-                        <h3 style="color: var(--danger); margin: 0 0 10px 0; font-size: 26px;">Falla 1: Fisuras por Abrasión</h3>
-                        <p style="margin: 0; font-size: 20px;">La fricción adelgaza la plancha (desgaste abrasivo). Los impactos superan la fatiga generando propagación de grietas.</p>
-                    </div>
-                    <div style="background: rgba(252, 163, 17, 0.1); padding: 15px; border-left: 4px solid var(--primary); border-radius: 0 8px 8px 0;">
-                        <p style="margin: 0; font-size: 18px; transform: translateZ(0);"><strong>💡 Mejora Metalúrgica:</strong><br>
-                        Implementar <strong>Planchas Bimetálicas de Carburo de Cromo</strong> en zonas de roce (Alta dureza protege el acero base).</p>
-                    </div>
-                </div>
-
-                <div class="panel" style="padding: 30px; gap: 15px;">
-                    <div class="media-box" style="flex: 1; min-height: 0; border-radius: 8px;">
-                        <img src="desgarro_neumatico.jpg" alt="Desgarro en Neumático LHD">
-                        <div class="media-label" style="font-size: 16px; bottom: 10px; left: 10px;">Evidencia: Desgarro por Cizalle</div>
-                    </div>
-                    <div>
-                        <h3 style="color: var(--danger); margin: 0 0 10px 0; font-size: 26px;">Falla 2: Desgarro por Cizalladura</h3>
-                        <p style="margin: 0; font-size: 20px;">El torque severo sobre rocas afiladas supera la resistencia a la tracción del elastómero, desprendiendo material.</p>
-                    </div>
-                    <div style="background: rgba(252, 163, 17, 0.1); padding: 15px; border-left: 4px solid var(--primary); border-radius: 0 8px 8px 0;">
-                        <p style="margin: 0; font-size: 18px; transform: translateZ(0);"><strong>💡 Mejora Estructural:</strong><br>
-                        Transición a compuestos <strong>L-5S (Minería Severa)</strong> de paredes reforzadas, o adopción de cadenas forjadas.</p>
-                    </div>
-                </div>
-
-            </div>
-        </div>
-
-        <!-- 7. CONCLUSIÓN -->
-        <div class="slide">
-            <h2>Conclusión Técnica</h2>
-            <div class="panel" style="text-align: center; padding: 80px 120px; justify-content: center; flex: 1;">
-                <h3 style="font-size: 45px; margin-bottom: 40px; color: #fff;">El material determina la confiabilidad</h3>
-                <p style="font-size: 28px; color: var(--primary); margin-bottom: 30px;">En maquinaria pesada, el diseño mecánico está subordinado a las propiedades de los materiales que lo componen.</p>
-                <p style="font-size: 24px; text-align: justify;">
-                El acero otorga soporte bruto, el cromo precisión hidráulica y los elastómeros disipación dinámica. Entender sus límites de fluencia, tenacidad y resiliencia nos permite evitar fallas catastróficas mediante una selección de repuestos justificada y mantenimientos alineados al comportamiento físico del equipo.
-                </p>
-            </div>
-        </div>
-
-        <!-- UI INFERIOR -->
-        <div id="ui-bar">
-            <span style="font-family: var(--font-tech); color: var(--text-muted); font-size: 20px; text-transform: uppercase; letter-spacing: 2px;">Cargador LHD - Análisis de Materiales</span>
-            <div class="progress-bg">
-                <div id="progress-fill"></div>
-            </div>
-            <div class="slide-counter" id="counter">1 / 7</div>
+        <div class="slide-content center-layout">
+            <div class="subtitle">06. Conclusión Técnica</div>
+            <h1 class="huge-title" style="font-size: 8vw; margin-bottom: 30px;">EL MATERIAL<br><span style="color: var(--accent);">DICTA LA LEY</span></h1>
+            <p style="font-size: 1.4rem; max-width: 800px; text-align: center; color: #fff;">
+                El diseño mecánico está subordinado a las propiedades físicas. El acero aporta estructura, el cromo precisión y los elastómeros resiliencia. Conocer sus límites es la verdadera esencia de la ingeniería.
+            </p>
         </div>
 
     </div>
 
     <script>
         let currentSlide = 0;
-        const slides = document.querySelectorAll('.slide');
+        const totalSlides = 7;
+        const body = document.body;
+        const slides = document.querySelectorAll('.slide-content');
         const progressFill = document.getElementById('progress-fill');
         const counter = document.getElementById('counter');
+        const floatingUI = document.getElementById('floating-ui');
+        const pauseIndicator = document.getElementById('pause-indicator');
+        const presenterLabel = document.getElementById('current-presenter');
+        let uiTimeout;
+
+        // Arreglo con los expositores según el guion
+        const presenters = [
+            "Julio Sinisterra", // Diapositiva 1
+            "Julio Sinisterra", // Diapositiva 2
+            "Wiljer Mamani",    // Diapositiva 3
+            "Millaray Aguirre", // Diapositiva 4
+            "Renato Bórquez",   // Diapositiva 5
+            "Simón Olivares",   // Diapositiva 6
+            "Simón Olivares"    // Diapositiva 7
+        ];
+
+        function wakeUpUI() {
+            floatingUI.classList.remove('ui-hidden');
+            document.getElementById('presenter-info').classList.remove('ui-hidden');
+            clearTimeout(uiTimeout);
+            uiTimeout = setTimeout(() => {
+                floatingUI.classList.add('ui-hidden');
+                document.getElementById('presenter-info').classList.add('ui-hidden');
+            }, 2500);
+        }
 
         function updateView() {
+            body.setAttribute('data-slide', currentSlide);
+            
             slides.forEach((slide, idx) => {
                 slide.classList.remove('active');
                 if (idx === currentSlide) slide.classList.add('active');
             });
             
-            progressFill.style.width = `${((currentSlide + 1) / slides.length) * 100}%`;
-            counter.innerText = `${currentSlide + 1} / ${slides.length}`;
+            progressFill.style.width = `${((currentSlide + 1) / totalSlides) * 100}%`;
+            counter.innerHTML = `<span>0${currentSlide + 1}</span> / 0${totalSlides}`;
             
-            const activeVideo = slides[currentSlide].querySelector('video');
-            if(activeVideo) {
-                activeVideo.currentTime = 0;
-                activeVideo.play().catch(e => console.log("Autoplay prevent", e));
-            }
+            // Actualiza el nombre del expositor actual
+            presenterLabel.textContent = presenters[currentSlide];
+
+            // Forzar reproducción de los videos en caso de haberlos pausado
+            document.querySelectorAll('video').forEach(v => { v.play().catch(()=>{}); });
+            
+            wakeUpUI();
         }
 
-        function resize() {
-            const ratio = 16 / 9;
-            const winRatio = window.innerWidth / window.innerHeight;
-            let scale = winRatio < ratio ? window.innerWidth / 1920 : window.innerHeight / 1080;
-            document.documentElement.style.setProperty('--scale-factor', scale);
-        }
-        window.addEventListener('resize', resize);
-        resize();
-
-        // MOTOR FÍSICO 3D (PARALAJE INTERACTIVO)
-        const tiltElements = document.querySelectorAll('.panel, .tilt-media');
-        
-        tiltElements.forEach(el => {
-            el.addEventListener('mousemove', e => {
-                const rect = el.getBoundingClientRect();
-                const x = e.clientX - rect.left; 
-                const y = e.clientY - rect.top;  
-                
-                const centerX = rect.width / 2;
-                const centerY = rect.height / 2;
-                
-                // Calcula el ángulo de inclinación (Máximo 6 grados)
-                const rotateX = ((y - centerY) / centerY) * -6; 
-                const rotateY = ((x - centerX) / centerX) * 6;
-                
-                // Aplica la transformación instantáneamente mientras se mueve el mouse
-                el.style.transform = `perspective(1200px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
-                el.style.transition = 'none'; 
-            });
-            
-            // Cuando el mouse sale, la caja vuelve a su estado normal suavemente
-            el.addEventListener('mouseleave', () => {
-                el.style.transform = `perspective(1200px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)`;
-                el.style.transition = 'transform 0.5s ease-out, box-shadow 0.5s ease-out'; 
-            });
-            
-            el.addEventListener('mouseenter', () => {
-                el.style.transition = 'none';
-            });
-        });
-
+        // Navegación con teclado
         document.addEventListener('keydown', (e) => {
-            if (['ArrowRight', ' ', 'PageDown'].includes(e.key) && currentSlide < slides.length - 1) {
+            if (['ArrowRight', ' ', 'PageDown', 'ArrowDown'].includes(e.key) && currentSlide < totalSlides - 1) {
                 currentSlide++; updateView();
-            } else if (['ArrowLeft', 'PageUp'].includes(e.key) && currentSlide > 0) {
+            } else if (['ArrowLeft', 'PageUp', 'ArrowUp'].includes(e.key) && currentSlide > 0) {
                 currentSlide--; updateView();
-            } else if (e.key.toLowerCase() === 'f') {
-                if (!document.fullscreenElement) document.documentElement.requestFullscreen();
-                else document.exitFullscreen();
             }
         });
 
+        // EVENTO DE CLIC (Zona central bloqueada para navegar, clics libres para videos)
         document.addEventListener('click', (e) => {
-            if(e.clientY > window.innerHeight - 80) return;
-            if (e.clientX > window.innerWidth / 2 && currentSlide < slides.length - 1) {
-                currentSlide++; updateView();
-            } else if (e.clientX <= window.innerWidth / 2 && currentSlide > 0) {
-                currentSlide--; updateView();
+            
+            // 1. Manejo de Videos: Pausa y Play si haces clic en ellos
+            if (e.target.tagName === 'VIDEO') {
+                const video = e.target;
+                if (video.paused) {
+                    video.play();
+                    pauseIndicator.style.opacity = '0';
+                } else {
+                    video.pause();
+                    pauseIndicator.style.opacity = '1';
+                    setTimeout(() => pauseIndicator.style.opacity = '0', 800);
+                }
+                return; // Corta la ejecución, interactuar con el video NO cambia de slide
+            }
+
+            // 2. Navegación restringida a los bordes laterales (15% de cada extremo)
+            const clickX = e.clientX;
+            const screenW = window.innerWidth;
+            const edgeThreshold = 0.15; // 15% del borde
+
+            // Si haces clic en el extremo derecho (avanza)
+            if (clickX > screenW * (1 - edgeThreshold) && currentSlide < totalSlides - 1) {
+                currentSlide++; 
+                updateView();
+            } 
+            // Si haces clic en el extremo izquierdo (retrocede)
+            else if (clickX < screenW * edgeThreshold && currentSlide > 0) {
+                currentSlide--; 
+                updateView();
             }
         });
+
+        document.addEventListener('mousemove', wakeUpUI);
 
         updateView();
     </script>
