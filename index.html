@@ -1,483 +1,642 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LHD - Análisis de Materiales (Edición Final)</title>
-    <style>
-        /* Fuentes */
-        @import url('https://fonts.googleapis.com/css2?family=Anton&family=Montserrat:wght@300;500;700;800&display=swap');
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Materiales No Metálicos · Komatsu WB93R-5</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Lora:wght@600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
 
-        :root {
-            --font-huge: 'Anton', sans-serif;
-            --font-text: 'Montserrat', sans-serif;
-            --accent: #ff9800;
-            --accent-danger: #ff4a4a;
-        }
+  :root{
+    --paper:#F7F4EC; --navy:#101a2c; --navy2:#16223a; --gold:#D8B860; --gold-dim:#8B6A2E;
+    --ink:#EFEAE0; --dim:#9aa6bd; --line:rgba(255,255,255,.12); --chipbg:rgba(255,255,255,.05);
+    --f-disp:'Lora', Georgia, serif; --f-body:'Inter', sans-serif; --f-mono:'IBM Plex Mono', monospace;
+    --ease:cubic-bezier(.76,0,.24,1);
+  }
+  *{ margin:0; padding:0; box-sizing:border-box; }
+  html,body{ width:100vw; height:100vh; overflow:hidden; font-family:var(--f-body); color:var(--ink);
+    background-color:var(--navy); transition:background-color 1s var(--ease); }
 
-        body, html {
-            margin: 0; padding: 0; width: 100vw; height: 100vh;
-            overflow: hidden; font-family: var(--font-text);
-            color: #ffffff; background-color: #080a0f; 
-            transition: background-color 1.2s cubic-bezier(0.76, 0, 0.24, 1);
-        }
+  /* fondo cinematográfico por diapositiva */
+  body[data-slide="0"]{ background-color:#0b1119; }
+  body[data-slide="1"]{ background-color:#141c2c; }
+  body[data-slide="2"]{ background-color:#0b1119; }
+  body[data-slide="3"]{ background-color:#161d28; }
+  body[data-slide="4"]{ background-color:#10141c; }
+  body[data-slide="5"]{ background-color:#0b1119; }
+  body[data-slide="6"]{ background-color:#10141c; }
+  body[data-slide="7"]{ background-color:#0b1119; }
+  body[data-slide="8"]{ background-color:#10141c; }
+  body[data-slide="9"]{ background-color:#0b1119; }
+  body[data-slide="10"]{ background-color:#141c2c; }
+  body[data-slide="11"]{ background-color:#161d28; }
+  body[data-slide="12"]{ background-color:#141c2c; }
+  body[data-slide="13"]{ background-color:#0e1320; }
+  body[data-slide="14"]{ background-color:#0b1119; }
 
-        /* COLORES DE FONDO POR DIAPOSITIVA */
-        body[data-slide="0"] { background-color: #080a0f; }
-        body[data-slide="1"] { background-color: #150a0a; }
-        body[data-slide="2"] { background-color: #08120d; }
-        body[data-slide="3"] { background-color: #121212; }
-        body[data-slide="4"] { background-color: #000000; }
-        body[data-slide="5"] { background-color: #1a0505; }
-        body[data-slide="6"] { background-color: #050505; }
+  /* ===================== CAPA MÁGICA (morph de medios) ===================== */
+  #magic-layer{ position:absolute; inset:0; z-index:1; pointer-events:none; }
+  .bubble{
+    position:absolute; top:50%; left:50%; width:0; height:0; opacity:0;
+    transform:translate(-50%,-50%); border-radius:0; overflow:hidden; background:#0b0e14;
+    box-shadow:0 30px 70px rgba(0,0,0,.55);
+    transition:all 1.05s var(--ease), opacity .6s ease;
+    pointer-events:none;
+  }
+  .bubble::after{ content:''; position:absolute; inset:0; z-index:2; pointer-events:none;
+    background:linear-gradient(180deg, rgba(9,12,18,.05), rgba(9,12,18,.82) 88%);
+    transition:background 1s ease; }
+  .bubble.full::after{ background:linear-gradient(100deg, rgba(9,12,18,.92) 0%, rgba(9,12,18,.55) 42%, rgba(9,12,18,.18) 100%); }
+  .bubble img, .bubble video{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover;
+    opacity:0; transform:scale(1.08); transition:opacity .7s ease, transform 1.1s var(--ease); z-index:1; }
+  .bubble img.show, .bubble video.show{ opacity:1; transform:scale(1); }
+  .bubble img.contain{ object-fit:contain; background:#0b0e14; }
 
-        /* =========================================
-           LA CAPA MÁGICA (Match and Move)
-           ========================================= */
-        #magic-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; pointer-events: none;
-        }
+  /* geometrías reutilizables */
+  .g-hidden{ width:0!important; height:0!important; opacity:0!important; box-shadow:none; }
+  .g-full{ width:100vw!important; height:100vh!important; left:50%!important; top:50%!important; border-radius:0!important; opacity:1!important; }
+  .g-panel-r{ width:40vw!important; height:82vh!important; left:79%!important; top:50%!important; border-radius:26px!important; opacity:1!important; }
+  .g-panel-l{ width:40vw!important; height:82vh!important; left:21%!important; top:50%!important; border-radius:26px!important; opacity:1!important; }
+  .g-trio-l{ width:17vw!important; height:17vw!important; left:21%!important; top:62%!important; border-radius:50%!important; opacity:1!important; }
+  .g-trio-c{ width:17vw!important; height:17vw!important; left:50%!important; top:62%!important; border-radius:50%!important; opacity:1!important; }
+  .g-trio-r{ width:17vw!important; height:17vw!important; left:79%!important; top:62%!important; border-radius:50%!important; opacity:1!important; }
+  .g-banner{ width:58vw!important; height:38vh!important; left:50%!important; top:47%!important; border-radius:20px!important; opacity:1!important; }
 
-        .bubble {
-            position: absolute; border-radius: 50%; overflow: hidden;
-            box-shadow: 0 30px 60px rgba(0,0,0,0.8);
-            transition: all 1.2s cubic-bezier(0.76, 0, 0.24, 1); 
-            top: 50%; left: 50%; transform: translate(-50%, -50%);
-            opacity: 0; width: 0; height: 0; background: #000;
-            pointer-events: auto; /* Permite que la burbuja reciba clics */
-        }
+  /* ===================== CAPA DE CONTENIDO ===================== */
+  #content-layer{ position:absolute; inset:0; z-index:10; pointer-events:none; }
+  .slide-content{
+    position:absolute; inset:0; opacity:0; pointer-events:none;
+    display:flex; flex-direction:column; padding:6.5vh 6vw; box-sizing:border-box;
+    transform:translateY(26px); transition:opacity .55s ease, transform .55s ease;
+  }
+  .slide-content.active{ opacity:1; transform:translateY(0); transition-delay:.35s; }
 
-        .bubble::after {
-            content: ''; position: absolute; inset: 0;
-            background: rgba(0,0,0,0);
-            transition: background 1.2s ease, backdrop-filter 1.2s ease;
-            z-index: 2; pointer-events: none;
-        }
+  .eyebrow{ font-family:var(--f-mono); font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--gold); margin-bottom:12px; display:flex; align-items:center; gap:10px; }
+  .eyebrow::before{ content:''; width:28px; height:2px; background:var(--gold); }
 
-        /* Control de los videos/imágenes internos */
-        .bubble video, .bubble img {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            object-fit: cover; 
-            transition: opacity 0.8s ease, transform 1.2s ease;
-            opacity: 0; transform: scale(1.15); 
-            z-index: 1;
-            cursor: pointer;
-            pointer-events: none; /* ¡SOLUCIÓN! Desactivamos el clic por defecto para que las imágenes invisibles no bloqueen los videos */
-        }
+  h1.huge{ font-family:var(--f-disp); font-weight:700; font-size:clamp(2.2rem,5.6vw,4.6rem); line-height:1.06; letter-spacing:-.5px; color:#fff; }
+  h2.big{ font-family:var(--f-disp); font-weight:700; font-size:clamp(1.7rem,3.8vw,3rem); line-height:1.1; letter-spacing:-.3px; color:#fff; }
+  .accent{ color:var(--gold); }
+  .keyline{ font-size:1.02rem; max-width:56ch; margin-top:12px; line-height:1.45; font-weight:600; font-family:var(--f-disp); color:var(--ink); }
+  .note{ font-size:.88rem; color:var(--dim); max-width:62ch; margin-top:10px; line-height:1.55; }
+  .note b{ color:var(--ink); font-weight:600; }
+  .note-box{ border-left:2px solid var(--gold); padding-left:14px; margin-top:14px; }
 
-        /* LÓGICA DE APARICIÓN DE MEDIOS POR SLIDE (Activamos el clic solo en los visibles) */
-        body[data-slide="0"] #b1-lhd,
-        body[data-slide="1"] #b1-lhd,
-        body[data-slide="4"] #b1-lhd,
-        body[data-slide="6"] #b1-lhd { opacity: 1; transform: scale(1); pointer-events: auto; }
+  .mid{ flex:1; display:flex; flex-direction:column; justify-content:center; gap:4px; }
+  .bottom{ display:flex; justify-content:flex-end; }
+  .left-col{ max-width:46%; }
 
-        body[data-slide="2"] #b1-balde,
-        body[data-slide="3"] #b1-balde { opacity: 1; transform: scale(1); pointer-events: auto; }
+  .glass{ background:rgba(255,255,255,.06); border:1px solid var(--line); border-radius:6px; padding:18px 22px; backdrop-filter:blur(8px); }
 
-        body[data-slide="5"] #b1-fail1 { opacity: 1; transform: scale(1); pointer-events: auto; }
-        body[data-slide="2"] #b2-vastago { opacity: 1; transform: scale(1); pointer-events: auto; }
-        body[data-slide="5"] #b2-fail2 { opacity: 1; transform: scale(1); pointer-events: auto; }
-        body[data-slide="2"] #b3-neumatico { opacity: 1; transform: scale(1); pointer-events: auto; }
+  .taglist{ display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+  .pill{ font-family:var(--f-mono); font-size:10.5px; letter-spacing:.03em; color:var(--ink);
+    border:1px solid var(--line); background:rgba(255,255,255,.05); padding:6px 12px; border-radius:30px; }
+  .pill b{ color:var(--gold); font-weight:600; }
 
-        /* LÓGICA DE GEOMETRÍA DE LAS BURBUJAS */
-        body[data-slide="0"] #b1 { opacity: 1; width: 100vw; height: 100vh; left: 50%; top: 50%; border-radius: 0; box-shadow: none; z-index: 0; }
-        body[data-slide="0"] #b1::after { background: linear-gradient(90deg, #080a0f 0%, rgba(8,10,15,0.9) 45%, transparent 100%); }
-        body[data-slide="0"] #b1-lhd { filter: contrast(1.1) brightness(0.85); }
+  .grid3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; }
+  .grid4{ display:grid; grid-template-columns:repeat(4,1fr); gap:11px; }
+  .grid5{ display:grid; grid-template-columns:repeat(5,1fr); gap:9px; }
 
-        body[data-slide="1"] #b1 { opacity: 1; width: 40vw; height: 85vh; left: 75%; border-radius: 200px; box-shadow: -20px 0 50px rgba(0,0,0,0.8); }
-        body[data-slide="1"] #b1-lhd { filter: contrast(1.1) brightness(0.8); }
-        body[data-slide="1"] #b1::after { background: rgba(0,0,0,0); }
+  .chip{ border:1px solid var(--line); background:rgba(255,255,255,.045); border-radius:6px; padding:13px 15px; }
+  .chip .k{ font-family:var(--f-mono); font-size:9px; letter-spacing:.07em; color:var(--gold); text-transform:uppercase; display:block; margin-bottom:5px; }
+  .chip .v{ font-family:var(--f-disp); font-weight:700; font-size:.98rem; color:#fff; }
+  .chip .d{ font-size:.78rem; color:var(--dim); margin-top:5px; line-height:1.4; }
 
-        body[data-slide="2"] #b1 { opacity: 1; width: 20vw; height: 20vw; left: 20%; top: 48%; border-radius: 50%; }
-        body[data-slide="2"] #b2 { opacity: 1; width: 20vw; height: 20vw; left: 50%; top: 48%; border-radius: 50%; }
-        body[data-slide="2"] #b3 { opacity: 1; width: 20vw; height: 20vw; left: 80%; top: 48%; border-radius: 50%; }
+  .card{ border:1px solid var(--line); background:rgba(255,255,255,.05); border-radius:8px; padding:20px 20px 18px; backdrop-filter:blur(6px); }
+  .card .tag{ font-family:var(--f-mono); font-size:9px; letter-spacing:.08em; color:var(--gold); text-transform:uppercase; }
+  .card h3{ font-family:var(--f-disp); font-size:1.3rem; font-weight:700; margin:7px 0 4px; color:#fff; }
+  .card .fam{ font-size:.84rem; color:var(--dim); margin-bottom:9px; }
+  .card .fn{ font-family:var(--f-mono); font-size:10.5px; letter-spacing:.04em; border-top:1px dashed var(--line); padding-top:8px; margin-top:4px; color:var(--ink); }
 
-        body[data-slide="3"] #b1 { opacity: 1; width: 45vw; height: 80vh; left: 25%; border-radius: 40px; }
+  table{ width:100%; border-collapse:collapse; font-size:.92rem; }
+  thead th{ text-align:left; font-family:var(--f-mono); font-size:9.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--navy); background:var(--gold); padding:11px 14px; }
+  tbody td{ padding:13px 14px; border-bottom:1px solid var(--line); color:var(--dim); }
+  tbody td:first-child{ color:#fff; font-weight:700; font-family:var(--f-disp); }
+  tbody tr.highlight td{ background:rgba(216,184,96,.1); }
+  tbody tr.highlight td:first-child{ color:var(--gold); }
 
-        body[data-slide="4"] #b1 { opacity: 1; width: 100vw; height: 100vh; left: 50%; top: 50%; border-radius: 0; box-shadow: none; z-index: 0; }
-        body[data-slide="4"] #b1::after { background: rgba(0,0,0,0.85); }
-        body[data-slide="4"] #b1-lhd { filter: grayscale(1); }
+  .vsrow{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:10px; }
+  .vsrow .arrow{ font-family:var(--f-mono); color:var(--gold); font-size:13px; }
+  .vsrow .from{ font-size:.86rem; color:var(--dim); }
+  .vsrow .to{ font-family:var(--f-disp); font-weight:700; font-size:.98rem; color:#fff; }
 
-        body[data-slide="5"] #b1 { opacity: 1; width: 32vw; height: 45vh; left: 30%; top: 55%; border-radius: 15px; }
-        body[data-slide="5"] #b2 { opacity: 1; width: 32vw; height: 45vh; left: 70%; top: 55%; border-radius: 15px; }
+  .caption-row{ display:flex; justify-content:space-around; gap:18px; margin-top:18px; }
+  .caption{ max-width:17vw; text-align:center; }
+  .caption h4{ font-family:var(--f-disp); font-size:1.1rem; color:#fff; margin-bottom:4px; }
+  .caption p{ font-size:.78rem; color:var(--dim); line-height:1.4; }
 
-        body[data-slide="6"] #b1 { opacity: 1; width: 100vw; height: 100vh; left: 50%; top: 50%; border-radius: 0; box-shadow: none; z-index: 0; }
-        body[data-slide="6"] #b1::after { background: rgba(0,0,0,0.6); backdrop-filter: blur(12px); }
+  /* UI */
+  #top-progress{ position:fixed; top:0; left:0; width:100%; height:3px; background:rgba(255,255,255,.06); z-index:100; }
+  #progress-fill{ height:100%; background:var(--gold); width:0%; transition:width .7s var(--ease); }
 
+  #floating-ui{ position:fixed; top:22px; right:5vw; display:flex; align-items:center; gap:16px; z-index:100;
+    transition:opacity .5s ease; font-family:var(--f-mono); }
+  #floating-ui.ui-hidden{ opacity:.12; }
+  .brand-tag{ font-size:9.5px; letter-spacing:.18em; color:var(--dim); text-transform:uppercase; border:1px solid var(--line); padding:5px 11px; border-radius:30px; background:var(--chipbg); }
+  .slide-counter{ font-size:12px; color:var(--dim); }
+  .slide-counter b{ color:var(--gold); }
 
-        /* =========================================
-           CAPA DE CONTENIDO (Textos)
-           ========================================= */
-        #content-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none;
-        }
+  #inst-badge{ position:fixed; top:22px; left:5vw; z-index:100; display:flex; align-items:center; gap:8px;
+    font-family:var(--f-mono); font-size:9.5px; letter-spacing:.07em; text-transform:uppercase; color:var(--dim);
+    border:1px solid var(--line); padding:5px 11px; background:var(--chipbg); transition:opacity .5s ease; }
+  #inst-badge.ui-hidden{ opacity:.12; }
+  #inst-badge .mono{ width:15px; height:15px; border:1.3px solid var(--gold); border-radius:2px; display:flex; align-items:center; justify-content:center; font-family:var(--f-disp); font-size:8px; color:var(--gold); font-weight:700; }
+  #inst-badge b{ color:var(--ink); font-weight:600; }
 
-        .slide-content {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            opacity: 0; pointer-events: none;
-            display: flex; flex-direction: column;
-            padding: 60px 80px; box-sizing: border-box;
-            transform: translateY(30px); 
-            transition: opacity 0.6s ease, transform 0.6s ease;
-        }
-        .slide-content.active {
-            opacity: 1; 
-            transform: translateY(0);
-            transition-delay: 0.4s;
-        }
+  #presenter-info{ position:fixed; bottom:30px; left:5vw; z-index:100; font-family:var(--f-mono); font-size:10.5px;
+    letter-spacing:.06em; text-transform:uppercase; color:var(--dim); display:flex; align-items:center; gap:8px; transition:opacity .5s ease; }
+  #presenter-info.ui-hidden{ opacity:.12; }
+  #presenter-info .dot{ width:5px; height:5px; border-radius:50%; background:var(--gold); }
 
-        .huge-title { font-family: var(--font-huge); font-size: 15vw; line-height: 0.85; text-transform: uppercase; margin: 0; letter-spacing: -2px; text-shadow: 0 20px 50px rgba(0,0,0,0.5); }
-        .big-title { font-family: var(--font-huge); font-size: 6vw; line-height: 0.95; text-transform: uppercase; margin: 0; letter-spacing: 1px; color: #ffffff; }
-        
-        .subtitle { font-size: 1.2rem; font-weight: 800; letter-spacing: 5px; text-transform: uppercase; color: var(--accent); margin-bottom: 20px; display: flex; align-items: center; gap: 15px;}
-        .subtitle::before { content: ''; display: block; width: 40px; height: 3px; background: var(--accent); }
-        
-        p { font-size: 1.25rem; line-height: 1.7; max-width: 500px; color: #d0d0d0; font-weight: 300;}
+  #pause-indicator{ position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); font-size:3.4rem; color:rgba(255,255,255,.85);
+    z-index:50; pointer-events:none; opacity:0; transition:opacity .25s ease; }
 
-        .center-layout { justify-content: center; align-items: center; text-align: center; }
-        .center-layout .subtitle { justify-content: center; }
-        .center-layout .subtitle::before { display: none; }
-        .left-layout { justify-content: center; align-items: flex-start; text-align: left; }
-        .right-layout { justify-content: center; align-items: flex-end; text-align: right; }
+  #nav{ position:fixed; bottom:18px; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:14px;
+    background:rgba(16,26,44,.92); padding:9px 16px; border-radius:30px; z-index:101; border:1px solid var(--line); transition:opacity .5s ease; }
+  #nav.ui-hidden{ opacity:.18; }
+  #nav button{ background:transparent; border:1px solid rgba(255,255,255,.25); color:var(--ink); width:32px; height:32px; border-radius:50%;
+    cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; transition:.2s; }
+  #nav button:hover{ background:var(--gold); border-color:var(--gold); color:#10141c; }
+  #nav .fs{ border-radius:6px; width:auto; padding:0 10px; font-size:10px; letter-spacing:.05em; font-family:var(--f-mono); }
+  #rail{ position:fixed; right:13px; top:50%; transform:translateY(-50%); display:flex; flex-direction:column; gap:5px; z-index:101; }
+  #rail .d{ width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.22); cursor:pointer; transition:.2s; }
+  #rail .d.active{ background:var(--gold); width:6px; height:14px; border-radius:3px; }
 
-        /* Panel Institucional */
-        .panel {
-            background: rgba(25, 28, 35, 0.5); 
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 12px; padding: 35px 40px;
-            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6);
-            position: relative;
-            display: flex; flex-direction: column;
-            backdrop-filter: blur(12px);
-        }
-        .panel::before {
-            content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px;
-            background: var(--accent); border-radius: 12px 12px 0 0;
-        }
+  #lightbox{ position:fixed; inset:0; background:rgba(8,10,15,.94); z-index:200; display:none; align-items:center; justify-content:center; }
+  #lightbox.open{ display:flex; }
+  #lightbox img{ max-width:88vw; max-height:86vh; border:1px solid rgba(255,255,255,.15); border-radius:4px; }
+  #lightbox .lb-close{ position:absolute; top:22px; right:30px; color:#fff; font-family:var(--f-mono); font-size:13px; cursor:pointer; border:1px solid rgba(255,255,255,.3); padding:7px 13px; border-radius:30px; }
 
-        .bubble-captions { position: absolute; top: 70%; left: 0; width: 100%; height: auto; display: block; }
-        .caption { position: absolute; width: 20vw; text-align: center; transform: translateX(-50%); }
-        .caption:nth-child(1) { left: 20%; }
-        .caption:nth-child(2) { left: 50%; }
-        .caption:nth-child(3) { left: 80%; }
-        .caption h3 { font-family: var(--font-huge); font-size: 2.2rem; margin: 0 0 8px 0; letter-spacing: 1px;}
-        .caption p { margin: 0 auto; font-size: 0.95rem; max-width: 100%; color: #a0a0a0; line-height: 1.4;}
-
-        .cinematic-table { width: 100%; max-width: 1200px; border-collapse: collapse; margin-top: 50px; }
-        .cinematic-table th { color: var(--accent); font-family: var(--font-huge); font-size: 2.2rem; text-align: left; padding-bottom: 20px; border-bottom: 2px solid rgba(255, 152, 0, 0.4); letter-spacing: 1px;}
-        .cinematic-table td { padding: 30px 20px 30px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 1.2rem; color: #ccc; }
-        .cinematic-table strong { color: #fff; font-weight: 700; }
-
-        /* UI SUPERIOR Y DINÁMICA */
-        #top-progress { position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: rgba(255,255,255,0.05); z-index: 100;}
-        #progress-fill { height: 100%; background: var(--accent); width: 0%; transition: width 0.8s cubic-bezier(0.76, 0, 0.24, 1); }
-
-        #floating-ui {
-            position: absolute; top: 25px; right: 40px; 
-            display: flex; align-items: center; gap: 20px; z-index: 100; pointer-events: none;
-            transition: opacity 0.5s ease; 
-        }
-        .ui-hidden { opacity: 0; }
-
-        .brand-tag { font-family: var(--font-text); font-weight: 800; font-size: 0.85rem; letter-spacing: 4px; color: rgba(255,255,255,0.3); text-transform: uppercase; }
-        .slide-counter { font-family: var(--font-huge); font-size: 2rem; color: #fff; letter-spacing: 2px;}
-        .slide-counter span { color: var(--accent); }
-
-        /* NOMBRE DEL EXPOSITOR INFERIOR DERECHO */
-        #presenter-info {
-            position: absolute; bottom: 30px; right: 40px;
-            font-family: var(--font-text); font-size: 1rem; color: #a0a0a0;
-            text-transform: uppercase; letter-spacing: 2px;
-            z-index: 100; pointer-events: none;
-            transition: opacity 0.5s ease;
-        }
-        #presenter-info span { font-weight: 800; color: var(--accent); }
-
-        .fail-card {
-            width: 35vw; text-align: left; background: rgba(15, 5, 5, 0.7); 
-            padding: 30px; border-radius: 15px; border-left: 4px solid var(--accent-danger);
-            backdrop-filter: blur(10px);
-        }
-
-        #pause-indicator {
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            font-size: 4rem; color: rgba(255,255,255,0.8); z-index: 100;
-            pointer-events: none; opacity: 0; transition: opacity 0.3s ease;
-            text-shadow: 0 10px 20px rgba(0,0,0,0.5);
-        }
-    </style>
+  @media (max-width:900px){
+    .grid3,.grid4,.grid5{ grid-template-columns:1fr 1fr; }
+    #rail{ display:none; }
+    .g-panel-r,.g-panel-l{ width:80vw!important; height:46vh!important; left:50%!important; top:30%!important; }
+    .g-trio-l,.g-trio-c,.g-trio-r{ width:26vw!important; height:26vw!important; top:70%!important; }
+    .g-banner{ width:88vw!important; height:28vh!important; top:50%!important; }
+    .slide-content{ padding:9vh 6vw 12vh; }
+    .left-col{ max-width:100%; }
+  }
+</style>
 </head>
 <body data-slide="0">
 
-    <div id="top-progress"><div id="progress-fill"></div></div>
-    <div id="pause-indicator">⏸</div>
+<div id="top-progress"><div id="progress-fill"></div></div>
+<div id="pause-indicator">⏸</div>
 
-    <div id="floating-ui">
-        <span class="brand-tag">INACAP_LHD</span>
-        <span class="slide-counter" id="counter"><span>01</span> / 07</span>
+<div id="inst-badge"><span class="mono">IM</span>INACAP <b>· Área Mecánica</b></div>
+<div id="floating-ui">
+  <span class="brand-tag">WB93R-5 · S/N F70001</span>
+  <span class="slide-counter" id="counter"><b>01</b> / 15</span>
+</div>
+<div id="presenter-info"><span class="dot"></span><span id="current-presenter">Julio Sinisterra</span></div>
+
+<!-- ===================== MAGIC LAYER ===================== -->
+<div id="magic-layer">
+  <div id="bMain" class="bubble">
+    <img id="bMain-p" src="P.png" alt="">
+    <img id="bMain-pp" src="PP.png" alt="">
+    <img id="bMain-final" class="contain" src="Final.png" alt="">
+  </div>
+  <div id="bMat1" class="bubble">
+    <img id="bMat1-photo" src="1.png" alt="">
+    <video id="bMat1-video" src="1.mp4" autoplay loop muted playsinline></video>
+  </div>
+  <div id="bMat2" class="bubble">
+    <img id="bMat2-photo" src="4.png" alt="">
+    <video id="bMat2-video" src="2.mp4" autoplay loop muted playsinline></video>
+  </div>
+  <div id="bMat3" class="bubble">
+    <img id="bMat3-photo" src="5.png" alt="">
+    <video id="bMat3-video" src="3.mp4" autoplay loop muted playsinline></video>
+  </div>
+  <div id="bBanner" class="bubble">
+    <img id="bBanner-1" class="contain" src="materiales_vs_acero.png" alt="">
+    <img id="bBanner-2" class="contain" src="seleccion_materiales.png" alt="">
+  </div>
+</div>
+
+<!-- ===================== CONTENT LAYER ===================== -->
+<div id="content-layer">
+
+  <!-- 0 PORTADA -->
+  <div class="slide-content active" style="justify-content:center;">
+    <div class="eyebrow" style="margin-bottom:0;">EVA N°4 · Materiales en Maquinaria Pesada</div>
+    <div class="mid left-col">
+      <h1 class="huge">Materiales No<br>Metálicos en la<br><span class="accent">Komatsu WB93R-5</span></h1>
+      <div class="keyline">Tres familias de materiales no metálicos — un elastómero, un compuesto y una cerámica — sostienen lo que el acero, por sí solo, no resuelve.</div>
     </div>
-
-    <div id="presenter-info">Expositor: <span id="current-presenter">Julio Sinisterra</span></div>
-
-    <div id="magic-layer">
-        <div id="b1" class="bubble">
-            <video id="b1-lhd" src="2.mp4" autoplay loop muted playsinline></video>
-            <video id="b1-balde" src="4.mp4" autoplay loop muted playsinline></video>
-            <img id="b1-fail1" src="fisura_balde.jpg" alt="Fisura por Fatiga">
+    <div class="bottom" style="justify-content:flex-start;">
+      <div class="glass" style="max-width:460px;">
+        <div style="display:grid; grid-template-columns:1.1fr .9fr; gap:18px; font-size:.88rem;">
+          <div>
+            <div style="font-family:var(--f-mono); font-size:9px; letter-spacing:.07em; color:var(--gold); text-transform:uppercase; margin-bottom:7px;">Equipo</div>
+            <div style="font-family:var(--f-disp); font-weight:600; font-size:.92rem; line-height:1.65; color:#fff;">Julio Sinisterra · Wiljer Mamani<br>Millaray Aguirre · Simón Olivares</div>
+          </div>
+          <div>
+            <div style="font-family:var(--f-mono); font-size:9px; letter-spacing:.07em; color:var(--gold); text-transform:uppercase; margin-bottom:7px;">Curso</div>
+            <div style="color:var(--dim); line-height:1.65;">Docente G. Garrido F.<br>30 / 06 / 2026</div>
+          </div>
         </div>
-        <div id="b2" class="bubble">
-            <video id="b2-vastago" src="1.mp4" autoplay loop muted playsinline></video>
-            <img id="b2-fail2" src="desgarro_neumatico.jpg" alt="Desgarro Masivo">
-        </div>
-        <div id="b3" class="bubble">
-            <video id="b3-neumatico" src="3.mp4" autoplay loop muted playsinline></video>
-        </div>
+      </div>
     </div>
+  </div>
 
-    <div id="content-layer">
-        
-        <div class="slide-content left-layout active" style="padding-left: 80px; width: 55%; justify-content: center;">
-            <div style="display:flex; gap:18px; align-items:center; margin-bottom:25px; background:rgba(255,255,255,0.08); padding:12px 25px; border-radius:8px; backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.12); width: fit-content;">
-                <span style="font-family:var(--font-text); font-weight: 800; font-size:1.4rem; color:#fff; letter-spacing: 1px;">INACAP</span>
-                <span style="color:var(--accent); font-size:1.4rem;">|</span>
-                <span style="font-family:var(--font-text); font-size:1.1rem; color:#ccc; font-weight: 600;">Área Mecánica</span>
-            </div>
-
-            <h1 class="huge-title" style="font-size: 5.5vw; text-align: left; line-height: 1.05; margin-bottom: 10px; text-transform: uppercase;">
-                ANÁLISIS DE <br><span style="color: var(--accent);">MATERIALES</span><br>EN MAQUINARIA PESADA
-            </h1>
-            <h3 style="font-size: 1.5rem; color: #ccc; margin-bottom: 40px; font-weight: 500; letter-spacing: 1px;">Cargador Frontal de Bajo Perfil (LHD)</h3>
-
-            <div class="panel" style="width: 100%;">
-                <div style="display:grid; grid-template-columns:1.2fr 1fr; gap:20px; font-size: 1rem;">
-                    <div>
-                        <p style="margin:0; max-width: 100%;"><strong>Asignatura:</strong> Materiales en Maquinaria Pesada</p>
-                        <p style="margin:8px 0 0; max-width: 100%;"><strong>Sección:</strong> V-O20-N5-P4-C2/V</p>
-                        <p style="margin:20px 0 0; max-width: 100%;"><strong>Docente:</strong> Gerardo Garrido Fernández</p>
-                        <p style="margin:8px 0 0; max-width: 100%;"><strong>Entrega:</strong> 12 / 05 / 2026</p>
-                    </div>
-                    <div>
-                        <p style="margin:0; color:var(--accent); font-weight:700;">Equipo de Trabajo:</p>
-                        <ul style="list-style:none; padding:0; margin-top:10px; color:#d0d0d0; line-height: 1.7;">
-                            <li>• Aguirre, Millaray</li>
-                            <li>• Bórquez, Renato</li>
-                            <li>• Mamani, Wiljer</li>
-                            <li>• Olivares, Simón</li>
-                            <li>• Sinisterra, Julio</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="slide-content left-layout">
-            <div class="subtitle">01. Contexto Operativo</div>
-            <h2 class="big-title">EL DESAFÍO<br>ESTRUCTURAL</h2>
-            <p style="margin-top: 30px;">El equipo opera bajo condiciones extremas en la minería subterránea. La abrasión constante y los impactos directos contra la roca fragmentada dictan su desgaste.</p>
-            <p>El objetivo es identificar las propiedades mecánicas para comprender la relación de <strong>Cargas y Deformaciones</strong>.</p>
-        </div>
-
-        <div class="slide-content center-layout" style="justify-content: flex-start; padding-top: 3%;">
-            <div class="subtitle" style="margin-bottom: 5px;">02. Componentes Clave</div>
-            <h2 class="big-title" style="font-size: 4.5vw;">MATERIA PRIMA</h2>
-            
-            <div class="bubble-captions">
-                <div class="caption">
-                    <h3>ACERO AL BORO</h3>
-                    <p style="color: var(--accent); font-weight: 700; margin-bottom: 10px; letter-spacing: 2px;">CUCHARA</p>
-                    <p>Alta tenacidad en el núcleo y extrema dureza superficial.</p>
-                </div>
-                <div class="caption">
-                    <h3>CROMO DURO</h3>
-                    <p style="color: var(--accent); font-weight: 700; margin-bottom: 10px; letter-spacing: 2px;">VÁSTAGO</p>
-                    <p>Acero bonificado con coeficiente de fricción casi nulo.</p>
-                </div>
-                <div class="caption">
-                    <h3>ELASTÓMERO</h3>
-                    <p style="color: var(--accent); font-weight: 700; margin-bottom: 10px; letter-spacing: 2px;">NEUMÁTICOS</p>
-                    <p>Polímero vulcanizado de alta memoria elástica.</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="slide-content right-layout">
-            <div style="text-align: left; max-width: 500px;">
-                <div class="subtitle">03. Comportamiento</div>
-                <h2 class="big-title" style="font-size: 5vw; line-height: 0.9;">FÍSICA DEL<br>MOVIMIENTO</h2>
-                <p style="margin-top: 30px;">El equipo falla cuando las cargas dinámicas superan los límites de diseño de sus aleaciones.</p>
-                
-                <div style="margin-top: 40px;">
-                    <h3 style="font-family: var(--font-huge); font-size: 2rem; margin: 0; color: #fff;">BALDE</h3>
-                    <p style="margin: 5px 0 20px; color: var(--accent);">Levanta material mediante <strong>cilindros hidráulicos de doble efecto</strong>. Sometido a Flexión y Cizalle constante.</p>
-                    
-                    <h3 style="font-family: var(--font-huge); font-size: 2rem; margin: 0; color: #fff;">CILINDRO</h3>
-                    <p style="margin: 5px 0 20px; color: var(--accent);">Tracción y Pandeo. En mantenimiento, se manda a <strong>duro cromar el vástago</strong> para quitar las impurezas del trabajo.</p>
-
-                    <h3 style="font-family: var(--font-huge); font-size: 2rem; margin: 0; color: #fff;">NEUMÁTICO</h3>
-                    <p style="margin: 5px 0 0; color: var(--accent);">Compresión Reversible bajo toneladas de carga dinámica.</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="slide-content center-layout">
-            <div class="subtitle">04. Análisis Comparativo</div>
-            <h2 class="big-title" style="font-size: 4vw;">LÍMITES DE DEFORMACIÓN</h2>
-            
-            <table class="cinematic-table">
-                <thead>
-                    <tr>
-                        <th>COMPONENTE</th>
-                        <th>MECÁNICA DE CARGA</th>
-                        <th>DEFORMACIÓN ADMITIDA</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong style="color: var(--accent);">VÁSTAGO</strong></td>
-                        <td>Compresión / Tracción axial.</td>
-                        <td><strong>Elástica Mínima.</strong> La flexión destruye los sellos.</td>
-                    </tr>
-                    <tr>
-                        <td><strong style="color: var(--accent);">BALDE (LABIO)</strong></td>
-                        <td>Flexión / Cizalle al levantar mineral.</td>
-                        <td><strong>Elástica.</strong> Bajo el Límite de Fluencia.</td>
-                    </tr>
-                    <tr>
-                        <td><strong style="color: var(--accent);">NEUMÁTICOS</strong></td>
-                        <td>Gravedad sumada al torque de tracción.</td>
-                        <td><strong>Alta y Reversible.</strong> Absorbe impactos y vibración.</td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-
-        <div class="slide-content center-layout" style="justify-content: flex-start; padding-top: 40px;">
-            <div class="subtitle" style="margin-bottom: 5px; color: var(--accent-danger);">05. Evidencia de Ruptura</div>
-            <h2 class="big-title" style="font-size: 4.5vw; color: #fff; z-index: 20;">ANÁLISIS DE FALLAS</h2>
-            
-            <div style="display: flex; width: 100%; justify-content: space-around; position: absolute; bottom: 8%; left: 0;">
-                <div class="fail-card">
-                    <h3 style="font-family: var(--font-huge); font-size: 2.5rem; margin: 0; color: #fff;">FISURA POR FATIGA</h3>
-                    <p style="margin: 10px 0;">La fricción abrasiva adelgaza la plancha. Los impactos cíclicos generan la grieta.</p>
-                    <p style="color: var(--accent-danger); font-weight: 700; margin: 0;">> MEJORA: Planchas Bimetálicas</p>
-                </div>
-                <div class="fail-card">
-                    <h3 style="font-family: var(--font-huge); font-size: 2.5rem; margin: 0; color: #fff;">DESGARRO MASIVO</h3>
-                    <p style="margin: 10px 0;">Tracción forzada sobre cantos vivos que supera la resistencia estructural del caucho.</p>
-                    <p style="color: var(--accent-danger); font-weight: 700; margin: 0;">> MEJORA: Compuesto L-5S</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="slide-content center-layout">
-            <div class="subtitle">06. Conclusión Técnica</div>
-            <h1 class="huge-title" style="font-size: 8vw; margin-bottom: 30px;">EL MATERIAL<br><span style="color: var(--accent);">DICTA LA LEY</span></h1>
-            <p style="font-size: 1.4rem; max-width: 800px; text-align: center; color: #fff;">
-                El diseño mecánico está subordinado a las propiedades físicas. El acero aporta estructura, el cromo precisión y los elastómeros resiliencia. Conocer sus límites es la verdadera esencia de la ingeniería.
-            </p>
-        </div>
-
+  <!-- 1 AGENDA -->
+  <div class="slide-content">
+    <div class="eyebrow">Agenda</div>
+    <h2 class="big">Tres materiales.<br>Una sola máquina.</h2>
+    <div class="mid">
+      <div class="keyline">La WB93R-5 es solo el caso de estudio. Lo que realmente está en juego son tres funciones que el acero no puede cumplir por sí mismo.</div>
+      <div class="grid3" style="margin-top:16px;">
+        <div class="chip"><span class="k">Función 1</span><span class="v">Sellado hidráulico</span><span class="d">Evita fugas en cilindros y mangueras sometidas a cientos de bares de presión.</span></div>
+        <div class="chip"><span class="k">Función 2</span><span class="v">Reducción de peso</span><span class="d">Quita masa muerta en paneles y cubiertas sin sacrificar protección.</span></div>
+        <div class="chip"><span class="k">Función 3</span><span class="v">Desgaste y temperatura</span><span class="d">Detiene toneladas en movimiento sin perder capacidad de frenado.</span></div>
+      </div>
+      <div class="taglist">
+        <div class="pill">1 — Vitón <b>/ NBR</b> · Elastómero</div>
+        <div class="pill">2 — Epoxi <b>+ Fibra de Vidrio</b> · PMC</div>
+        <div class="pill">3 — Cerámicas <b>de Contacto</b> · Industrial</div>
+      </div>
     </div>
+    <div class="presenter-tag" data-presenter="Julio Sinisterra"></div>
+  </div>
 
-    <script>
-        let currentSlide = 0;
-        const totalSlides = 7;
-        const body = document.body;
-        const slides = document.querySelectorAll('.slide-content');
-        const progressFill = document.getElementById('progress-fill');
-        const counter = document.getElementById('counter');
-        const floatingUI = document.getElementById('floating-ui');
-        const pauseIndicator = document.getElementById('pause-indicator');
-        const presenterLabel = document.getElementById('current-presenter');
-        let uiTimeout;
+  <!-- 2 CONTEXTO -->
+  <div class="slide-content" style="justify-content:center;">
+    <div class="eyebrow">Contexto operativo</div>
+    <div class="mid left-col">
+      <h2 class="big">No hablamos<br>del <span class="accent">acero.</span></h2>
+      <div class="note" style="max-width:48ch;">La WB93R-5 combina cargador frontal y brazo retroexcavador en un solo chasis. Trabaja bajo cinco condiciones simultáneas que definen qué material va en cada punto crítico.</div>
+    </div>
+    <div class="bottom" style="justify-content:flex-start;">
+      <div class="glass" style="max-width:560px;">
+        <div class="grid5">
+          <div class="chip"><span class="k">01</span><span class="v" style="font-size:.84rem;">Vibración constante</span></div>
+          <div class="chip"><span class="k">02</span><span class="v" style="font-size:.84rem;">Polvo abrasivo</span></div>
+          <div class="chip"><span class="k">03</span><span class="v" style="font-size:.84rem;">Humedad</span></div>
+          <div class="chip"><span class="k">04</span><span class="v" style="font-size:.84rem;">Presión hidráulica</span></div>
+          <div class="chip"><span class="k">05</span><span class="v" style="font-size:.84rem;">+150°C motor</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="presenter-tag" data-presenter="Julio Sinisterra"></div>
+  </div>
 
-        // Arreglo con los expositores según el guion
-        const presenters = [
-            "Julio Sinisterra", // Diapositiva 1
-            "Julio Sinisterra", // Diapositiva 2
-            "Wiljer Mamani",    // Diapositiva 3
-            "Millaray Aguirre", // Diapositiva 4
-            "Renato Bórquez",   // Diapositiva 5
-            "Simón Olivares",   // Diapositiva 6
-            "Simón Olivares"    // Diapositiva 7
-        ];
+  <!-- 3 LOS TRES MATERIALES IDENTIFICADOS -->
+  <div class="slide-content" style="align-items:center; text-align:center;">
+    <div class="eyebrow" style="justify-content:center;">Punto de quiebre</div>
+    <div class="mid" style="align-items:center;">
+      <h2 class="big">El acero resiste.<br>No <span class="accent">sella, ni aligera, ni frena.</span></h2>
+    </div>
+    <div class="caption-row" style="margin-top:26vh;">
+      <div class="caption"><h4>Vitón / NBR</h4><p>Polímero elastomérico · sellado hidráulico</p></div>
+      <div class="caption"><h4>Epoxi + Fibra</h4><p>Material compuesto · reducción de peso</p></div>
+      <div class="caption"><h4>Cerámica</h4><p>Cerámica industrial · resistencia al desgaste</p></div>
+    </div>
+    <div class="presenter-tag" data-presenter="Wiljer Mamani"></div>
+  </div>
 
-        function wakeUpUI() {
-            floatingUI.classList.remove('ui-hidden');
-            document.getElementById('presenter-info').classList.remove('ui-hidden');
-            clearTimeout(uiTimeout);
-            uiTimeout = setTimeout(() => {
-                floatingUI.classList.add('ui-hidden');
-                document.getElementById('presenter-info').classList.add('ui-hidden');
-            }, 2500);
-        }
+  <!-- 4 MATERIAL 1 — RECONOCIMIENTO -->
+  <div class="slide-content" style="justify-content:center;">
+    <div class="eyebrow">Material 1 / 3</div>
+    <div class="mid left-col">
+      <h1 class="huge">Vitón <span class="accent">/ NBR</span></h1>
+      <div class="note" style="max-width:46ch;">Caucho Nitrilo (NBR) y su versión resistente al calor, el Vitón. Ambos elastómeros sintéticos viven en O-rings, juntas y el interior de mangueras hidráulicas de alta presión.</div>
+    </div>
+    <div class="bottom" style="justify-content:flex-start;">
+      <div class="glass" style="max-width:480px;">
+        <div class="grid3" style="gap:10px;">
+          <div class="chip"><span class="k">Propiedad</span><span class="v" style="font-size:.84rem;">Alta elasticidad</span><span class="d">Se deforma y recupera su forma sin daño permanente.</span></div>
+          <div class="chip"><span class="k">Aplicación</span><span class="v" style="font-size:.84rem;">O-rings y mangueras</span><span class="d">Persigue micro-holguras del vástago en movimiento.</span></div>
+          <div class="chip"><span class="k">Beneficio</span><span class="v" style="font-size:.84rem;">Sella sin fuga</span><span class="d">Evita pérdida de presión en cilindros estabilizadores.</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="presenter-tag" data-presenter="Wiljer Mamani"></div>
+  </div>
 
-        function updateView() {
-            body.setAttribute('data-slide', currentSlide);
-            
-            slides.forEach((slide, idx) => {
-                slide.classList.remove('active');
-                if (idx === currentSlide) slide.classList.add('active');
-            });
-            
-            progressFill.style.width = `${((currentSlide + 1) / totalSlides) * 100}%`;
-            counter.innerHTML = `<span>0${currentSlide + 1}</span> / 0${totalSlides}`;
-            
-            // Actualiza el nombre del expositor actual
-            presenterLabel.textContent = presenters[currentSlide];
+  <!-- 5 MATERIAL 1 — CLASIFICACIÓN -->
+  <div class="slide-content" style="justify-content:center;">
+    <div class="eyebrow">Clasificación · Polímero Sintético / Elastómero</div>
+    <div class="mid left-col">
+      <h2 class="big">Se deforma.<br>No se <span class="accent">rompe.</span></h2>
+      <div class="note-box note" style="max-width:48ch;">Cadenas moleculares con entrecruzamiento espaciado: bajo presión se estiran, y al liberar la tensión recuperan su forma original. Esa memoria elástica es lo que evita la fuga.</div>
+    </div>
+    <div class="bottom" style="justify-content:flex-start;">
+      <div class="grid4" style="max-width:560px;">
+        <div class="chip"><span class="k">Familia</span><span class="v" style="font-size:.86rem;">Polímero sintético</span></div>
+        <div class="chip"><span class="k">Subfamilia</span><span class="v" style="font-size:.86rem;">Elastómero</span></div>
+        <div class="chip"><span class="k">Química</span><span class="v" style="font-size:.86rem;">Inerte a aceites</span></div>
+        <div class="chip"><span class="k">Zona motor</span><span class="v" style="font-size:.86rem;">Vitón &gt;200°C</span></div>
+      </div>
+    </div>
+    <div class="presenter-tag" data-presenter="Wiljer Mamani"></div>
+  </div>
 
-            // Forzar reproducción de los videos en caso de haberlos pausado
-            document.querySelectorAll('video').forEach(v => { v.play().catch(()=>{}); });
-            
-            wakeUpUI();
-        }
+  <!-- 6 MATERIAL 2 — RECONOCIMIENTO -->
+  <div class="slide-content" style="justify-content:center; align-items:flex-end; text-align:right;">
+    <div class="eyebrow" style="justify-content:flex-end;">Material 2 / 3</div>
+    <div class="mid" style="max-width:48%; align-items:flex-end;">
+      <h1 class="huge" style="font-size:clamp(1.9rem,4.6vw,3.6rem);">Resina Epoxi<br><span class="accent">+ Fibra de Vidrio</span></h1>
+      <div class="note" style="max-width:46ch; text-align:right;">Material compuesto de matriz polimérica usado en paneles exteriores, guardabarros y cubiertas protectoras. Dos componentes que trabajan juntos sin disolverse entre sí.</div>
+    </div>
+    <div class="bottom">
+      <div class="glass" style="max-width:480px;">
+        <div class="taglist" style="margin-top:0; justify-content:flex-end;">
+          <div class="pill">Fibra: soporta tracción y flexión</div>
+          <div class="pill">Resina: protege y transfiere carga</div>
+          <div class="pill">Inerte a corrosión y humedad</div>
+        </div>
+      </div>
+    </div>
+    <div class="presenter-tag" data-presenter="Millaray Aguirre"></div>
+  </div>
 
-        // Navegación con teclado
-        document.addEventListener('keydown', (e) => {
-            if (['ArrowRight', ' ', 'PageDown', 'ArrowDown'].includes(e.key) && currentSlide < totalSlides - 1) {
-                currentSlide++; updateView();
-            } else if (['ArrowLeft', 'PageUp', 'ArrowUp'].includes(e.key) && currentSlide > 0) {
-                currentSlide--; updateView();
-            }
-        });
+  <!-- 7 MATERIAL 2 — CLASIFICACIÓN PMC -->
+  <div class="slide-content" style="justify-content:center;">
+    <div class="eyebrow">Clasificación · Material Compuesto (PMC)</div>
+    <div class="mid left-col">
+      <h2 class="big">Matriz +<br><span class="accent">Refuerzo</span></h2>
+      <div class="note" style="max-width:48ch;">Usar este compuesto en lugar de chapa de acero quita peso muerto exactamente donde no se necesita resistencia estructural: el capó, que se abre y cierra a diario.</div>
+    </div>
+    <div class="bottom" style="justify-content:flex-start;">
+      <div class="grid3" style="max-width:620px;">
+        <div class="chip"><span class="k">Resina (matriz)</span><span class="v" style="font-size:.86rem;">Transfiere carga</span><span class="d">Protege contra corrosión sin fundirse por el calor.</span></div>
+        <div class="chip"><span class="k">Fibra (refuerzo)</span><span class="v" style="font-size:.86rem;">Soporta esfuerzos</span><span class="d">Resiste tracción y flexión con una fracción del peso.</span></div>
+        <div class="chip"><span class="k">Clasificación</span><span class="v" style="font-size:.86rem;">PMC</span><span class="d">Compuesto de Matriz Polimérica · dos fases distintas.</span></div>
+      </div>
+    </div>
+    <div class="presenter-tag" data-presenter="Millaray Aguirre"></div>
+  </div>
 
-        // EVENTO DE CLIC (Zona central bloqueada para navegar, clics libres para videos)
-        document.addEventListener('click', (e) => {
-            
-            // 1. Manejo de Videos: Pausa y Play si haces clic en ellos
-            if (e.target.tagName === 'VIDEO') {
-                const video = e.target;
-                if (video.paused) {
-                    video.play();
-                    pauseIndicator.style.opacity = '0';
-                } else {
-                    video.pause();
-                    pauseIndicator.style.opacity = '1';
-                    setTimeout(() => pauseIndicator.style.opacity = '0', 800);
-                }
-                return; // Corta la ejecución, interactuar con el video NO cambia de slide
-            }
+  <!-- 8 MATERIAL 3 — RECONOCIMIENTO -->
+  <div class="slide-content" style="justify-content:center;">
+    <div class="eyebrow">Material 3 / 3</div>
+    <div class="mid left-col">
+      <h1 class="huge">Cerámicas<br><span class="accent">de Contacto</span></h1>
+      <div class="note" style="max-width:46ch;">Se emplean en los discos de fricción de los sistemas de embrague multidisco y de frenado. Inorgánicas, extremadamente duras y químicamente inertes — pero frágiles ante impactos secos.</div>
+    </div>
+    <div class="bottom" style="justify-content:flex-start;">
+      <div class="glass" style="max-width:400px;">
+        <div class="taglist" style="margin-top:0;">
+          <div class="pill">Discos de embrague</div>
+          <div class="pill">Discos de freno</div>
+        </div>
+      </div>
+    </div>
+    <div class="presenter-tag" data-presenter="Simón Olivares"></div>
+  </div>
 
-            // 2. Navegación restringida a los bordes laterales (15% de cada extremo)
-            const clickX = e.clientX;
-            const screenW = window.innerWidth;
-            const edgeThreshold = 0.15; // 15% del borde
+  <!-- 9 MATERIAL 3 — CLASIFICACIÓN -->
+  <div class="slide-content" style="justify-content:center;">
+    <div class="eyebrow">Clasificación · Cerámica Industrial</div>
+    <div class="mid left-col">
+      <h2 class="big">Resiste el calor.<br><span class="accent">Sin fading.</span></h2>
+      <div class="note-box note" style="max-width:48ch;">Enlaces iónicos y covalentes entre elementos metálicos y no metálicos (óxidos o carburos) le dan su carácter aislante y refractario — opuesto a la conductividad de un metal.</div>
+    </div>
+    <div class="bottom" style="justify-content:flex-start;">
+      <div class="grid3" style="max-width:560px;">
+        <div class="chip"><span class="k">Térmica</span><span class="v" style="font-size:.86rem;">Resiste +700°C</span></div>
+        <div class="chip"><span class="k">Mecánica</span><span class="v" style="font-size:.86rem;">Alta dureza</span></div>
+        <div class="chip"><span class="k">Limitación</span><span class="v" style="font-size:.86rem;">Frágil a impacto</span></div>
+      </div>
+    </div>
+    <div class="presenter-tag" data-presenter="Simón Olivares"></div>
+  </div>
 
-            // Si haces clic en el extremo derecho (avanza)
-            if (clickX > screenW * (1 - edgeThreshold) && currentSlide < totalSlides - 1) {
-                currentSlide++; 
-                updateView();
-            } 
-            // Si haces clic en el extremo izquierdo (retrocede)
-            else if (clickX < screenW * edgeThreshold && currentSlide > 0) {
-                currentSlide--; 
-                updateView();
-            }
-        });
+  <!-- 10 LO QUE EL ACERO NO RESUELVE -->
+  <div class="slide-content" style="align-items:center; text-align:center;">
+    <div class="eyebrow" style="justify-content:center;">Propiedad → Aplicación</div>
+    <h2 class="big">Lo que el acero<br>no resuelve</h2>
+    <div style="flex:1;"></div>
+    <div class="grid3" style="max-width:760px; margin:0 auto;">
+      <div class="chip"><div class="vsrow"><span class="from">Fugas hidráulicas</span><span class="arrow">→</span><span class="to">Vitón / NBR</span></div></div>
+      <div class="chip"><div class="vsrow"><span class="from">Exceso de peso</span><span class="arrow">→</span><span class="to">PMC</span></div></div>
+      <div class="chip"><div class="vsrow"><span class="from">Desgaste térmico</span><span class="arrow">→</span><span class="to">Cerámica</span></div></div>
+    </div>
+    <div class="note" style="margin:14px auto 0; text-align:center;"><b>Conclusión técnica:</b> el acero aporta resistencia estructural, pero no sella bajo presión, no aligera donde no hay carga, ni resiste fricción térmica continua.</div>
+    <div class="presenter-tag" data-presenter="Simón Olivares"></div>
+  </div>
 
-        document.addEventListener('mousemove', wakeUpUI);
+  <!-- 11 TABLA COMPARATIVA -->
+  <div class="slide-content" style="justify-content:center;">
+    <div class="eyebrow">Comparación técnica</div>
+    <h2 class="big">Frente a frente</h2>
+    <div class="mid">
+      <table>
+        <thead><tr><th>Material</th><th>Familia</th><th>Función</th><th>Ventaja</th></tr></thead>
+        <tbody>
+          <tr><td>Vitón / NBR</td><td>Elastómero</td><td>Sellado hidráulico</td><td>Deformación recuperable</td></tr>
+          <tr><td>Epoxi + Fibra</td><td>Compuesto PMC</td><td>Paneles exteriores</td><td>Alta resist. / bajo peso</td></tr>
+          <tr><td>Cerámica</td><td>Industrial</td><td>Embrague / freno</td><td>Estable a alta T°</td></tr>
+          <tr class="highlight"><td>Conclusión</td><td>—</td><td>Mejor elasticidad → Vitón/NBR</td><td>Menor peso → PMC · Mayor resist. térmica → Cerámica</td></tr>
+        </tbody>
+      </table>
+      <div class="keyline" style="margin-top:16px; font-size:.95rem;">Tres familias. Tres funciones. Un mismo objetivo: que la máquina funcione sin fallar.</div>
+    </div>
+    <div class="presenter-tag" data-presenter="Millaray Aguirre"></div>
+  </div>
 
-        updateView();
-    </script>
+  <!-- 12 ¿POR QUÉ FUERON SELECCIONADOS? -->
+  <div class="slide-content" style="align-items:center; text-align:center;">
+    <div class="eyebrow" style="justify-content:center;">Selección de materiales</div>
+    <h2 class="big">¿Por qué fueron seleccionados<br>estos materiales?</h2>
+    <div style="flex:1;"></div>
+    <div class="grid3" style="max-width:780px; margin:0 auto;">
+      <div class="card">
+        <div class="tag">Material 1</div><h3>Vitón / NBR</h3>
+        <div class="fam">Elegido por su capacidad de sellado y resistencia química.</div>
+      </div>
+      <div class="card">
+        <div class="tag">Material 2</div><h3>PMC</h3>
+        <div class="fam">Elegido por su baja densidad y resistencia mecánica.</div>
+      </div>
+      <div class="card">
+        <div class="tag">Material 3</div><h3>Cerámica</h3>
+        <div class="fam">Elegida por su resistencia al desgaste y altas temperaturas.</div>
+      </div>
+    </div>
+    <div class="note" style="margin:14px auto 0; text-align:center;"><b>Conclusión:</b> la combinación de estas tres familias mejora la eficiencia, confiabilidad y vida útil de la WB93R-5.</div>
+    <div class="presenter-tag" data-presenter="Simón Olivares"></div>
+  </div>
+
+  <!-- 13 CONCLUSIÓN TÉCNICA -->
+  <div class="slide-content" style="align-items:center; text-align:center; justify-content:center;">
+    <div class="eyebrow" style="justify-content:center;">Conclusión técnica</div>
+    <h1 class="huge">Sellar, proteger<br>y <span class="accent">resistir.</span></h1>
+    <div class="keyline" style="text-align:center; margin:0 auto;">Tres funciones esenciales para el funcionamiento eficiente de la Komatsu WB93R-5.</div>
+    <div class="grid3" style="margin-top:18px; max-width:760px; text-align:left;">
+      <div class="chip"><span class="k">Vitón / NBR</span><span class="v" style="font-size:.85rem;">Sella sin fuga</span></div>
+      <div class="chip"><span class="k">Epoxi + Fibra</span><span class="v" style="font-size:.85rem;">Protege sin peso</span></div>
+      <div class="chip"><span class="k">Cerámica</span><span class="v" style="font-size:.85rem;">Resiste el calor</span></div>
+    </div>
+    <div class="presenter-tag" data-presenter="Todo el equipo"></div>
+  </div>
+
+  <!-- 14 GRACIAS -->
+  <div class="slide-content" style="align-items:center; text-align:center; justify-content:center;">
+    <h1 class="huge">Muchas<br>Gracias</h1>
+    <div style="margin-top:18px; font-family:var(--f-mono); font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--gold);">INACAP · Sede Copiapó · Área Mecánica</div>
+    <div class="presenter-tag" data-presenter="Equipo completo"></div>
+  </div>
+
+</div>
+
+<div id="lightbox" onclick="if(event.target===this) closeLightbox()">
+  <span class="lb-close" onclick="closeLightbox()">CERRAR ✕</span>
+  <img id="lightbox-img" src="" alt="">
+</div>
+
+<div id="rail"></div>
+<div id="nav">
+  <button id="prevBtn">&#8592;</button>
+  <button id="fsBtn" class="fs">PANTALLA COMPLETA</button>
+  <button id="nextBtn">&#8594;</button>
+</div>
+
+<script>
+  const body = document.body;
+  const slides = Array.from(document.querySelectorAll('.slide-content'));
+  const total = slides.length;
+  let current = 0;
+  const counter = document.getElementById('counter');
+  const progressFill = document.getElementById('progress-fill');
+  const rail = document.getElementById('rail');
+  const floatingUI = document.getElementById('floating-ui');
+  const instBadge = document.getElementById('inst-badge');
+  const presenterInfo = document.getElementById('presenter-info');
+  const presenterLabel = document.getElementById('current-presenter');
+  const navEl = document.getElementById('nav');
+  const pauseIndicator = document.getElementById('pause-indicator');
+  let uiTimeout;
+
+  // geometrías de cada burbuja por diapositiva (índice 0-14)
+  const geo = {
+    bMain:   { 0:'g-full', 2:'g-full', 14:'g-full' },
+    bMat1:   { 3:'g-trio-l', 4:'g-panel-r', 5:'g-full' },
+    bMat2:   { 3:'g-trio-c', 6:'g-panel-l', 7:'g-full' },
+    bMat3:   { 3:'g-trio-r', 8:'g-panel-r', 9:'g-full' },
+    bBanner: { 10:'g-banner', 12:'g-banner' }
+  };
+  // medio visible dentro de cada burbuja por diapositiva
+  const media = {
+    bMain:   { 0:'bMain-p', 2:'bMain-pp', 14:'bMain-final' },
+    bMat1:   { 3:'bMat1-photo', 4:'bMat1-photo', 5:'bMat1-video' },
+    bMat2:   { 3:'bMat2-photo', 6:'bMat2-photo', 7:'bMat2-video' },
+    bMat3:   { 3:'bMat3-photo', 8:'bMat3-photo', 9:'bMat3-video' },
+    bBanner: { 10:'bBanner-1', 12:'bBanner-2' }
+  };
+  const allGeoClasses = ['g-hidden','g-full','g-panel-r','g-panel-l','g-trio-l','g-trio-c','g-trio-r','g-banner'];
+
+  rail.innerHTML = '';
+  slides.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'd' + (i === 0 ? ' active' : '');
+    d.addEventListener('click', () => goTo(i));
+    rail.appendChild(d);
+  });
+
+  function applyBubble(id, table){
+    const el = document.getElementById(id);
+    const g = table[current] || 'g-hidden';
+    el.classList.remove(...allGeoClasses);
+    el.classList.add(g);
+    el.classList.toggle('full', g === 'g-full');
+  }
+
+  function applyMedia(bubbleId, table){
+    const bubble = document.getElementById(bubbleId);
+    const activeMediaId = table[current];
+    bubble.querySelectorAll('img,video').forEach(m => {
+      m.classList.toggle('show', m.id === activeMediaId);
+    });
+  }
+
+  function wakeUpUI(){
+    [floatingUI, instBadge, presenterInfo, navEl].forEach(el => el.classList.remove('ui-hidden'));
+    clearTimeout(uiTimeout);
+    uiTimeout = setTimeout(() => {
+      [floatingUI, instBadge, presenterInfo, navEl].forEach(el => el.classList.add('ui-hidden'));
+    }, 2600);
+  }
+
+  function render(){
+    body.setAttribute('data-slide', current);
+    slides.forEach((s, i) => s.classList.toggle('active', i === current));
+    counter.innerHTML = '<b>' + String(current+1).padStart(2,'0') + '</b> / ' + String(total).padStart(2,'0');
+    progressFill.style.width = ((current + 1) / total * 100) + '%';
+    Array.from(rail.children).forEach((d, i) => d.classList.toggle('active', i === current));
+
+    Object.keys(geo).forEach(id => applyBubble(id, geo[id]));
+    Object.keys(media).forEach(id => applyMedia(id, media[id]));
+
+    const presenterTag = slides[current].querySelector('.presenter-tag');
+    presenterLabel.textContent = presenterTag ? presenterTag.dataset.presenter : '';
+
+    document.querySelectorAll('video').forEach(v => v.play().catch(()=>{}));
+    wakeUpUI();
+  }
+
+  function goTo(i){ current = Math.max(0, Math.min(total - 1, i)); render(); }
+  function next(){ goTo(current + 1); }
+  function prev(){ goTo(current - 1); }
+
+  document.getElementById('nextBtn').addEventListener('click', next);
+  document.getElementById('prevBtn').addEventListener('click', prev);
+
+  document.addEventListener('keydown', (e) => {
+    if (document.getElementById('lightbox').classList.contains('open')) {
+      if (e.key === 'Escape') closeLightbox();
+      return;
+    }
+    if (['ArrowRight','PageDown',' '].includes(e.key)) { next(); e.preventDefault(); }
+    if (['ArrowLeft','PageUp'].includes(e.key)) { prev(); e.preventDefault(); }
+  });
+
+  document.getElementById('fsBtn').addEventListener('click', () => {
+    if (!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
+    else document.exitFullscreen();
+  });
+
+  let touchStartX = null;
+  document.addEventListener('touchstart', e => touchStartX = e.touches[0].clientX);
+  document.addEventListener('touchend', e => {
+    if (touchStartX === null) return;
+    const dx = e.changedTouches[0].clientX - touchStartX;
+    if (Math.abs(dx) > 60) { dx < 0 ? next() : prev(); }
+    touchStartX = null;
+  });
+
+  document.addEventListener('mousemove', wakeUpUI);
+
+  // pausar/reproducir video con clic, y lightbox para imágenes banner
+  document.addEventListener('click', (e) => {
+    if (e.target.tagName === 'VIDEO') {
+      const v = e.target;
+      if (v.paused) { v.play(); pauseIndicator.style.opacity = '0'; }
+      else { v.pause(); pauseIndicator.style.opacity = '1'; setTimeout(() => pauseIndicator.style.opacity = '0', 700); }
+      return;
+    }
+    if (e.target.id === 'bBanner-1' || e.target.id === 'bBanner-2') {
+      openLightbox(e.target.getAttribute('src'));
+      return;
+    }
+  });
+
+  function openLightbox(src){
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('lightbox').classList.add('open');
+  }
+  function closeLightbox(){ document.getElementById('lightbox').classList.remove('open'); }
+
+  // habilitar pointer-events solo en medios visibles (para clic/lightbox)
+  const css = document.createElement('style');
+  css.textContent = '.bubble.g-full, .bubble.g-panel-r, .bubble.g-panel-l, .bubble.g-trio-l, .bubble.g-trio-c, .bubble.g-trio-r, .bubble.g-banner { pointer-events:auto; } .bubble img, .bubble video { pointer-events:none; } .bubble img.show, .bubble video.show { pointer-events:auto; }';
+  document.head.appendChild(css);
+
+  render();
+</script>
+
 </body>
 </html>
