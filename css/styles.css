@@ -1,1440 +1,807 @@
-/* ============================================================================
-   styles.css
-   SISTEMA DE DISEÑO — DASHBOARD INDUSTRIAL DE FRENADO DE EMERGENCIA
-   ============================================================================
-   Paleta: negro industrial + amarillo Caterpillar + rojo peligro.
-   Estilo: paneles de cristal (glassmorphism) flotando sobre el canvas 3D.
-   ============================================================================ */
-
-:root {
-  /* --- Superficies --- */
-  --void: #06070a;
-  --panel-bg: rgba(18, 21, 25, 0.62);
-  --panel-border: rgba(255, 255, 255, 0.08);
-  --panel-border-strong: rgba(255, 204, 0, 0.35);
-
-  /* --- Acentos industriales --- */
-  --cat-yellow: #ffcc00;
-  --cat-yellow-dim: #b38f00;
-  --danger-red: #e63946;
-  --ok-green: #4ade80;
-  --steel: #4a5d6a;
-
-  /* --- Texto --- */
-  --text-primary: #eef0f2;
-  --text-muted: #8a9199;
-  --text-faint: #565c63;
-
-  /* --- Tipografía --- */
-  --font-display: 'Rajdhani', 'Barlow Semi Condensed', sans-serif;
-  --font-body: 'Barlow', 'Segoe UI', sans-serif;
-  --font-mono: 'Share Tech Mono', 'Consolas', monospace;
-
-  /* --- Radios y sombras --- */
-  --radius: 16px;
-  --blur: 18px;
-  --shadow-panel: 0 10px 34px rgba(0, 0, 0, 0.5);
-
-  /* --- Espaciado entre tarjetas (Ronda 6): antes todo vivía apretado
-     dentro de un único glass-panel por columna; ahora cada columna es un
-     wrapper de layout con varias tarjetas reales separadas por --stack-gap,
-     así ninguna se percibe "encima" de otra. --- */
-  --stack-gap: 18px;
-
-  /* --- Altura real del HUD inferior, medida en vivo por main.js (syncHudSpacing) ---
-     Empieza con un valor de respaldo razonable para el primer frame antes de que
-     JS pueda medir el elemento; luego se sobreescribe con la altura exacta.
-     Ronda 6: ahora el HUD tiene 2 filas fijas (métricas + acciones), así
-     que el valor de respaldo sube para reflejar esa altura real. */
-  --hud-height: 176px;
-
-  /* --- Colchón de seguridad extra bajo el HUD (Ronda 6): además de la
-     altura medida, siempre se reserva este margen fijo para que, aunque
-     el cálculo en vivo llegue un frame tarde, jamás se vea un panel
-     tapado por el HUD ni fundido visualmente con su blur. --- */
-  --hud-safety-gap: 40px;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  background: var(--void);
-  color: var(--text-primary);
-  font-family: var(--font-body);
-  overflow: hidden;
-}
-
-/* ----------------------------------------------------------------------
-   CAPA 3D DE FONDO
-   ---------------------------------------------------------------------- */
-#canvasContainer {
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-}
-
-#canvasContainer canvas {
-  display: block;
-}
-
-/* ----------------------------------------------------------------------
-   FALLBACK SIN WEBGL (Ronda 7) — se inyecta dentro de #canvasContainer
-   cuando Scene3D detecta que el navegador/GPU no puede crear un contexto
-   WebGL. El resto del dashboard (gráficos, HUD, pizarra) sigue
-   funcionando con normalidad; solo la capa 3D queda reemplazada por este
-   aviso.
-   ---------------------------------------------------------------------- */
-.webgl-fallback {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 40px;
-  text-align: center;
-  background: radial-gradient(circle at 50% 40%, #1c2126 0%, var(--void) 75%);
-}
-
-.webgl-fallback-icon {
-  font-size: 42px;
-  line-height: 1;
-  color: var(--danger-red);
-  text-shadow: 0 0 24px rgba(230, 57, 70, 0.5);
-}
-
-.webgl-fallback-title {
-  margin: 0;
-  font-family: var(--font-display);
-  font-size: 18px;
-  font-weight: 700;
-  color: var(--text-primary);
-  max-width: 560px;
-}
-
-.webgl-fallback-text {
-  margin: 0;
-  font-size: 14px;
-  color: var(--text-muted);
-  max-width: 480px;
-  line-height: 1.5;
-}
-
-/* ----------------------------------------------------------------------
-   ESTRUCTURA GENERAL DEL DASHBOARD
-   ---------------------------------------------------------------------- */
-.app-shell {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  height: 100%;
-  display: grid;
-  grid-template-columns: 300px 1fr 320px;
-  grid-template-rows: 1fr;
-  grid-template-areas: "left . right";
-  gap: 20px;
-  padding: 20px;
-  /* Deja espacio bajo el HUD (que es position:fixed, fuera del flujo del grid).
-     Antes esto era un número fijo (128px) que asumía una altura de HUD que
-     dejó de ser cierta apenas el HUD creció (texto de estado más largo,
-     brake fade, viewports angostos que envuelven los botones a una segunda
-     fila) → los paneles quedaban tapados por el HUD. Luego (Ronda 5) pasó a
-     depender solo de --hud-height medido en vivo por main.js, pero un
-     ResizeObserver que aún no disparó su primer callback (p. ej. el frame
-     inicial, o navegadores lentos) podía dejar, por un instante, el gráfico
-     de temperatura asomándose bajo el HUD (ver captura de la Ronda 6).
-     Ahora se suma SIEMPRE --hud-safety-gap como colchón fijo además de la
-     medición en vivo, así el espacio reservado nunca es insuficiente. */
-  padding-bottom: calc(var(--hud-height) + var(--hud-safety-gap));
-  pointer-events: none; /* deja pasar los clics al canvas salvo en los paneles */
-}
-
-.app-shell > * {
-  pointer-events: auto;
-}
-
-/* ----------------------------------------------------------------------
-   PANEL DE CRISTAL — BASE COMPARTIDA
-   ---------------------------------------------------------------------- */
-.glass-panel {
-  position: relative;
-  background: var(--panel-bg);
-  border: 1px solid var(--panel-border);
-  border-radius: var(--radius);
-  backdrop-filter: blur(var(--blur)) saturate(140%);
-  -webkit-backdrop-filter: blur(var(--blur)) saturate(140%);
-  box-shadow: var(--shadow-panel);
-  transition: opacity 0.5s ease, transform 0.5s ease, filter 0.5s ease, border-color 0.25s ease;
-  overflow: hidden;
-}
-
-/* Filete superior de acento (Ronda 6): un borde amarillo sutil en el
-   borde superior de cada tarjeta le da identidad propia y refuerza,
-   visualmente, dónde empieza y termina cada bloque — útil ahora que hay
-   más tarjetas independientes en pantalla. */
-.glass-panel::before {
-  content: '';
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--cat-yellow) 30%, var(--cat-yellow) 70%, transparent);
-  opacity: 0.5;
-}
-
-.glass-panel:hover {
-  border-color: rgba(255, 255, 255, 0.14);
-}
-
-.panel-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 14px 18px 10px 18px;
-  border-bottom: 1px solid var(--panel-border);
-}
-
-.panel-header .eyebrow {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 2px;
-  color: var(--cat-yellow);
-  text-transform: uppercase;
-}
-
-.panel-header h2 {
-  font-family: var(--font-display);
-  font-weight: 600;
-  font-size: 16px;
-  letter-spacing: 0.5px;
-  margin: 0;
-  text-transform: uppercase;
-}
-
-.panel-body {
-  padding: 16px 18px 20px 18px;
-  overflow-y: auto;
-}
-
-/* ----------------------------------------------------------------------
-   COLUMNAS COMO WRAPPERS DE LAYOUT (Ronda 6)
-   ---------------------------------------------------------------------- */
-/* `.panel-left` y `.panel-right` ya NO son ellas mismas glass-panel: son
-   simples contenedores flex en columna que organizan varias tarjetas
-   `.glass-panel` reales, cada una con su propio fondo/blur/sombra y
-   separadas por un gap real (`--stack-gap`). Antes todo el contenido de
-   una columna vivía dentro de un único glass-panel (o, en el caso del
-   panel derecho, dentro de secciones con `style="border:none"` que las
-   dejaba sin identidad visual propia) → todo se sentía apilado "encima
-   de sí mismo". Con tarjetas independientes y gap real, nada se solapa
-   ni se funde visualmente con lo de al lado. */
-.panel-left,
-.panel-right {
-  grid-area: left;
-  display: flex;
-  flex-direction: column;
-  gap: var(--stack-gap);
-  max-height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.panel-right {
-  grid-area: right;
-}
-
-.panel-left::-webkit-scrollbar,
-.panel-right::-webkit-scrollbar {
-  width: 6px;
-}
-
-.panel-left::-webkit-scrollbar-thumb,
-.panel-right::-webkit-scrollbar-thumb {
-  background: rgba(255, 204, 0, 0.25);
-  border-radius: 4px;
-}
-
-/* Tarjeta base para el panel izquierdo (comparte look con .chart-panel) */
-.panel-card {
-  flex: 0 0 auto;
-}
-
-/* La tarjeta de la Pizarra no debe encogerse si el contenedor scrollea */
-.panel-card-board {
-  flex-shrink: 0;
-}
-
-.control-group {
-  margin-bottom: 18px;
-}
-
-.control-group label {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.4px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-  margin-bottom: 8px;
-}
-
-.control-group label .value-tag {
-  font-family: var(--font-mono);
-  color: var(--cat-yellow);
-  font-size: 13px;
-}
-
-select, input[type="range"] {
-  width: 100%;
-}
-
-select:disabled, input[type="range"]:disabled {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-/* ----------------------------------------------------------------------
-   SISTEMA DE SLIDERS — velocidad / freno
-   ---------------------------------------------------------------------- */
-.slider-group {
-  margin-bottom: 24px;
-}
-
-.slider-label-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.slider-label-row label {
-  margin: 0;
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.4px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-}
-
-.slider-pill {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--cat-yellow);
-  background: rgba(255, 204, 0, 0.08);
-  border: 1px solid var(--panel-border-strong);
-  padding: 4px 12px;
-  border-radius: 999px;
-  white-space: nowrap;
-  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-}
-
-.brake-control .slider-pill {
-  color: var(--danger-red);
-  background: rgba(230, 57, 70, 0.08);
-  border-color: rgba(230, 57, 70, 0.4);
-}
-
-.slider-track-wrap {
-  position: relative;
-  padding-bottom: 16px;
-}
-
-input[type="range"] {
-  -webkit-appearance: none;
-  position: relative;
-  z-index: 2;
-  height: 8px;
-  border-radius: 6px;
-  background: linear-gradient(90deg,
-    var(--cat-yellow) 0%,
-    var(--cat-yellow) var(--fill, 50%),
-    rgba(255, 255, 255, 0.08) var(--fill, 50%));
-  cursor: pointer;
-  transition: box-shadow 0.15s ease;
-}
-
-.brake-control input[type="range"] {
-  background: linear-gradient(90deg,
-    var(--danger-red) 0%,
-    var(--danger-red) var(--fill, 50%),
-    rgba(255, 255, 255, 0.08) var(--fill, 50%));
-}
-
-input[type="range"]:hover {
-  box-shadow: 0 0 0 4px rgba(255, 204, 0, 0.08);
-}
-
-.brake-control input[type="range"]:hover {
-  box-shadow: 0 0 0 4px rgba(230, 57, 70, 0.08);
-}
-
-input[type="range"]::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--cat-yellow);
-  border: 3px solid #14171a;
-  box-shadow: 0 0 10px rgba(255, 204, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.5);
-  cursor: pointer;
-  transition: transform 0.12s ease;
-}
-
-input[type="range"]:active::-webkit-slider-thumb {
-  transform: scale(1.15);
-}
-
-.brake-control input[type="range"]::-webkit-slider-thumb {
-  background: var(--danger-red);
-  box-shadow: 0 0 10px rgba(230, 57, 70, 0.7), 0 2px 6px rgba(0, 0, 0, 0.5);
-}
-
-input[type="range"]::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  background: var(--cat-yellow);
-  border: 3px solid #14171a;
-  box-shadow: 0 0 10px rgba(255, 204, 0, 0.7);
-  cursor: pointer;
-}
-
-.brake-control input[type="range"]::-moz-range-thumb {
-  background: var(--danger-red);
-  box-shadow: 0 0 10px rgba(230, 57, 70, 0.7);
-}
-
-.slider-ticks {
-  display: flex;
-  justify-content: space-between;
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 18px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 0.3px;
-  color: var(--text-faint);
-  pointer-events: none;
-}
-
-/* Los extremos (min/max) se alinean a los bordes reales del thumb en vez
-   de al borde del track, y los del medio quedan centrados — así ningún
-   número queda pegado al valor actual mostrado en la píldora ni se corta
-   contra el borde de la tarjeta. */
-.slider-ticks span:first-child { text-align: left; }
-.slider-ticks span:last-child { text-align: right; }
-.slider-ticks span:not(:first-child):not(:last-child) { text-align: center; }
-
-.slider-presets {
-  display: flex;
-  gap: 6px;
-  margin-top: 8px;
-}
-
-.chip {
-  flex: 1;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--panel-border);
-  color: var(--text-muted);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 0.5px;
-  padding: 7px 0;
-  border-radius: 7px;
-  cursor: pointer;
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
-}
-
-.chip:hover {
-  border-color: var(--cat-yellow);
-  color: var(--cat-yellow);
-}
-
-.chip:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  border-color: var(--panel-border);
-  color: var(--text-muted);
-}
-
-.chip.active {
-  background: rgba(255, 204, 0, 0.14);
-  border-color: var(--cat-yellow);
-  color: var(--cat-yellow);
-}
-
-.brake-control .chip:hover {
-  border-color: var(--danger-red);
-  color: var(--danger-red);
-}
-
-.brake-control .chip.active {
-  background: rgba(230, 57, 70, 0.14);
-  border-color: var(--danger-red);
-  color: var(--danger-red);
-}
-
-/* Ronda 9 — Perfil de camino: el slider de "Inclinación máxima" solo
-   aplica cuando el perfil activo es "Lomas" (sinusoidal); en "Recto" y
-   "Bajada pronunciada" se atenúa y bloquea para no sugerir un ajuste
-   sin efecto real. */
-.slope-control.profile-disabled {
-  opacity: 0.4;
-  pointer-events: none;
-}
-
-select {
-  appearance: none;
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  background-color: rgba(255, 255, 255, 0.05);
-  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'><path d='M1 1l6 6 6-6' fill='none' stroke='%23FFCC00' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
-  background-repeat: no-repeat;
-  background-position: right 14px center;
-  border: 1px solid var(--panel-border);
-  color: var(--text-primary);
-  padding: 10px 36px 10px 12px;
-  border-radius: 8px;
-  font-family: var(--font-body);
-  font-size: 13px;
-  cursor: pointer;
-}
-
-select option {
-  background-color: #14171a;
-  color: var(--text-primary);
-  padding: 8px;
-}
-
-select:hover {
-  border-color: var(--panel-border-strong);
-}
-
-select:focus, input:focus, button:focus {
-  outline: 2px solid var(--cat-yellow);
-  outline-offset: 1px;
-}
-
-.divider {
-  height: 1px;
-  background: var(--panel-border);
-  margin: 18px 0;
-}
-
-/* Panel de fórmula en vivo */
-.formula-box {
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid var(--panel-border-strong);
-  border-radius: 10px;
-  padding: 12px 14px;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1.9;
-  color: var(--text-muted);
-  margin-bottom: 18px;
-}
-
-.formula-box .fx {
-  color: var(--ok-green);
-}
-
-.formula-box strong {
-  color: var(--text-primary);
-}
-
-/* Aviso de pendiente crítica (Ronda 8): el terreno + la gravedad ya no
-   dejan margen real de frenado con el μ y la presión actuales. */
-.slope-warning {
-  display: block;
-  margin-top: 6px;
-  color: var(--danger-red);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-/* Botón "Vista Cabina" activo: mismo lenguaje visual que los chips/estado activos */
-#driverViewBtn.active {
-  color: var(--cat-yellow);
-  border-color: var(--cat-yellow);
-  background: rgba(255, 204, 0, 0.08);
-}
-
-/* ----------------------------------------------------------------------
-   PIZARRA DE ECUACIONES EN VIVO
-   ---------------------------------------------------------------------- */
-.blackboard {
-  background: linear-gradient(160deg, rgba(10, 22, 16, 0.75) 0%, rgba(6, 10, 9, 0.85) 100%);
-  border: 1px dashed rgba(74, 222, 128, 0.35);
-  border-radius: 10px;
-  padding: 12px 14px;
-  margin-bottom: 4px;
-  font-family: var(--font-mono);
-}
-
-.blackboard-header {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  margin-bottom: 10px;
-  padding-bottom: 8px;
-  border-bottom: 1px dashed rgba(74, 222, 128, 0.25);
-}
-
-.blackboard-subtitle {
-  font-family: var(--font-body);
-  font-size: 10px;
-  color: var(--text-faint);
-  text-transform: none;
-  letter-spacing: 0.2px;
-}
-
-.blackboard-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 10px;
-  font-size: 12px;
-  line-height: 2;
-  color: var(--ok-green);
-  white-space: nowrap;
-}
-
-.blackboard-row .bb-label {
-  color: #7fdba0;
-  flex-shrink: 0;
-}
-
-.blackboard-row .bb-eq,
-.blackboard-row .bb-value {
-  color: #d8ffe4;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.blackboard-divider {
-  height: 1px;
-  background: rgba(74, 222, 128, 0.2);
-  margin: 6px 0;
-}
-
-.btn {
-  width: 100%;
-  padding: 13px 16px;
-  border-radius: 9px;
-  border: none;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 14px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
-}
-
-.btn:active {
-  transform: scale(0.98);
-}
-
-.btn-primary {
-  background: linear-gradient(180deg, var(--cat-yellow) 0%, var(--cat-yellow-dim) 100%);
-  color: #1a1400;
-  box-shadow: 0 4px 18px rgba(255, 204, 0, 0.25);
-}
-
-.btn-primary:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  box-shadow: none;
-}
-
-.btn-secondary {
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text-primary);
-  border: 1px solid var(--panel-border);
-  margin-top: 10px;
-}
-
-.btn-secondary:hover {
-  border-color: var(--danger-red);
-}
-
-/* ----------------------------------------------------------------------
-   PANEL DERECHO — TELEMETRÍA (tarjetas de gráficos)
-   ---------------------------------------------------------------------- */
-.chart-panel {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 220px; /* evita que Chart.js reciba un canvas de alto 0
-                         cuando el viewport es muy bajo */
-}
-
-.chart-panel .panel-body {
-  flex: 1;
-  min-height: 0;
-  position: relative;
-}
-
-.chart-panel canvas {
-  width: 100% !important;
-  height: 100% !important;
-}
-
-/* ----------------------------------------------------------------------
-   PANEL INFERIOR — HUD
-   ---------------------------------------------------------------------- */
-.panel-hud {
-  grid-area: hud;
-  position: fixed;
-  left: 50%;
-  bottom: 16px;
-  transform: translateX(-50%);
-  z-index: 1000;
-  /* Ronda 6 — layout robusto en DOS filas fijas en vez de un único flex
-     "wrap" cuyo punto de quiebre era impredecible (dependía de cuánto
-     texto/botones cupieran en una fila): antes, si los 8 clusters + los 3
-     botones no cabían en ~1180px, el contenido se salía literalmente de
-     la tarjeta y quedaba cortado por el borde de la ventana ("EXPORTAR
-     DATOS" recortado en la captura de la Ronda 6). Ahora `.hud-metrics`
-     (fila 1) y `.hud-actions` (fila 2) son bloques independientes,
-     apilados con `flex-direction: column`, cada uno con su propio
-     `flex-wrap` interno: si algo no cabe, esa fila específica crece
-     hacia arriba, nunca se recorta ni invade a la otra fila. */
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 12px;
-  padding: 14px 26px 18px;
-  width: min(1180px, calc(100vw - 24px));
-  max-width: calc(100vw - 24px);
-  box-shadow: 0 -4px 34px rgba(0, 0, 0, 0.4), var(--shadow-panel);
-  /* Los tooltips de Fuerza/Energía (`::after` en `.hud-cluster[data-tooltip]`)
-     se posicionan por encima del borde superior del HUD, así que este
-     panel específico necesita `overflow: visible` — de lo contrario el
-     `overflow: hidden` que ahora tiene `.glass-panel` por defecto (para
-     que el filete de acento superior no se salga del borde redondeado)
-     recortaría el tooltip antes de que llegara a mostrarse. */
-  overflow: visible;
-}
-
-.hud-metrics {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: center;
-  row-gap: 10px;
-  column-gap: 26px;
-}
-
-.hud-cluster {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  flex: 0 0 auto;
-}
-
-/* Fila de acciones: siempre debajo de las métricas, separada por un
-   filete superior sutil que además sirve de referencia visual constante
-   (ya no depende de si comparte fila con las métricas o no). */
-.hud-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  padding-top: 12px;
-  border-top: 1px solid var(--panel-border);
-}
-
-/* ---- Tooltips explicativos (Fuerza de Frenado, Energía Cinética, etc.) ---- */
-.hud-cluster[data-tooltip] {
-  position: relative;
-  cursor: help;
-}
-
-.hud-cluster[data-tooltip]::after {
-  content: attr(data-tooltip);
-  position: absolute;
-  bottom: calc(100% + 12px);
-  left: 50%;
-  transform: translateX(-50%) translateY(6px);
-  width: 230px;
-  background: rgba(10, 12, 14, 0.96);
-  border: 1px solid var(--panel-border-strong);
-  color: var(--text-primary);
-  font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 400;
-  line-height: 1.45;
-  text-transform: none;
-  letter-spacing: normal;
-  padding: 10px 12px;
-  border-radius: 8px;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.18s ease, transform 0.18s ease;
-  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
-  z-index: 10;
-}
-
-.hud-cluster[data-tooltip]:hover::after,
-.hud-cluster[data-tooltip]:focus-within::after {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-/* ----------------------------------------------------------------------
-   BANNER DE ADVERTENCIA — BRAKE FADE (falla térmica > 400°C)
-   ---------------------------------------------------------------------- */
-.brake-fade-banner {
-  position: fixed;
-  top: 24px;
-  left: 50%;
-  transform: translateX(-50%) translateY(-14px);
-  z-index: 1100;
-  background: rgba(40, 6, 9, 0.92);
-  border: 1px solid var(--danger-red);
-  color: #ffe2e4;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 18px;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  padding: 12px 26px;
-  border-radius: 10px;
-  box-shadow: 0 10px 30px rgba(230, 57, 70, 0.35);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.25s ease, transform 0.25s ease;
-}
-
-.brake-fade-banner.is-visible {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-  animation: bfBannerBlink 0.8s ease-in-out infinite alternate;
-}
-
-/* ----------------------------------------------------------------------
-   TOAST DE FEEDBACK — confirmación de acciones rápidas (Compartir /
-   Copiar resumen). Discreto y autodestructivo: no bloquea como alert().
-   ---------------------------------------------------------------------- */
-.app-toast {
-  position: fixed;
-  bottom: 28px;
-  left: 50%;
-  transform: translateX(-50%) translateY(10px);
-  z-index: 1600;
-  background: rgba(20, 22, 25, 0.94);
-  border: 1px solid var(--panel-border-strong);
-  color: var(--text-primary);
-  font-family: var(--font-mono);
-  font-size: 13px;
-  letter-spacing: 0.3px;
-  padding: 10px 20px;
-  border-radius: 9px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease, transform 0.2s ease;
-  max-width: min(90vw, 480px);
-  text-align: center;
-}
-
-.app-toast.is-visible {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .app-toast {
-    transition: opacity 0.2s ease;
-    transform: translateX(-50%);
-  }
-  .app-toast.is-visible {
-    transform: translateX(-50%);
-  }
-}
-
-@keyframes bfBannerBlink {
-  from { background: rgba(40, 6, 9, 0.92); box-shadow: 0 10px 30px rgba(230, 57, 70, 0.3); }
-  to   { background: rgba(90, 12, 18, 0.96); box-shadow: 0 10px 44px rgba(230, 57, 70, 0.75); }
-}
-
-/* ---- Alerta de falla térmica (brake fade) ---- */
-.hud-temp.brake-fade .hud-value,
-.hud-status.brake-fade .hud-value {
-  color: var(--danger-red);
-  animation: bfPulse 0.85s ease-in-out infinite alternate;
-}
-
-@keyframes bfPulse {
-  from { text-shadow: 0 0 6px rgba(230, 57, 70, 0.35); }
-  to   { text-shadow: 0 0 22px rgba(230, 57, 70, 0.95); }
-}
-
-.hud-cluster .hud-label {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 1.5px;
-  color: var(--text-muted);
-  text-transform: uppercase;
-}
-
-.hud-cluster .hud-value {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 22px;
-  color: var(--text-primary);
-}
-
-.hud-cluster .hud-unit {
-  font-size: 11px;
-  color: var(--text-faint);
-}
-
-.hud-speed .hud-value {
-  font-size: 44px;
-  color: var(--cat-yellow);
-  text-shadow: 0 0 18px rgba(255, 204, 0, 0.4);
-  line-height: 1;
-}
-
-.hud-temp .hud-value {
-  color: var(--danger-red);
-}
-
-.hud-status .hud-value {
-  font-size: 15px;
-  color: var(--ok-green);
-  letter-spacing: 1px;
-}
-
-.hud-actions .btn {
-  width: auto;
-  padding: 12px 20px;
-}
-
-.btn-icon {
-  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
-}
-
-.btn-icon.muted {
-  color: var(--text-faint);
-  border-color: var(--panel-border);
-  opacity: 0.7;
-}
-
-/* ----------------------------------------------------------------------
-   MODO CINE
-   ---------------------------------------------------------------------- */
-.app-shell.cinema-mode .panel-left,
-.app-shell.cinema-mode .panel-right,
-.app-shell.cinema-mode .panel-hud {
-  opacity: 0;
-  transform: translateY(12px);
-  pointer-events: none;
-  filter: blur(4px);
-}
-
-.restore-hint {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  z-index: 2;
-  opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
-  pointer-events: none;
-}
-
-.app-shell.cinema-mode ~ .restore-hint,
-body:has(.cinema-mode) .restore-hint {
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
-}
-
-.restore-hint button {
-  background: rgba(18, 21, 25, 0.72);
-  border: 1px solid var(--panel-border-strong);
-  color: var(--cat-yellow);
-  backdrop-filter: blur(12px);
-  border-radius: 999px;
-  padding: 10px 18px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  letter-spacing: 1px;
-  cursor: pointer;
-}
-
-/* ----------------------------------------------------------------------
-   SCROLLBARS DISCRETAS
-   ---------------------------------------------------------------------- */
-.panel-body::-webkit-scrollbar {
-  width: 6px;
-}
-
-.panel-body::-webkit-scrollbar-thumb {
-  background: rgba(255, 204, 0, 0.25);
-  border-radius: 4px;
-}
-
-/* ----------------------------------------------------------------------
-   RESPONSIVE — TABLET / MÓVIL
-   ---------------------------------------------------------------------- */
-@media (max-width: 1024px) {
-  .app-shell {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto auto;
-    grid-template-areas:
-      "left"
-      "right";
-    overflow-y: auto;
-    pointer-events: auto;
+/**
+ * scene.js — Controlador de ambiente / biomas para maqueta 3D
+ * ---------------------------------------------------------------
+ * Requiere que THREE (three.js r128) ya esté cargado como variable global
+ * antes de este script (ver index.html).
+ *
+ * Expone window.BiomeScene con:
+ *   BiomeScene.init(containerEl)   -> arranca el render loop
+ *   BiomeScene.setBiome(key)       -> cambia de bioma con transición suave
+ *   BiomeScene.BIOMES              -> catálogo de biomas disponibles
+ */
+
+(function () {
+  "use strict";
+
+  // -----------------------------------------------------------------------
+  // 1. CATÁLOGO DE BIOMAS
+  // -----------------------------------------------------------------------
+  // Cada bioma define color de cielo (arriba/horizonte), niebla, color de
+  // suelo (base/pico de variación), color de pasto (base->punta), sol
+  // (color + altura/ángulo + intensidad) y el tipo de partícula ambiental.
+  const BIOMES = {
+    verano: {
+      label: "Pradera de verano",
+      desc: "Pasto verde bajo un sol brillante de verano.",
+      sky: { top: 0x2f7bd6, bottom: 0xbfe9ff },
+      fog: 0xbfe9ff,
+      fogDensity: 0.0035,
+      ground: { low: 0x274d16, high: 0x4c8c2b },
+      grass: { base: 0x1f5c1a, tip: 0x8fd14f },
+      sun: { color: 0xfff3c4, elevation: 0.85, azimuth: 0.9, intensity: 1.35 },
+      ambient: 0x8fb7ff,
+      particle: { mode: "float", color: 0xffce54, count: 60, label: "mariposas" },
+      windStrength: 0.55,
+    },
+    desierto: {
+      label: "Desierto dorado",
+      desc: "Arena caliente, pasto disperso y un sol intenso al atardecer.",
+      sky: { top: 0xd9772e, bottom: 0xffd9a0 },
+      fog: 0xffd9a0,
+      fogDensity: 0.004,
+      ground: { low: 0xc98a41, high: 0xe6b56c },
+      grass: { base: 0x8a6a2e, tip: 0xd9b35c },
+      sun: { color: 0xffb26b, elevation: 0.45, azimuth: 1.4, intensity: 1.6 },
+      ambient: 0xffb37a,
+      particle: { mode: "drift", color: 0xe8c48a, count: 80, label: "polvo" },
+      windStrength: 0.35,
+      grassDensity: 0.35,
+    },
+    otono: {
+      label: "Bosque de otoño",
+      desc: "Pasto ámbar, hojas cayendo y luz cálida de tarde.",
+      sky: { top: 0x8a5a3c, bottom: 0xf2c78c },
+      fog: 0xd9a86c,
+      fogDensity: 0.0045,
+      ground: { low: 0x5c3a1e, high: 0x9c6a2e },
+      grass: { base: 0x6b3f1a, tip: 0xd98a2e },
+      sun: { color: 0xffd08a, elevation: 0.35, azimuth: 2.1, intensity: 1.1 },
+      ambient: 0xc98a52,
+      particle: { mode: "fall", color: 0xc9702e, count: 90, label: "hojas" },
+      windStrength: 0.65,
+    },
+    tundra: {
+      label: "Tundra nevada",
+      desc: "Terreno níveo bajo un sol pálido de invierno.",
+      sky: { top: 0x7fa8c9, bottom: 0xe8f2fb },
+      fog: 0xe8f2fb,
+      fogDensity: 0.005,
+      ground: { low: 0xcfe3f0, high: 0xffffff },
+      grass: { base: 0x88a9a0, tip: 0xdff0ea },
+      sun: { color: 0xdfeeff, elevation: 0.55, azimuth: 3.0, intensity: 0.9 },
+      ambient: 0xaacbe8,
+      particle: { mode: "fall", color: 0xffffff, count: 140, label: "nieve" },
+      windStrength: 0.25,
+      grassDensity: 0.6,
+    },
+  };
+
+  // -----------------------------------------------------------------------
+  // 2. ESTADO GLOBAL DEL MÓDULO
+  // -----------------------------------------------------------------------
+  let renderer, scene, camera, clock;
+  let sky, sunLight, sunSprite, hemi;
+  let ground, groundMat;
+  let grassMesh, grassMat, grassCount;
+  let particles, particleMat, particleData;
+  let currentBiome = "verano";
+  let transitionT = 1; // 1 = transición completa
+  let fromBiome = BIOMES.verano;
+  let toBiome = BIOMES.verano;
+
+  // Cámara orbital manual (sin dependencias externas)
+  const camState = { radius: 70, theta: 0.6, phi: 1.05, target: new (window.THREE.Vector3)(0, 6, 0) };
+  let isDragging = false;
+  let lastX = 0, lastY = 0;
+
+  const GROUND_SIZE = 200;
+  const GRASS_MAX = 14000;
+
+  // Ciclo día/noche. Antes corría siempre en automático cada 50s, lo que
+  // se sentía errático/apurado (la luz cambiaba mientras uno miraba el
+  // bioma). Ahora hay dos modos:
+  //   - "auto": ciclo lento y continuo (DAY_CYCLE_SECONDS).
+  //   - "manual": el usuario fija la hora del día con un slider
+  //     (dayMode + manualPhase), el ciclo automático se congela.
+  const DAY_CYCLE_SECONDS = 150;
+  const NIGHT = {
+    top: new (window.THREE.Color)(0x040814),
+    bottom: new (window.THREE.Color)(0x111f38),
+    fog: new (window.THREE.Color)(0x0a1424),
+    moonColor: new (window.THREE.Color)(0xcdd8ff),
+    intensity: 0.12,
+  };
+  let dayFactor = 1; // 0 = noche cerrada, 1 = mediodía pleno
+  let dayMode = "auto"; // "auto" | "manual"
+  let manualPhase = 0.5; // 0..1 dentro del ciclo; 0.5 ≈ mediodía
+
+  // Raycasting para que el pasto reaccione al mouse
+  let raycaster, mouseNDC, groundPlane, mouseWorld;
+  let stars, starsMat;
+
+  // -----------------------------------------------------------------------
+  // 3. UTILIDADES
+  // -----------------------------------------------------------------------
+  function lerpColor(cA, cB, t, out) {
+    out = out || new THREE.Color();
+    return out.copy(cA).lerp(cB, t);
   }
 
-  /* En una sola columna ambos wrappers ya no necesitan su propio scroll
-     interno (el `.app-shell` entero scrollea); se deja que crezcan con
-     su contenido para que las tarjetas no queden apretadas dentro de
-     una caja de 640px fija. */
-  .panel-left,
-  .panel-right {
-    max-height: none;
-    overflow: visible;
+  // Ruido barato basado en senos (suficiente para ondulaciones de terreno)
+  function heightNoise(x, z) {
+    return (
+      Math.sin(x * 0.06) * 1.6 +
+      Math.cos(z * 0.05) * 1.4 +
+      Math.sin((x + z) * 0.02) * 2.2
+    );
   }
 
-  .panel-hud {
-    width: calc(100vw - 20px);
-    max-width: calc(100vw - 20px);
-    padding: 12px 16px 16px;
+  function makeGlowTexture(hexColor) {
+    const size = 256;
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    const c = new THREE.Color(hexColor);
+    const grd = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    grd.addColorStop(0, `rgba(255,255,255,1)`);
+    grd.addColorStop(0.25, `rgba(${c.r * 255}, ${c.g * 255}, ${c.b * 255}, 0.9)`);
+    grd.addColorStop(1, `rgba(${c.r * 255}, ${c.g * 255}, ${c.b * 255}, 0)`);
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, size, size);
+    return new THREE.CanvasTexture(canvas);
   }
 
-  .hud-metrics {
-    column-gap: 18px;
-  }
-}
-
-@media (max-width: 640px) {
-  .app-shell {
-    padding: 10px;
-    padding-bottom: calc(var(--hud-height) + var(--hud-safety-gap));
-  }
-
-  .panel-hud {
-    bottom: 10px;
-    padding: 10px 14px 14px;
-    gap: 10px;
+  function makeSoftDotTexture() {
+    const size = 64;
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    const grd = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    grd.addColorStop(0, "rgba(255,255,255,1)");
+    grd.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, size, size);
+    return new THREE.CanvasTexture(canvas);
   }
 
-  .hud-metrics {
-    row-gap: 10px;
-    column-gap: 14px;
+  function sunDirFrom(elevation, azimuth) {
+    // elevation: 0 (horizonte) -> 1 (cenit) ; azimuth en radianes
+    const phi = (1 - elevation) * (Math.PI / 2.1);
+    const dir = new THREE.Vector3(
+      Math.sin(phi) * Math.cos(azimuth),
+      Math.cos(phi),
+      Math.sin(phi) * Math.sin(azimuth)
+    );
+    return dir.normalize();
   }
 
-  .hud-actions {
-    width: 100%;
-    justify-content: center;
+  // -----------------------------------------------------------------------
+  // 4. CONSTRUCCIÓN DE LA ESCENA
+  // -----------------------------------------------------------------------
+  function buildSky() {
+    const geo = new THREE.SphereGeometry(400, 32, 16);
+    const mat = new THREE.ShaderMaterial({
+      uniforms: {
+        topColor: { value: new THREE.Color(BIOMES.verano.sky.top) },
+        bottomColor: { value: new THREE.Color(BIOMES.verano.sky.bottom) },
+        offset: { value: 20 },
+        exponent: { value: 0.6 },
+      },
+      vertexShader: `
+        varying vec3 vWorldPosition;
+        void main() {
+          vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+          vWorldPosition = worldPosition.xyz;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 topColor;
+        uniform vec3 bottomColor;
+        uniform float offset;
+        uniform float exponent;
+        varying vec3 vWorldPosition;
+        void main() {
+          float h = normalize(vWorldPosition + offset).y;
+          gl_FragColor = vec4(mix(bottomColor, topColor, max(pow(max(h, 0.0), exponent), 0.0)), 1.0);
+        }
+      `,
+      side: THREE.BackSide,
+      fog: false,
+    });
+    sky = new THREE.Mesh(geo, mat);
+    scene.add(sky);
   }
 
-  .hud-cluster .hud-value {
-    font-size: 18px;
+  function buildLights() {
+    hemi = new THREE.HemisphereLight(BIOMES.verano.sky.top, BIOMES.verano.ground.low, 0.55);
+    scene.add(hemi);
+
+    sunLight = new THREE.DirectionalLight(BIOMES.verano.sun.color, BIOMES.verano.sun.intensity);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.set(2048, 2048);
+    sunLight.shadow.camera.left = -90;
+    sunLight.shadow.camera.right = 90;
+    sunLight.shadow.camera.top = 90;
+    sunLight.shadow.camera.bottom = -90;
+    sunLight.shadow.camera.near = 10;
+    sunLight.shadow.camera.far = 400;
+    sunLight.shadow.bias = -0.0015;
+    scene.add(sunLight);
+    scene.add(sunLight.target);
+
+    const glowTex = makeGlowTexture(BIOMES.verano.sun.color);
+    sunSprite = new THREE.Sprite(
+      new THREE.SpriteMaterial({
+        map: glowTex,
+        color: 0xffffff,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+      })
+    );
+    sunSprite.scale.set(60, 60, 1);
+    scene.add(sunSprite);
   }
 
-  .hud-speed .hud-value {
-    font-size: 30px;
+  function buildGround() {
+    const seg = 100;
+    const geo = new THREE.PlaneGeometry(GROUND_SIZE, GROUND_SIZE, seg, seg);
+    geo.rotateX(-Math.PI / 2);
+
+    const pos = geo.attributes.position;
+    const colors = new Float32Array(pos.count * 3);
+    const low = new THREE.Color(BIOMES.verano.ground.low);
+    const high = new THREE.Color(BIOMES.verano.ground.high);
+    const tmp = new THREE.Color();
+
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i);
+      const z = pos.getZ(i);
+      const h = heightNoise(x, z);
+      pos.setY(i, h);
+      const t = THREE.MathUtils.clamp((h + 3) / 6, 0, 1);
+      tmp.copy(low).lerp(high, t);
+      colors[i * 3] = tmp.r;
+      colors[i * 3 + 1] = tmp.g;
+      colors[i * 3 + 2] = tmp.b;
+    }
+    geo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+    geo.computeVertexNormals();
+
+    groundMat = new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      roughness: 1,
+      metalness: 0,
+    });
+
+    ground = new THREE.Mesh(geo, groundMat);
+    ground.receiveShadow = true;
+    scene.add(ground);
   }
 
-  .hud-actions {
-    gap: 6px;
+  function groundHeightAt(x, z) {
+    return heightNoise(x, z);
   }
 
-  .hud-actions .btn {
-    padding: 10px 12px;
-    font-size: 12px;
+  function buildGrass() {
+    // --- geometría de una brizna: se afina hacia la punta y guarda en el
+    // canal verde del color de vértice el factor de altura (0 base -> 1 punta)
+    const width = 0.12;
+    const height = 1.1;
+    const heightSegs = 4;
+    const rows = heightSegs + 1;
+    const positions = [];
+    const colorsArr = [];
+    const indices = [];
+
+    for (let r = 0; r < rows; r++) {
+      const t = r / heightSegs; // 0 base -> 1 punta
+      const w = width * (1 - t * 0.85);
+      const y = t * height;
+      positions.push(-w / 2, y, 0, w / 2, y, 0);
+      colorsArr.push(0, t, 0, 0, t, 0);
+    }
+    for (let r = 0; r < heightSegs; r++) {
+      const a = r * 2, b = r * 2 + 1, c = r * 2 + 2, d = r * 2 + 3;
+      indices.push(a, b, c, b, d, c);
+    }
+
+    const bladeGeo = new THREE.BufferGeometry();
+    bladeGeo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    bladeGeo.setAttribute("color", new THREE.Float32BufferAttribute(colorsArr, 3));
+    bladeGeo.setIndex(indices);
+    bladeGeo.computeVertexNormals();
+
+    grassCount = GRASS_MAX;
+    grassMat = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: { value: 0 },
+        uWind: { value: BIOMES.verano.windStrength },
+        uBaseColor: { value: new THREE.Color(BIOMES.verano.grass.base) },
+        uTipColor: { value: new THREE.Color(BIOMES.verano.grass.tip) },
+        uSunDir: { value: sunDirFrom(BIOMES.verano.sun.elevation, BIOMES.verano.sun.azimuth) },
+        uSunColor: { value: new THREE.Color(BIOMES.verano.sun.color) },
+        uGrowStart: { value: 0 },
+        uGrowDuration: { value: 1.4 },
+        uGrowWaveSpeed: { value: 26.0 },
+        uMouse: { value: new THREE.Vector2(9999, 9999) },
+        uMouseRadius: { value: 5.5 },
+      },
+      vertexShader: `
+        precision mediump float;
+        attribute vec4 aData; // x: fase, y: escala, z: sin usar, w: sin usar
+        uniform float uTime;
+        uniform float uWind;
+        uniform float uGrowStart;
+        uniform float uGrowDuration;
+        uniform float uGrowWaveSpeed;
+        uniform vec2 uMouse;
+        uniform float uMouseRadius;
+        varying float vHeight;
+        varying vec3 vNormal;
+        varying float vGrowth;
+
+        #ifdef USE_INSTANCING
+          attribute mat4 instanceMatrix;
+        #endif
+
+        void main() {
+          vHeight = color.g;
+          vec3 pos = position;
+          float phase = aData.x;
+
+          // --- crecimiento en onda desde el centro del campo ---
+          vec2 instXZ = instanceMatrix[3].xz;
+          float dist = length(instXZ);
+          float jitter = fract(sin(phase * 91.7) * 43758.5453) * 0.6;
+          float delay = dist / uGrowWaveSpeed + jitter;
+          float growth = clamp((uTime - uGrowStart - delay) / uGrowDuration, 0.0, 1.0);
+          growth = growth * growth * (3.0 - 2.0 * growth); // smoothstep
+          vGrowth = growth;
+
+          pos.y *= growth;
+          pos.x *= mix(0.25, 1.0, growth);
+
+          // --- viento (más fuerte cuanto más crecida está la brizna) ---
+          float sway = sin(uTime * 1.6 + phase) * uWind * vHeight * vHeight * growth;
+          float swayZ = cos(uTime * 1.1 + phase * 1.3) * uWind * 0.4 * vHeight * vHeight * growth;
+          pos.x += sway;
+          pos.z += swayZ;
+
+          // --- el pasto se aparta del mouse ---
+          float mdist = distance(instXZ, uMouse);
+          float influence = smoothstep(uMouseRadius, 0.0, mdist) * vHeight * growth;
+          vec2 away = normalize(instXZ - uMouse + vec2(0.0001));
+          pos.x += away.x * influence * 1.6;
+          pos.z += away.y * influence * 1.6;
+
+          vec4 worldPos = instanceMatrix * vec4(pos, 1.0);
+          vNormal = normalize(mat3(instanceMatrix) * vec3(0.0, 0.0, 1.0));
+          gl_Position = projectionMatrix * modelViewMatrix * worldPos;
+        }
+      `,
+      fragmentShader: `
+        precision mediump float;
+        uniform vec3 uBaseColor;
+        uniform vec3 uTipColor;
+        uniform vec3 uSunDir;
+        uniform vec3 uSunColor;
+        varying float vHeight;
+        varying vec3 vNormal;
+        varying float vGrowth;
+
+        void main() {
+          vec3 color = mix(uBaseColor, uTipColor, vHeight);
+          // brote recién nacido: un poco más claro/verde tierno
+          color = mix(color * 1.35 + 0.05, color, smoothstep(0.0, 1.0, vGrowth));
+          float diff = max(dot(normalize(vNormal), uSunDir), 0.35);
+          color *= (0.55 + diff * 0.6) * uSunColor;
+          gl_FragColor = vec4(color, 1.0);
+        }
+      `,
+      side: THREE.DoubleSide,
+    });
+
+    grassMesh = new THREE.InstancedMesh(bladeGeo, grassMat, grassCount);
+    grassMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+    const aData = new Float32Array(grassCount * 4);
+    const dummy = new THREE.Object3D();
+    const radius = GROUND_SIZE / 2 - 4;
+
+    for (let i = 0; i < grassCount; i++) {
+      const r = radius * Math.sqrt(Math.random());
+      const a = Math.random() * Math.PI * 2;
+      const x = Math.cos(a) * r;
+      const z = Math.sin(a) * r;
+      const y = groundHeightAt(x, z);
+      const scale = 0.7 + Math.random() * 0.9;
+
+      dummy.position.set(x, y, z);
+      dummy.rotation.y = Math.random() * Math.PI * 2;
+      dummy.scale.setScalar(scale);
+      dummy.updateMatrix();
+      grassMesh.setMatrixAt(i, dummy.matrix);
+
+      aData[i * 4] = Math.random() * Math.PI * 2; // fase de viento
+      aData[i * 4 + 1] = scale;
+      aData[i * 4 + 2] = 0;
+      aData[i * 4 + 3] = 0;
+    }
+    bladeGeo.setAttribute("aData", new THREE.InstancedBufferAttribute(aData, 4));
+    grassMesh.instanceMatrix.needsUpdate = true;
+    grassMesh.castShadow = false;
+    grassMesh.receiveShadow = true;
+    scene.add(grassMesh);
   }
 
-  .brake-fade-banner {
-    font-size: 13px;
-    padding: 9px 16px;
-    top: 12px;
-    width: calc(100vw - 24px);
-    text-align: center;
+  function buildParticles() {
+    const count = 150;
+    const geo = new THREE.BufferGeometry();
+    const positions = new Float32Array(count * 3);
+    particleData = [];
+
+    for (let i = 0; i < count; i++) {
+      const x = (Math.random() - 0.5) * GROUND_SIZE * 0.9;
+      const z = (Math.random() - 0.5) * GROUND_SIZE * 0.9;
+      const y = 4 + Math.random() * 18;
+      positions[i * 3] = x;
+      positions[i * 3 + 1] = y;
+      positions[i * 3 + 2] = z;
+      particleData.push({
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.4 + Math.random() * 0.8,
+        baseY: y,
+        baseX: x,
+        baseZ: z,
+      });
+    }
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+
+    particleMat = new THREE.PointsMaterial({
+      size: 1.2,
+      map: makeSoftDotTexture(),
+      transparent: true,
+      depthWrite: false,
+      color: BIOMES.verano.particle.color,
+      opacity: 0.85,
+    });
+
+    particles = new THREE.Points(geo, particleMat);
+    scene.add(particles);
   }
 
-  .panel-header h2 {
-    font-size: 14px;
+  function buildStars() {
+    const count = 800;
+    const positions = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      // puntos sobre una media esfera grande, por encima del horizonte
+      const r = 380;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.random() * Math.PI * 0.48; // 0 = cenit
+      positions[i * 3] = r * Math.sin(phi) * Math.cos(theta);
+      positions[i * 3 + 1] = r * Math.cos(phi);
+      positions[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute("position", new THREE.Float32BufferAttribute(positions, 3));
+    starsMat = new THREE.PointsMaterial({
+      size: 1.6,
+      map: makeSoftDotTexture(),
+      color: 0xffffff,
+      transparent: true,
+      depthWrite: false,
+      opacity: 0,
+    });
+    stars = new THREE.Points(geo, starsMat);
+    scene.add(stars);
   }
-}
 
-/* ----------------------------------------------------------------------
-   ACCESIBILIDAD — REDUCED MOTION
-   ---------------------------------------------------------------------- */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    transition-duration: 0.01ms !important;
-    animation-duration: 0.01ms !important;
+  function updateParticles(dt, time, biome) {
+    const pos = particles.geometry.attributes.position;
+    const mode = biome.particle.mode; // "float" | "fall" | "drift"
+
+    for (let i = 0; i < particleData.length; i++) {
+      const d = particleData[i];
+      let x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i);
+
+      if (mode === "float") {
+        // mariposas: deriva suave en xz + oscilación vertical
+        y = d.baseY + Math.sin(time * d.speed + d.phase) * 1.5;
+        x += Math.cos(time * 0.3 + d.phase) * 0.03;
+        z += Math.sin(time * 0.25 + d.phase) * 0.03;
+      } else if (mode === "fall") {
+        // hojas / nieve: caen y derivan lateralmente
+        y -= d.speed * dt * 1.6;
+        x += Math.sin(time * 0.6 + d.phase) * 0.02;
+        if (y < 0) {
+          y = 18 + Math.random() * 6;
+          x = (Math.random() - 0.5) * GROUND_SIZE * 0.9;
+          z = (Math.random() - 0.5) * GROUND_SIZE * 0.9;
+        }
+      } else {
+        // polvo del desierto: deriva horizontal lenta
+        x += Math.cos(time * 0.2 + d.phase) * 0.05;
+        z += Math.sin(time * 0.15 + d.phase) * 0.05;
+        y = d.baseY + Math.sin(time * 0.5 + d.phase) * 0.6;
+      }
+
+      pos.setXYZ(i, x, y, z);
+    }
+    pos.needsUpdate = true;
   }
-}
-/* ============================================================================
-   RONDA 10 — HERRAMIENTAS DE BROADCASTING / DEFENSA EN VIVO (Google Meet)
-   ============================================================================
-   Todo lo agregado aquí es exclusivamente para la demostración en vivo:
-   Modo Presentación (fuentes/líneas grandes, cursor de puntero), overlays
-   gigantes de eventos críticos, casos de prueba, pausa exacta, modal de la
-   pizarra y el muro de impacto. Ver REGISTRO_TECNICO.md §18.
-   ============================================================================ */
 
-/* ----------------------------------------------------------------------
-   00. CASOS DE PRUEBA (bookmarks) — tarjeta sobre "Parámetros"
-   ---------------------------------------------------------------------- */
-.scenario-bar {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.scenario-btn {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 2px;
-  padding: 10px 14px;
-  text-align: left;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--panel-border);
-  border-radius: 10px;
-  color: var(--text-primary);
-  cursor: pointer;
-  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
-}
-
-.scenario-btn:hover {
-  border-color: var(--panel-border-strong);
-  background: rgba(255, 204, 0, 0.06);
-}
-
-.scenario-btn:active {
-  transform: scale(0.98);
-}
-
-.scenario-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
-  background: rgba(255, 255, 255, 0.03);
-}
-
-.scenario-btn strong {
-  font-family: var(--font-display);
-  font-size: 13px;
-  letter-spacing: 0.5px;
-  color: var(--cat-yellow);
-  text-transform: uppercase;
-}
-
-.scenario-btn span {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-.scenario-btn.just-applied {
-  border-color: var(--ok-green);
-  background: rgba(74, 222, 128, 0.08);
-}
-
-/* ----------------------------------------------------------------------
-   Botón "Simular" + "Pausar" en una misma fila
-   ---------------------------------------------------------------------- */
-.sim-actions-row {
-  display: flex;
-  gap: 10px;
-  margin-top: 4px;
-}
-
-.sim-actions-row .btn-primary {
-  flex: 1 1 auto;
-  margin-top: 0;
-}
-
-.btn-pause {
-  flex: 0 0 auto;
-  min-width: 118px;
-  background: linear-gradient(180deg, #3a3f45, #24282c);
-  color: var(--text-primary);
-}
-
-.btn-pause:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
-
-.btn-pause.is-paused {
-  background: linear-gradient(180deg, var(--cat-yellow), var(--cat-yellow-dim));
-  color: #1a1400;
-  font-weight: 700;
-}
-
-/* ----------------------------------------------------------------------
-   01. MODO PRESENTACIÓN / "MEET MODE" — combate la compresión de video
-   ---------------------------------------------------------------------- */
-/* Ronda 10 — NOTA: `font-size: 1em` en CSS siempre se resuelve contra el
-   PADRE del elemento, nunca contra el propio valor que el elemento tenía
-   en otra regla. Por eso aquí se escriben tamaños explícitos en vez de
-   `calc(1em * 1.3)` para los elementos que ya definen su propio
-   font-size base (evita que "agrandar" termine, por accidente,
-   encogiendo el texto al tomar como referencia el font-size heredado
-   del contenedor en vez del valor original). */
-.presentation-mode .hud-cluster .hud-value {
-  font-size: 29px; /* base 22px × 1.3 */
-}
-
-.presentation-mode .hud-cluster .hud-label {
-  font-size: 13px; /* base 10px × 1.3 */
-  letter-spacing: 2px;
-}
-
-.presentation-mode .hud-speed .hud-value {
-  font-size: 57px; /* base 44px × 1.3 */
-}
-
-.presentation-mode .panel-header h2 {
-  font-size: 21px; /* base 16px × 1.3 */
-}
-
-.presentation-mode .control-group label {
-  font-size: 16px; /* base 12px × 1.3 */
-}
-
-.presentation-mode .formula-box {
-  font-size: 16px; /* base 12px × 1.3 — sus hijos (fx/strong) heredan y escalan con él */
-}
-
-/* .bb-label/.bb-eq/.bb-value NO fijan su propio font-size (heredan los
-   12px de .blackboard-row), así que aquí SÍ es correcto usar 1em: se
-   resuelve exactamente contra esos 12px heredados del padre. */
-.presentation-mode .bb-label,
-.presentation-mode .bb-eq,
-.presentation-mode .bb-value {
-  font-size: calc(1em * 1.3);
-}
-
-.presentation-mode .formula-box strong {
-  font-size: calc(1em * 1.15);
-}
-
-.presentation-mode .glass-panel {
-  border-width: 2px;
-  border-color: var(--panel-border-strong);
-}
-
-.presentation-mode .glass-panel::before {
-  height: 4px;
-  opacity: 0.85;
-}
-
-.presentation-mode .hud-status .hud-value {
-  font-size: calc(15px * 1.3);
-}
-
-/* Colores más saturados/brillantes: la compresión H.264 de Meet aplana
-   tonos apagados; subimos saturación y brillo de los acentos clave. */
-.presentation-mode {
-  --cat-yellow: #ffe14a;
-  --danger-red: #ff4d5e;
-  --ok-green: #6bffa3;
-  --text-primary: #ffffff;
-}
-
-.presentation-mode .btn {
-  border-width: 2px;
-  font-weight: 700;
-}
-
-.presentation-mode #presentationBtn {
-  border-color: var(--cat-yellow);
-  color: var(--cat-yellow);
-}
-
-/* Cursor real del navegador oculto: lo reemplaza #presenterCursor */
-.presentation-mode,
-.presentation-mode * {
-  cursor: none !important;
-}
-
-/* ----------------------------------------------------------------------
-   Cursor de presentador — círculo amarillo grande que sigue al mouse
-   ---------------------------------------------------------------------- */
-.presenter-cursor {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 46px;
-  height: 46px;
-  margin-left: -23px;
-  margin-top: -23px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 225, 74, 0.55) 0%, rgba(255, 225, 74, 0.28) 55%, rgba(255, 225, 74, 0) 78%);
-  border: 2px solid rgba(255, 225, 74, 0.85);
-  pointer-events: none;
-  z-index: 5000;
-  opacity: 0;
-  transition: opacity 0.15s ease, transform 0.06s linear;
-  will-change: transform;
-}
-
-.presentation-mode .presenter-cursor {
-  opacity: 1;
-}
-
-/* ----------------------------------------------------------------------
-   02. OVERLAY GIGANTE DE EVENTOS — "¡FRENANDO!", "¡DETENIDO!",
-       "¡FALLA TÉRMICA!", "¡IMPACTO!"
-   ---------------------------------------------------------------------- */
-.event-overlay {
-  position: fixed;
-  top: 16%;
-  left: 50%;
-  transform: translate(-50%, -12px) scale(0.92);
-  z-index: 900;
-  pointer-events: none;
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: clamp(38px, 7vw, 96px);
-  letter-spacing: 3px;
-  text-transform: uppercase;
-  text-align: center;
-  color: var(--cat-yellow);
-  text-shadow:
-    0 0 18px rgba(0, 0, 0, 0.9),
-    0 0 40px rgba(255, 204, 0, 0.55),
-    0 4px 0 rgba(0, 0, 0, 0.6);
-  opacity: 0;
-  -webkit-text-stroke: 2px rgba(0, 0, 0, 0.55);
-  transition: opacity 0.18s ease, transform 0.18s ease;
-}
-
-.event-overlay.is-visible {
-  opacity: 1;
-  transform: translate(-50%, 0) scale(1);
-  animation: eventPop 0.4s cubic-bezier(0.2, 1.4, 0.4, 1);
-}
-
-.event-overlay.event-danger {
-  color: var(--danger-red);
-  text-shadow:
-    0 0 18px rgba(0, 0, 0, 0.9),
-    0 0 46px rgba(230, 57, 70, 0.7),
-    0 4px 0 rgba(0, 0, 0, 0.6);
-}
-
-.event-overlay.event-ok {
-  color: var(--ok-green);
-  text-shadow:
-    0 0 18px rgba(0, 0, 0, 0.9),
-    0 0 40px rgba(74, 222, 128, 0.6),
-    0 4px 0 rgba(0, 0, 0, 0.6);
-}
-
-.event-overlay.event-impact {
-  color: #ffffff;
-  animation: eventShake 0.35s ease;
-}
-
-@keyframes eventPop {
-  0%   { transform: translate(-50%, 10px) scale(0.7); opacity: 0; }
-  60%  { transform: translate(-50%, -4px) scale(1.06); opacity: 1; }
-  100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
-}
-
-@keyframes eventShake {
-  0%, 100% { transform: translate(-50%, 0) scale(1); }
-  20% { transform: translate(calc(-50% - 10px), 0) scale(1.02); }
-  40% { transform: translate(calc(-50% + 10px), 0) scale(1.02); }
-  60% { transform: translate(calc(-50% - 6px), 0) scale(1.01); }
-  80% { transform: translate(calc(-50% + 6px), 0) scale(1.01); }
-}
-
-/* ----------------------------------------------------------------------
-   09. PIZARRA MATEMÁTICA — MODAL / LIGHTBOX
-   ---------------------------------------------------------------------- */
-.board-modal-backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(4, 5, 7, 0.82);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  z-index: 1499;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.22s ease;
-}
-
-.board-modal-backdrop.is-visible {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-#boardCard {
-  cursor: zoom-in;
-}
-
-.board-zoom-hint {
-  position: absolute;
-  top: 10px;
-  right: 14px;
-  font-family: var(--font-mono);
-  font-size: 10px;
-  letter-spacing: 1px;
-  color: var(--text-faint);
-  z-index: 2;
-  pointer-events: none;
-}
-
-#boardCard.board-modal-open {
-  position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: min(760px, 92vw);
-  max-height: 84vh;
-  z-index: 1500;
-  cursor: zoom-out;
-  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.7), 0 0 0 2px var(--panel-border-strong);
-}
-
-#boardCard.board-modal-open .blackboard-row {
-  font-size: 1.5em;
-  padding: 10px 0;
-}
-
-#boardCard.board-modal-open .bb-eq,
-#boardCard.board-modal-open .bb-value {
-  font-size: 1.15em;
-}
-
-#boardCard.board-modal-open .board-zoom-hint::after {
-  content: ' — Esc o clic para cerrar';
-}
-
-/* ----------------------------------------------------------------------
-   RESPONSIVE — Modo Presentación en pantallas angostas
-   ---------------------------------------------------------------------- */
-@media (max-width: 900px) {
-  #boardCard.board-modal-open {
-    width: 94vw;
+  // -----------------------------------------------------------------------
+  // 5. CÁMARA ORBITAL MANUAL
+  // -----------------------------------------------------------------------
+  function setupCameraControls(dom) {
+    dom.addEventListener("pointerdown", (e) => {
+      isDragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+    });
+    window.addEventListener("pointerup", () => (isDragging = false));
+    window.addEventListener("pointermove", (e) => {
+      if (!isDragging) return;
+      const dx = e.clientX - lastX;
+      const dy = e.clientY - lastY;
+      lastX = e.clientX;
+      lastY = e.clientY;
+      camState.theta -= dx * 0.006;
+      camState.phi = THREE.MathUtils.clamp(camState.phi - dy * 0.006, 0.25, 1.45);
+    });
+    dom.addEventListener(
+      "wheel",
+      (e) => {
+        e.preventDefault();
+        camState.radius = THREE.MathUtils.clamp(camState.radius + e.deltaY * 0.05, 25, 150);
+      },
+      { passive: false }
+    );
   }
-  .event-overlay {
-    font-size: clamp(28px, 9vw, 56px);
+
+  function updateCamera() {
+    const { radius, theta, phi, target } = camState;
+    camera.position.set(
+      target.x + radius * Math.sin(phi) * Math.sin(theta),
+      target.y + radius * Math.cos(phi),
+      target.z + radius * Math.sin(phi) * Math.cos(theta)
+    );
+    camera.lookAt(target);
   }
-}
+
+  function setupMouseTracking(dom) {
+    raycaster = new THREE.Raycaster();
+    mouseNDC = new THREE.Vector2(9999, 9999);
+    groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+    mouseWorld = new THREE.Vector3();
+
+    function updateFromEvent(e) {
+      const rect = dom.getBoundingClientRect();
+      mouseNDC.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      mouseNDC.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(mouseNDC, camera);
+      const hit = raycaster.ray.intersectPlane(groundPlane, mouseWorld);
+      if (hit) {
+        grassMat.uniforms.uMouse.value.set(hit.x, hit.z);
+      }
+    }
+
+    dom.addEventListener("pointermove", updateFromEvent);
+    dom.addEventListener("pointerleave", () => {
+      grassMat.uniforms.uMouse.value.set(9999, 9999);
+    });
+  }
+
+  // -----------------------------------------------------------------------
+  // 6. TRANSICIÓN ENTRE BIOMAS
+  // -----------------------------------------------------------------------
+  function applyBiomeInstant(biome) {
+    // El sol, el cielo, la niebla y las estrellas los recalcula cada frame
+    // updateDayNight() en función de la hora del día + este bioma.
+    sunSprite.material.map = makeGlowTexture(biome.sun.color);
+    sunSprite.material.needsUpdate = true;
+
+    grassMat.uniforms.uBaseColor.value.set(biome.grass.base);
+    grassMat.uniforms.uTipColor.value.set(biome.grass.tip);
+    grassMat.uniforms.uWind.value = biome.windStrength;
+
+    particleMat.color.set(biome.particle.color);
+
+    // recolor de suelo
+    const pos = ground.geometry.attributes.position;
+    const colors = ground.geometry.attributes.color;
+    const low = new THREE.Color(biome.ground.low);
+    const high = new THREE.Color(biome.ground.high);
+    const tmp = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) {
+      const h = pos.getY(i);
+      const t = THREE.MathUtils.clamp((h + 3) / 6, 0, 1);
+      tmp.copy(low).lerp(high, t);
+      colors.setXYZ(i, tmp.r, tmp.g, tmp.b);
+    }
+    colors.needsUpdate = true;
+  }
+
+  // Hace que todo el campo "brote" de nuevo, en onda desde el centro
+  function triggerGrowth() {
+    grassMat.uniforms.uGrowStart.value = clock ? clock.elapsedTime : 0;
+  }
+
+  function setBiome(key) {
+    const biome = BIOMES[key];
+    if (!biome || key === currentBiome) return;
+    currentBiome = key;
+    applyBiomeInstant(biome);
+    triggerGrowth();
+    document.dispatchEvent(new CustomEvent("biomechange", { detail: { key, biome } }));
+  }
+
+  function smoothstep(edge0, edge1, x) {
+    const t = THREE.MathUtils.clamp((x - edge0) / (edge1 - edge0), 0, 1);
+    return t * t * (3 - 2 * t);
+  }
+
+  // -----------------------------------------------------------------------
+  // 6b. CICLO DÍA / NOCHE
+  // -----------------------------------------------------------------------
+  const tmpSunColor = new THREE.Color();
+  const tmpSkyTop = new THREE.Color();
+  const tmpSkyBottom = new THREE.Color();
+  const tmpFog = new THREE.Color();
+  const tmpHemi = new THREE.Color();
+
+  // Fase acumulada del modo automático. Se guarda por separado del reloj
+  // (que no se detiene) para poder pausarla en modo manual y retomarla sin
+  // saltos al volver a automático.
+  let autoElapsed = 0;
+  let lastRawT = 0;
+
+  function updateDayNight(t) {
+    const biome = BIOMES[currentBiome];
+
+    if (dayMode === "auto") {
+      autoElapsed += Math.max(0, t - lastRawT);
+    }
+    lastRawT = t;
+
+    const phase =
+      dayMode === "manual"
+        ? manualPhase
+        : (autoElapsed % DAY_CYCLE_SECONDS) / DAY_CYCLE_SECONDS;
+    const raw = Math.sin(phase * Math.PI * 2 - Math.PI / 2);
+    dayFactor = Math.max(0, raw);
+    const nightBlend = 1 - smoothstep(0, 0.35, dayFactor);
+
+    const azimuth = biome.sun.azimuth + phase * Math.PI * 2;
+    const elevation = Math.max(biome.sun.elevation * dayFactor, 0.02);
+    const dir = sunDirFrom(elevation, azimuth);
+
+    tmpSunColor.set(biome.sun.color).lerp(NIGHT.moonColor, nightBlend);
+    const intensity = THREE.MathUtils.lerp(
+      biome.sun.intensity * (0.15 + 0.85 * dayFactor),
+      NIGHT.intensity,
+      nightBlend
+    );
+
+    sunLight.position.copy(dir).multiplyScalar(220);
+    sunLight.color.copy(tmpSunColor);
+    sunLight.intensity = intensity;
+
+    sunSprite.position.copy(dir).multiplyScalar(300);
+    sunSprite.material.color.copy(tmpSunColor);
+    sunSprite.material.opacity = THREE.MathUtils.lerp(0.95, 0.55, nightBlend);
+
+    tmpSkyTop.set(biome.sky.top).lerp(NIGHT.top, nightBlend);
+    tmpSkyBottom.set(biome.sky.bottom).lerp(NIGHT.bottom, nightBlend);
+    sky.material.uniforms.topColor.value.copy(tmpSkyTop);
+    sky.material.uniforms.bottomColor.value.copy(tmpSkyBottom);
+
+    tmpHemi.set(biome.sky.top).lerp(NIGHT.top, nightBlend);
+    hemi.color.copy(tmpHemi);
+    hemi.groundColor.set(biome.ground.low);
+    hemi.intensity = THREE.MathUtils.lerp(0.55, 0.1, nightBlend) * (0.45 + 0.55 * dayFactor);
+
+    tmpFog.set(biome.fog).lerp(NIGHT.fog, nightBlend);
+    scene.fog.color.copy(tmpFog);
+    scene.fog.density = biome.fogDensity;
+
+    grassMat.uniforms.uSunDir.value.copy(dir);
+    grassMat.uniforms.uSunColor.value
+      .copy(tmpSunColor)
+      .multiplyScalar(THREE.MathUtils.clamp(intensity / 1.3, 0.28, 1.3));
+
+    starsMat.opacity = nightBlend * 0.9;
+  }
+
+  // -----------------------------------------------------------------------
+  // 6c. CONTROL EXTERNO DEL CICLO DÍA/NOCHE
+  // -----------------------------------------------------------------------
+  function setDayMode(mode) {
+    dayMode = mode === "manual" ? "manual" : "auto";
+  }
+
+  function setManualPhase(v) {
+    manualPhase = THREE.MathUtils.clamp(v, 0, 1);
+  }
+
+  function getDayMode() {
+    return dayMode;
+  }
+
+  // -----------------------------------------------------------------------
+  // 7. LOOP PRINCIPAL
+  // -----------------------------------------------------------------------
+  function animate() {
+    requestAnimationFrame(animate);
+    const dt = Math.min(clock.getDelta(), 0.05);
+    const t = clock.elapsedTime;
+
+    grassMat.uniforms.uTime.value = t;
+    updateDayNight(t);
+    updateParticles(dt, t, BIOMES[currentBiome]);
+    updateCamera();
+
+    // indicador opcional de hora del día en el HTML, si existe
+    const indicator = animate._indicator || (animate._indicator = document.getElementById("daytime-indicator"));
+    if (indicator) {
+      indicator.textContent = dayFactor > 0.55 ? "Día" : dayFactor > 0.1 ? "Atardecer / amanecer" : "Noche";
+    }
+
+    renderer.render(scene, camera);
+  }
+
+  function onResize(container) {
+    const w = container.clientWidth;
+    const h = container.clientHeight;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  }
+
+  // -----------------------------------------------------------------------
+  // 8. INICIALIZACIÓN
+  // -----------------------------------------------------------------------
+  function init(container) {
+    scene = new THREE.Scene();
+    clock = new THREE.Clock();
+
+    camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 1000);
+
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.outputColorSpace = THREE.SRGBColorSpace || renderer.outputColorSpace;
+    container.appendChild(renderer.domElement);
+
+    buildSky();
+    buildLights();
+    scene.fog = new THREE.FogExp2(BIOMES.verano.fog, BIOMES.verano.fogDensity);
+    buildGround();
+    buildGrass();
+    buildParticles();
+    buildStars();
+    setupCameraControls(renderer.domElement);
+    setupMouseTracking(renderer.domElement);
+
+    applyBiomeInstant(BIOMES.verano);
+    triggerGrowth();
+
+    window.addEventListener("resize", () => onResize(container));
+    animate();
+  }
+
+  window.BiomeScene = {
+    init,
+    setBiome,
+    BIOMES,
+    regrow: triggerGrowth,
+    getDayFactor: () => dayFactor,
+    setDayMode,
+    setManualPhase,
+    getDayMode,
+  };
+})();
