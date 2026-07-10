@@ -417,7 +417,17 @@ const Scene3D = (function () {
       scene.remove(group);
       group.traverse((obj) => {
         if (obj.geometry) obj.geometry.dispose();
-        if (obj.material) obj.material.dispose();
+        if (obj.material) {
+          // BUG corregido: disponer solo el material no libera su textura
+          // (`map`) de la GPU. La pista usa una textura de canvas generada
+          // en buildRoadTexture() en cada llamada a buildRoad() — sin este
+          // dispose extra, cada arrastre del slider "Inclinación máxima" (o
+          // cambio de "Perfil del camino") dejaba una textura huérfana en
+          // VRAM, igual al problema que ya se había corregido para el caso
+          // más obvio de setTerrainVisual() (ver oldMap.dispose() ahí).
+          if (obj.material.map) obj.material.map.dispose();
+          obj.material.dispose();
+        }
       });
     });
     buildRoad();
