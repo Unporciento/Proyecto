@@ -28,6 +28,10 @@ const Scene3D = (function () {
   let sparkParticles = []; // {points, life, maxLife} — chispas de brake fade activas
   let weatherParticles = null; // { points, velocities, kind: 'lluvia'|'nieve' }
   let roadMeshRef = null; // referencia al mesh de asfalto para poder retintarlo por terreno
+  let groundMeshRef = null;      // igual que roadMeshRef, pero para el suelo/bermas (vertex colors)
+  let grassMesh = null;          // InstancedMesh del césped de las bermas
+  let grassTime = 0;             // acumulador de tiempo para el shader de viento del césped
+  const GRASS_MAX = 6000;        // total de instancias generadas una vez en init(); applyEnvironment() solo trunca .count
 
   // Longitud total de la carretera en unidades del mundo 3D (metros virtuales)
   const ROAD_LENGTH = 260;
@@ -52,7 +56,11 @@ const Scene3D = (function () {
       sunColor: 0xfff2d6, sunIntensity: 1.6,
       hemiSky: 0x9fb8c8, hemiGround: 0x14171a, hemiIntensity: 0.38,
       rimColor: 0x9fd0ff, rimIntensity: 0.55,
-      starOpacity: 0.55
+      starOpacity: 0.55,
+      groundLow: 0x1c1e1f, groundHigh: 0x33373a,   // gris industrial, pasto casi nulo
+      grassDensityRatio: 0.15,
+      grassBase: 0x2e3a22, grassTip: 0x5c7a34,
+      windStrength: 0.35
     },
     mojado: {
       skyTop: 0x050a10, skyBottom: 0x0f1b24,
@@ -60,7 +68,11 @@ const Scene3D = (function () {
       sunColor: 0xcfe0ff, sunIntensity: 1.25,
       hemiSky: 0x7d99b3, hemiGround: 0x11151a, hemiIntensity: 0.4,
       rimColor: 0x7fc2ff, rimIntensity: 0.65,
-      starOpacity: 0.25
+      starOpacity: 0.25,
+      groundLow: 0x14181a, groundHigh: 0x262d30,
+      grassDensityRatio: 0.15,
+      grassBase: 0x233120, grassTip: 0x4a6b2e,
+      windStrength: 0.5
     },
     grava: {
       skyTop: 0x0a0805, skyBottom: 0x241d14,
@@ -68,7 +80,11 @@ const Scene3D = (function () {
       sunColor: 0xffdca8, sunIntensity: 1.55,
       hemiSky: 0xc9a877, hemiGround: 0x1a1611, hemiIntensity: 0.36,
       rimColor: 0xffb35c, rimIntensity: 0.4,
-      starOpacity: 0.5
+      starOpacity: 0.5,
+      groundLow: 0x241d14, groundHigh: 0x4a3a22,   // tierra/grava, pasto ralo y seco
+      grassDensityRatio: 0.25,
+      grassBase: 0x5a4a24, grassTip: 0x8a7a3e,     // pasto seco amarillento
+      windStrength: 0.4
     },
     barro: {
       skyTop: 0x070907, skyBottom: 0x1a1f16,
@@ -76,7 +92,11 @@ const Scene3D = (function () {
       sunColor: 0xd8c98f, sunIntensity: 1.2,
       hemiSky: 0x8a9a6c, hemiGround: 0x0f120c, hemiIntensity: 0.34,
       rimColor: 0x6fae7a, rimIntensity: 0.35,
-      starOpacity: 0.2
+      starOpacity: 0.2,
+      groundLow: 0x1a150e, groundHigh: 0x3a2c1a,   // barro oscuro, la máxima densidad de pasto
+      grassDensityRatio: 0.85,
+      grassBase: 0x1f3a17, grassTip: 0x4f8a2e,     // pasto verde intenso (húmedo)
+      windStrength: 0.6
     },
     nieve: {
       skyTop: 0x0a1018, skyBottom: 0x2c3a44,
@@ -84,7 +104,11 @@ const Scene3D = (function () {
       sunColor: 0xeaf4ff, sunIntensity: 1.7,
       hemiSky: 0xdcecff, hemiGround: 0x1c232a, hemiIntensity: 0.5,
       rimColor: 0xbfe3ff, rimIntensity: 0.6,
-      starOpacity: 0.35
+      starOpacity: 0.35,
+      groundLow: 0xcfd9e0, groundHigh: 0xffffff,   // nieve, casi sin pasto (solo algunas puntas asomando)
+      grassDensityRatio: 0.06,
+      grassBase: 0x5a6a5e, grassTip: 0x8fae9a,     // pasto apagado, medio cubierto
+      windStrength: 0.25
     },
     hielo: {
       skyTop: 0x040810, skyBottom: 0x122430,
@@ -92,7 +116,11 @@ const Scene3D = (function () {
       sunColor: 0xcdeeff, sunIntensity: 1.35,
       hemiSky: 0x8fd8ff, hemiGround: 0x0c161c, hemiIntensity: 0.42,
       rimColor: 0x6fe3ff, rimIntensity: 0.75,
-      starOpacity: 0.7
+      starOpacity: 0.7,
+      groundLow: 0xaecbd6, groundHigh: 0xe8f4fa,   // hielo, sin pasto
+      grassDensityRatio: 0.0,
+      grassBase: 0x5a6a6e, grassTip: 0x8fae9a,
+      windStrength: 0.15
     }
   };
 
@@ -234,6 +262,38 @@ const Scene3D = (function () {
     return texture;
   }
 
+  /**
+   * Pinta vertex colors de suelo interpolando entre un tono "bajo" (hondonada)
+   * y uno "alto" (cresta) del terreno — mismo rango que usa displaceTerrainGeometry.
+   * Se puede llamar de nuevo sobre la misma geometría para re-tintar sin
+   * reconstruir la malla (ver retintGround).
+   */
+  function paintGroundVertexColors(geometry, lowHex, highHex) {
+    const pos = geometry.attributes.position;
+    const colors = new Float32Array(pos.count * 3);
+    const low = new THREE.Color(lowHex);
+    const high = new THREE.Color(highHex);
+    const tmp = new THREE.Color();
+    for (let i = 0; i < pos.count; i++) {
+      // El plano se rota -90° en X después, así que la "altura" real
+      // (Z tras displaceTerrainGeometry) vive en el eje Z local del plano.
+      const h = pos.getZ(i);
+      const t = THREE.MathUtils.clamp((h + 3) / 6, 0, 1); // mismo rango que displaceTerrainGeometry
+      tmp.copy(low).lerp(high, t);
+      colors[i * 3] = tmp.r;
+      colors[i * 3 + 1] = tmp.g;
+      colors[i * 3 + 2] = tmp.b;
+    }
+    geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+  }
+
+  /** Re-tiñe el suelo/bermas ya construido, sin reconstruir la geometría. */
+  function retintGround(lowHex, highHex) {
+    if (!groundMeshRef) return;
+    paintGroundVertexColors(groundMeshRef.geometry, lowHex, highHex);
+    groundMeshRef.geometry.attributes.color.needsUpdate = true;
+  }
+
   function buildRoad() {
     roadGroup = new THREE.Group();
 
@@ -254,22 +314,201 @@ const Scene3D = (function () {
 
     // Bermas laterales (terreno adyacente) para dar contexto industrial;
     // también siguen la ondulación del terreno para no "flotar" ni
-    // "enterrarse" respecto a la carretera principal.
+    // "enterrarse" respecto a la carretera principal. Vertex colors por
+    // altura (bioma de suelo) en vez de un gris plano — ver
+    // paintGroundVertexColors()/retintGround() y TERRAIN_ENVIRONMENTS.
     const shoulderGeo = new THREE.PlaneGeometry(60, ROAD_LENGTH, 1, 130);
     displaceTerrainGeometry(shoulderGeo);
-    const shoulderMat = new THREE.MeshStandardMaterial({ color: 0x1a1d1f, roughness: 1 });
+    const initialEnv = TERRAIN_ENVIRONMENTS[currentEnvKey] || TERRAIN_ENVIRONMENTS.asfalto;
+    paintGroundVertexColors(shoulderGeo, initialEnv.groundLow, initialEnv.groundHigh);
+    const shoulderMat = new THREE.MeshStandardMaterial({ vertexColors: true, roughness: 1 });
 
     const shoulderLeft = new THREE.Mesh(shoulderGeo, shoulderMat);
     shoulderLeft.rotation.x = -Math.PI / 2;
     shoulderLeft.position.set(-ROAD_WIDTH / 2 - 30 + 0.5, -0.02, 0);
     shoulderLeft.receiveShadow = true;
     roadGroup.add(shoulderLeft);
+    groundMeshRef = shoulderLeft; // el de la derecha es un clone: comparte geometría/material, retintar uno basta
 
     const shoulderRight = shoulderLeft.clone();
     shoulderRight.position.set(ROAD_WIDTH / 2 + 30 - 0.5, -0.02, 0);
     roadGroup.add(shoulderRight);
 
     scene.add(roadGroup);
+  }
+
+  /**
+   * Césped instanciado de las bermas (bioma de suelo) — portado de
+   * `buildGrass()` del demo de biomas (scene.js/BiomeScene). Una única
+   * "brizna" (blade) repetida GRASS_MAX veces vía InstancedMesh, con un
+   * vertex shader que la dobla con el viento y la hace crecer en onda.
+   * Se genera UNA sola vez en init(); applyEnvironment() solo re-tiñe
+   * uniforms y trunca `grassMesh.count` para variar densidad por terreno.
+   */
+  let grassAData = null; // Float32Array reutilizado por scatterGrassInstances
+
+  function buildGrassField() {
+    const width = 0.12;
+    const height = 1.1;
+    const heightSegs = 4;
+    const rows = heightSegs + 1;
+    const positions = [];
+    const colorsArr = [];
+    const indices = [];
+
+    for (let r = 0; r < rows; r++) {
+      const t = r / heightSegs; // 0 base -> 1 punta
+      const w = width * (1 - t * 0.85);
+      const y = t * height;
+      positions.push(-w / 2, y, 0, w / 2, y, 0);
+      colorsArr.push(0, t, 0, 0, t, 0);
+    }
+    for (let r = 0; r < heightSegs; r++) {
+      const a = r * 2, b = r * 2 + 1, c = r * 2 + 2, d = r * 2 + 3;
+      indices.push(a, b, c, b, d, c);
+    }
+
+    const bladeGeo = new THREE.BufferGeometry();
+    bladeGeo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    bladeGeo.setAttribute('color', new THREE.Float32BufferAttribute(colorsArr, 3));
+    bladeGeo.setIndex(indices);
+    bladeGeo.computeVertexNormals();
+
+    const initialEnv = TERRAIN_ENVIRONMENTS[currentEnvKey] || TERRAIN_ENVIRONMENTS.asfalto;
+
+    const grassMat = new THREE.ShaderMaterial({
+      uniforms: {
+        uTime: { value: 0 },
+        uWind: { value: initialEnv.windStrength },
+        uBaseColor: { value: new THREE.Color(initialEnv.grassBase) },
+        uTipColor: { value: new THREE.Color(initialEnv.grassTip) },
+        uSunDir: { value: new THREE.Vector3(0.4, 0.8, 0.3) },
+        uSunColor: { value: new THREE.Color(initialEnv.sunColor || 0xffffff) },
+        uGrowStart: { value: 0 },
+        uGrowDuration: { value: 1.4 },
+        uGrowWaveSpeed: { value: 26.0 },
+        // niebla: la escena usa THREE.Fog (lineal); un ShaderMaterial "en
+        // crudo" no la recibe automáticamente, así que se replica a mano
+        // (ver fragmentShader) para que el césped se disuelva con la
+        // distancia igual que la carretera/conos/vehículo.
+        uFogColor: { value: new THREE.Color(scene.fog ? scene.fog.color : 0x0a0d10) },
+        uFogNear: { value: scene.fog ? scene.fog.near : 60 },
+        uFogFar: { value: scene.fog ? scene.fog.far : 220 }
+      },
+      vertexShader: `
+        precision mediump float;
+        attribute vec4 aData; // x: fase de viento
+        uniform float uTime;
+        uniform float uWind;
+        uniform float uGrowStart;
+        uniform float uGrowDuration;
+        uniform float uGrowWaveSpeed;
+        varying float vHeight;
+        varying vec3 vNormal;
+        varying float vGrowth;
+        varying float vFogDepth;
+
+        #ifdef USE_INSTANCING
+          attribute mat4 instanceMatrix;
+        #endif
+
+        void main() {
+          vHeight = color.g;
+          vec3 pos = position;
+          float phase = aData.x;
+
+          vec2 instXZ = instanceMatrix[3].xz;
+          float dist = length(instXZ);
+          float jitter = fract(sin(phase * 91.7) * 43758.5453) * 0.6;
+          float delay = dist / uGrowWaveSpeed + jitter;
+          float growth = clamp((uTime - uGrowStart - delay) / uGrowDuration, 0.0, 1.0);
+          growth = growth * growth * (3.0 - 2.0 * growth);
+          vGrowth = growth;
+
+          pos.y *= growth;
+          pos.x *= mix(0.25, 1.0, growth);
+
+          float sway = sin(uTime * 1.6 + phase) * uWind * vHeight * vHeight * growth;
+          float swayZ = cos(uTime * 1.1 + phase * 1.3) * uWind * 0.4 * vHeight * vHeight * growth;
+          pos.x += sway;
+          pos.z += swayZ;
+
+          vec4 worldPos = instanceMatrix * vec4(pos, 1.0);
+          vNormal = normalize(mat3(instanceMatrix) * vec3(0.0, 0.0, 1.0));
+          vec4 mvPosition = modelViewMatrix * worldPos;
+          vFogDepth = -mvPosition.z;
+          gl_Position = projectionMatrix * mvPosition;
+        }
+      `,
+      fragmentShader: `
+        precision mediump float;
+        uniform vec3 uBaseColor;
+        uniform vec3 uTipColor;
+        uniform vec3 uSunDir;
+        uniform vec3 uSunColor;
+        uniform vec3 uFogColor;
+        uniform float uFogNear;
+        uniform float uFogFar;
+        varying float vHeight;
+        varying vec3 vNormal;
+        varying float vGrowth;
+        varying float vFogDepth;
+
+        void main() {
+          vec3 color = mix(uBaseColor, uTipColor, vHeight);
+          color = mix(color * 1.35 + 0.05, color, smoothstep(0.0, 1.0, vGrowth));
+          float diff = max(dot(normalize(vNormal), uSunDir), 0.35);
+          color *= (0.55 + diff * 0.6) * uSunColor;
+
+          float fogFactor = clamp((vFogDepth - uFogNear) / (uFogFar - uFogNear), 0.0, 1.0);
+          color = mix(color, uFogColor, fogFactor);
+
+          gl_FragColor = vec4(color, 1.0);
+        }
+      `,
+      side: THREE.DoubleSide
+    });
+
+    grassMesh = new THREE.InstancedMesh(bladeGeo, grassMat, GRASS_MAX);
+    grassMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    grassMesh.castShadow = false;   // costo de rendimiento: el césped no proyecta sombra
+    grassMesh.receiveShadow = true; // sí la recibe
+
+    grassAData = new Float32Array(GRASS_MAX * 4);
+    bladeGeo.setAttribute('aData', new THREE.InstancedBufferAttribute(grassAData, 4));
+
+    scene.add(grassMesh);
+
+    scatterGrassInstances(GRASS_MAX);
+    grassMesh.count = Math.round(GRASS_MAX * initialEnv.grassDensityRatio);
+  }
+
+  /**
+   * Distribuye `count` instancias de pasto en dos franjas rectangulares a
+   * los costados de la carretera, evitando la pista y la zona de conos
+   * (ROAD_WIDTH/2 + 1.5 hasta ROAD_WIDTH/2 + 30, igual que las bermas).
+   * Se llama UNA vez desde buildGrassField(); nunca se regenera al cambiar
+   * de terreno (solo se trunca/expande vía grassMesh.count).
+   */
+  function scatterGrassInstances(count) {
+    const dummy = new THREE.Object3D();
+    let placed = 0;
+    for (let i = 0; i < count; i++) {
+      const side = Math.random() < 0.5 ? -1 : 1;
+      const lateral = ROAD_WIDTH / 2 + 1.5 + Math.random() * 27;
+      const z = (Math.random() - 0.5) * ROAD_LENGTH;
+      const x = side * lateral;
+      const y = getHeightAt(z);
+      dummy.position.set(x, y, z);
+      dummy.rotation.y = Math.random() * Math.PI * 2;
+      const scale = 0.7 + Math.random() * 0.8;
+      dummy.scale.setScalar(scale);
+      dummy.updateMatrix();
+      grassMesh.setMatrixAt(placed, dummy.matrix);
+      grassAData[placed * 4] = Math.random() * Math.PI * 2; // fase de viento
+      placed++;
+    }
+    grassMesh.instanceMatrix.needsUpdate = true;
   }
 
   /**
@@ -417,17 +656,7 @@ const Scene3D = (function () {
       scene.remove(group);
       group.traverse((obj) => {
         if (obj.geometry) obj.geometry.dispose();
-        if (obj.material) {
-          // BUG corregido: disponer solo el material no libera su textura
-          // (`map`) de la GPU. La pista usa una textura de canvas generada
-          // en buildRoadTexture() en cada llamada a buildRoad() — sin este
-          // dispose extra, cada arrastre del slider "Inclinación máxima" (o
-          // cambio de "Perfil del camino") dejaba una textura huérfana en
-          // VRAM, igual al problema que ya se había corregido para el caso
-          // más obvio de setTerrainVisual() (ver oldMap.dispose() ahí).
-          if (obj.material.map) obj.material.map.dispose();
-          obj.material.dispose();
-        }
+        if (obj.material) obj.material.dispose();
       });
     });
     buildRoad();
@@ -1033,6 +1262,19 @@ const Scene3D = (function () {
     if (starsMesh) {
       starsMesh.material.opacity = env.starOpacity;
     }
+
+    // NUEVO — suelo y césped por bioma (ver GUIA_BIOMAS_SUELO.md):
+    retintGround(env.groundLow, env.groundHigh);
+    if (grassMesh) {
+      grassMesh.material.uniforms.uBaseColor.value.setHex(env.grassBase);
+      grassMesh.material.uniforms.uTipColor.value.setHex(env.grassTip);
+      grassMesh.material.uniforms.uSunColor.value.setHex(env.sunColor);
+      grassMesh.material.uniforms.uWind.value = env.windStrength;
+      grassMesh.material.uniforms.uFogColor.value.setHex(env.fogColor);
+      grassMesh.material.uniforms.uFogNear.value = env.fogNear;
+      grassMesh.material.uniforms.uFogFar.value = env.fogFar;
+      grassMesh.count = Math.round(GRASS_MAX * env.grassDensityRatio);
+    }
   }
 
   /**
@@ -1135,6 +1377,7 @@ const Scene3D = (function () {
     buildSky();
     buildStars();
     buildRoad();
+    buildGrassField(); // bioma de suelo: césped instanciado de las bermas (ver GUIA_BIOMAS_SUELO.md)
     buildDistanceMarkers();
     buildSafetyCones();
     buildImpactWall();
@@ -1157,6 +1400,8 @@ const Scene3D = (function () {
 
   function render(dt = 0) {
     if (!sceneReady) return;
+    grassTime += dt;
+    if (grassMesh) grassMesh.material.uniforms.uTime.value = grassTime;
     updateWeather(dt);
     if (driverViewEnabled) {
       updateDriverView();
