@@ -38,7 +38,7 @@
   --font-mono: 'Share Tech Mono', 'Consolas', monospace;
 
   /* --- Radios y sombras --- */
-  --radius: 16px;
+  --radius: 13px;
   --blur: 22px;
   --shadow-panel: 0 18px 46px rgba(0, 0, 0, 0.45), inset 0 1px 0 var(--glass-rim), inset 0 0 0 1px rgba(255,255,255,0.025);
 
@@ -46,14 +46,14 @@
      dentro de un único glass-panel por columna; ahora cada columna es un
      wrapper de layout con varias tarjetas reales separadas por --stack-gap,
      así ninguna se percibe "encima" de otra. --- */
-  --stack-gap: 18px;
+  --stack-gap: 14px;
 
   /* --- Altura real del HUD inferior, medida en vivo por main.js (syncHudSpacing) ---
      Empieza con un valor de respaldo razonable para el primer frame antes de que
      JS pueda medir el elemento; luego se sobreescribe con la altura exacta.
      Ronda 6: ahora el HUD tiene 2 filas fijas (métricas + acciones), así
      que el valor de respaldo sube para reflejar esa altura real. */
-  --hud-height: 176px;
+  --hud-height: 150px;
 
   /* --- Colchón de seguridad extra bajo el HUD (Ronda 6): además de la
      altura medida, siempre se reserva este margen fijo para que, aunque
@@ -224,7 +224,7 @@ html, body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 14px 18px 10px 18px;
+  padding: 12px 16px 9px 16px;
   border-bottom: 1px solid var(--panel-border);
 }
 
@@ -239,8 +239,8 @@ html, body {
 .panel-header h2 {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 16px;
-  letter-spacing: 0.5px;
+  font-size: 14.5px;
+  letter-spacing: 0.4px;
   margin: 0;
   text-transform: uppercase;
 }
@@ -248,7 +248,7 @@ html, body {
 .panel-body {
   position: relative;
   z-index: 1;
-  padding: 16px 18px 20px 18px;
+  padding: 14px 16px 17px 16px;
   overflow-y: auto;
 }
 
@@ -659,13 +659,13 @@ select:focus, input:focus, button:focus {
 
 .btn {
   width: 100%;
-  padding: 13px 16px;
-  border-radius: 9px;
+  padding: 9px 14px;
+  border-radius: 8px;
   border: none;
   font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 14px;
-  letter-spacing: 1px;
+  font-weight: 600;
+  font-size: 12.5px;
+  letter-spacing: 0.6px;
   text-transform: uppercase;
   cursor: pointer;
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
@@ -743,8 +743,8 @@ select:focus, input:focus, button:focus {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 12px;
-  padding: 14px 26px 18px;
+  gap: 10px;
+  padding: 12px 22px 15px;
   width: min(1180px, calc(100vw - 24px));
   max-width: calc(100vw - 24px);
   box-shadow: 0 -4px 34px rgba(0, 0, 0, 0.4), var(--shadow-panel);
@@ -779,9 +779,9 @@ select:focus, input:focus, button:focus {
 .hud-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   justify-content: center;
-  padding-top: 12px;
+  padding-top: 10px;
   border-top: 1px solid var(--panel-border);
 }
 
@@ -800,12 +800,12 @@ select:focus, input:focus, button:focus {
   align-items: center;
   align-self: center;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10.5px;
   letter-spacing: 0.5px;
   color: var(--text-faint);
-  padding: 10px 14px;
+  padding: 8px 12px;
   border: 1px dashed var(--panel-border);
-  border-radius: 9px;
+  border-radius: 8px;
   cursor: help;
   user-select: none;
 }
@@ -982,7 +982,9 @@ select:focus, input:focus, button:focus {
 
 .hud-actions .btn {
   width: auto;
-  padding: 12px 20px;
+  padding: 8px 14px;
+  font-size: 11.5px;
+  letter-spacing: 0.4px;
 }
 
 .btn-icon {
@@ -1169,12 +1171,12 @@ body:has(.cinema-mode) .restore-hint {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 2px;
-  padding: 10px 14px;
+  gap: 1px;
+  padding: 8px 12px;
   text-align: left;
   background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--panel-border);
-  border-radius: 10px;
+  border-radius: 8px;
   color: var(--text-primary);
   cursor: pointer;
   transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
@@ -1198,15 +1200,15 @@ body:has(.cinema-mode) .restore-hint {
 
 .scenario-btn strong {
   font-family: var(--font-display);
-  font-size: 13px;
-  letter-spacing: 0.5px;
+  font-size: 12px;
+  letter-spacing: 0.4px;
   color: var(--cat-yellow);
   text-transform: uppercase;
 }
 
 .scenario-btn span {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10.5px;
   color: var(--text-muted);
 }
 
