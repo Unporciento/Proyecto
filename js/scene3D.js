@@ -398,6 +398,7 @@ const Scene3D = (function () {
       vertexShader: `
         precision mediump float;
         attribute vec4 aData; // x: fase de viento
+        attribute vec3 color; // atributo 'color' de la geometría de la brizna (verde base->punta, ver buildGrassField)
         uniform float uTime;
         uniform float uWind;
         uniform float uGrowStart;
