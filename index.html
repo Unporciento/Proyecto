@@ -5,15 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Simulador de Frenado de Emergencia | Maquinaria Pesada</title>
 <meta name="description" content="Simulador Web 3D de frenado de emergencia para maquinaria pesada — Cálculo Diferencial y Física Mecánica aplicados.">
-<meta name="theme-color" content="#06070a">
-
-<!-- Redes sociales / vista previa al compartir el enlace -->
-<meta property="og:title" content="Simulador de Frenado de Emergencia — Maquinaria Pesada">
-<meta property="og:description" content="Simulador Web 3D de frenado de emergencia: Cálculo Diferencial y Física Mecánica aplicados, con telemetría en vivo.">
-<meta property="og:type" content="website">
-
-<!-- Favicon liviano (sin archivo extra): emoji de disco de freno sobre fondo oscuro -->
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%9B%9E%3C/text%3E%3C/svg%3E">
 
 <!-- Tipografías industriales -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,70 +15,13 @@
 <link rel="stylesheet" href="css/styles.css">
 
 <!-- Three.js r128 (UMD) + OrbitControls compatible -->
-<link rel="preconnect" href="https://cdnjs.cloudflare.com">
-<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
 <!-- Chart.js -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-
-<!-- Masthead flotante (autocontenido, no depende de css/styles.css): un
-     rótulo tipo "HUD de nave" con indicador de estado en vivo, apoyado en
-     las mismas variables de tema (--void, --cat-yellow, --font-*) que ya
-     define styles.css. Puramente informativo/decorativo. -->
-<style>
-  #masthead {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 8px 18px;
-    border-radius: 999px;
-    pointer-events: none;
-  }
-  #masthead .status-dot {
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    background: var(--cat-yellow, #ffcc00);
-    box-shadow: 0 0 8px 1px var(--cat-yellow, #ffcc00);
-    flex-shrink: 0;
-    animation: masthead-pulse 2.2s ease-in-out infinite;
-  }
-  @keyframes masthead-pulse {
-    0%, 100% { opacity: 0.55; }
-    50% { opacity: 1; }
-  }
-  #masthead .masthead-text {
-    font-family: var(--font-mono, 'Share Tech Mono', monospace);
-    font-size: 10.5px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: var(--text-muted, #8a9199);
-    white-space: nowrap;
-  }
-  #masthead .masthead-text strong {
-    color: var(--text-primary, #eef0f2);
-    font-weight: 600;
-  }
-  @media (max-width: 860px) {
-    #masthead { display: none; } /* en pantallas angostas cede el espacio a los paneles */
-  }
-</style>
 </head>
 <body>
-
-<!-- Rótulo superior tipo HUD: refuerza la identidad "sala de control /
-     nave" sin competir por espacio con los paneles de control ni el HUD
-     inferior. Puramente informativo (pointer-events desactivado). -->
-<div id="masthead" class="glass-panel" aria-hidden="true">
-  <span class="status-dot"></span>
-  <span class="masthead-text"><strong>SIMULADOR DE FRENADO</strong> · Maquinaria Pesada · Sesión en vivo</span>
-</div>
 
 <!-- ==========================================================
      CAPA DE FONDO: CANVAS 3D (Three.js se monta aquí)
@@ -402,6 +336,7 @@
 
     <div class="hud-actions">
       <button id="soundBtn" class="btn btn-secondary btn-icon" style="margin-top:0;" aria-pressed="false">🔊 Sonido</button>
+      <button id="headlightsBtn" class="btn btn-secondary btn-icon" style="margin-top:0;" aria-pressed="true" title="Enciende/apaga los faros delanteros del vehículo">💡 Faros</button>
       <button id="screenshotBtn" class="btn btn-secondary btn-icon" style="margin-top:0;">📸 Captura</button>
       <button id="exportBtn" class="btn btn-secondary" style="margin-top:0;">Exportar datos</button>
       <button id="shareBtn" class="btn btn-secondary btn-icon" style="margin-top:0;" title="Copia un enlace que abre el simulador con este mismo escenario ya configurado">🔗 Compartir</button>
