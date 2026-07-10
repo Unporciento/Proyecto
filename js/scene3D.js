@@ -409,9 +409,11 @@ const Scene3D = (function () {
         varying float vGrowth;
         varying float vFogDepth;
 
-        #ifdef USE_INSTANCING
-          attribute mat4 instanceMatrix;
-        #endif
+        // NOTA: la variable instanceMatrix NO se declara acá — Three.js ya
+        // la inyecta automáticamente (junto con USE_INSTANCING) en
+        // cualquier material usado sobre un InstancedMesh. Declararla de
+        // nuevo la duplicaba y rompía la compilación del shader (por eso
+        // el pasto no se dibujaba en NINGÚN terreno, no solo en Hielo).
 
         void main() {
           vHeight = color.g;
