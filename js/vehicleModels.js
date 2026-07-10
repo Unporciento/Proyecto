@@ -109,6 +109,65 @@ const VehicleModels = (function () {
   }
 
   /**
+   * Faros delanteros funcionales: lente emisivo (esfera pequeña, visible
+   * siempre) + THREE.SpotLight real que ilumina la pista por delante del
+   * vehículo. Se montan en el extremo local -X, que es el que efectivamente
+   * apunta en la dirección de avance del mundo (+Z) una vez que main.js
+   * aplica `vehicleGroup.rotation.y = 90°` — el mismo eje que ya usa
+   * `Scene3D.updateDriverView()` para mirar "hacia adelante" (ver
+   * `setDriverViewTarget(group, forward, height)` en main.js), así que los
+   * faros quedan alineados con la vista de cabina sin importar hacia qué
+   * lado quede la cabina decorativa de cada modelo.
+   *
+   * Ambos nodos (lente + luz + su target) son hijos del `group` del
+   * vehículo, así que heredan automáticamente su rotación/posición cada
+   * frame — no hace falta reposicionarlos a mano en main.js, solo
+   * prender/apagar (`light.intensity`/`lens.material.emissiveIntensity`).
+   *
+   * @param {THREE.Group} group   grupo del vehículo (mismo que build*() retorna)
+   * @param {number} halfLength   mitad del largo del vehículo (define el bumper delantero)
+   * @param {number} y            altura del faro sobre el chasis
+   * @param {number} spread       separación lateral desde el eje central (medio track)
+   * @returns {{headlights: THREE.SpotLight[], headlightLenses: THREE.Mesh[]}}
+   */
+  function addHeadlights(group, halfLength, y, spread) {
+    const frontX = -halfLength * 0.94; // extremo -X = frente real (dirección de avance)
+    const lensGeo = new THREE.SphereGeometry(0.1, 10, 8);
+    const headlights = [];
+    const headlightLenses = [];
+
+    [spread, -spread].forEach((zOff) => {
+      const lensMat = new THREE.MeshStandardMaterial({
+        color: 0xfff6d8,
+        emissive: 0xfff6d8,
+        emissiveIntensity: 1.6,
+        roughness: 0.25,
+        metalness: 0.1
+      });
+      const lens = new THREE.Mesh(lensGeo, lensMat);
+      lens.position.set(frontX, y, zOff);
+      group.add(lens);
+      headlightLenses.push(lens);
+
+      // ángulo/penumbra moderados: un cono de luz realista sobre el asfalto
+      // y las bermas, sin costo de sombra (castShadow=false, ya hay sombra
+      // dura del sol/luna — un segundo shadow map por faro sería caro).
+      const spot = new THREE.SpotLight(0xfff6d8, 3.4, 36, Math.PI / 6.4, 0.45, 1.6);
+      spot.position.set(frontX, y, zOff);
+      spot.castShadow = false;
+      group.add(spot);
+
+      const target = new THREE.Object3D();
+      target.position.set(frontX - halfLength * 2.4, y * 0.5, zOff * 0.4);
+      group.add(target);
+      spot.target = target;
+      headlights.push(spot);
+    });
+
+    return { headlights, headlightLenses };
+  }
+
+  /**
    * FURGÓN (2 ton): cabina + caja de carga simple, 2 ejes.
    */
   function buildFurgon() {
@@ -145,7 +204,9 @@ const VehicleModels = (function () {
     addAxle(group, 1.3, 0, 0.42, 0.35, trackWidth);
     addAxle(group, -1.3, 0, 0.42, 0.35, trackWidth);
 
-    return { group, halfLength: 2.4, wheelRadius: 0.42, trackWidth };
+    const { headlights, headlightLenses } = addHeadlights(group, 2.4, 0.62, 0.7);
+
+    return { group, halfLength: 2.4, wheelRadius: 0.42, trackWidth, headlights, headlightLenses };
   }
 
   /**
@@ -188,7 +249,9 @@ const VehicleModels = (function () {
     addAxle(group, 3.4, 0, 0.55, 0.4, trackWidth);
     addAxle(group, -3.4, 0, 0.55, 0.4, trackWidth);
 
-    return { group, halfLength: 4.9, wheelRadius: 0.55, trackWidth };
+    const { headlights, headlightLenses } = addHeadlights(group, 4.9, 0.75, 0.95);
+
+    return { group, halfLength: 4.9, wheelRadius: 0.55, trackWidth, headlights, headlightLenses };
   }
 
   /**
@@ -246,7 +309,9 @@ const VehicleModels = (function () {
     addAxle(group, -4.2, 0, 1.35, 0.9, trackWidth);
     addAxle(group, -5.6, 0, 1.35, 0.9, trackWidth);
 
-    return { group, halfLength: 6.0, wheelRadius: 1.35, trackWidth };
+    const { headlights, headlightLenses } = addHeadlights(group, 6.0, 1.55, 2.0);
+
+    return { group, halfLength: 6.0, wheelRadius: 1.35, trackWidth, headlights, headlightLenses };
   }
 
   /**
@@ -298,7 +363,9 @@ const VehicleModels = (function () {
     addAxle(group, -1.0, 0, 0.5, 0.4, trackWidth);   // primer eje del remolque
     addAxle(group, -3.4, 0, 0.5, 0.4, trackWidth);   // segundo eje del remolque
 
-    return { group, halfLength: 5.3, wheelRadius: 0.5, trackWidth };
+    const { headlights, headlightLenses } = addHeadlights(group, 5.3, 0.7, 0.85);
+
+    return { group, halfLength: 5.3, wheelRadius: 0.5, trackWidth, headlights, headlightLenses };
   }
 
   /**
@@ -356,7 +423,9 @@ const VehicleModels = (function () {
     addAxle(group, 0.0, 0, 0.6, 0.45, trackWidth);
     addAxle(group, -2.6, 0, 0.6, 0.45, trackWidth);
 
-    return { group, halfLength: 4.5, wheelRadius: 0.6, trackWidth };
+    const { headlights, headlightLenses } = addHeadlights(group, 4.5, 0.8, 0.95);
+
+    return { group, halfLength: 4.5, wheelRadius: 0.6, trackWidth, headlights, headlightLenses };
   }
 
   const BUILDERS = {
@@ -377,7 +446,7 @@ const VehicleModels = (function () {
    * main.js pueda ubicar huellas de frenado y humo bajo las ruedas reales
    * de cada vehículo, en vez de un punto genérico bajo el chasis.
    * @param {'furgon'|'bus'|'minero'} type
-   * @returns {{group: THREE.Group, halfLength: number, wheelRadius: number, trackWidth: number}}
+   * @returns {{group: THREE.Group, halfLength: number, wheelRadius: number, trackWidth: number, headlights: THREE.SpotLight[], headlightLenses: THREE.Mesh[]}}
    */
   function build(type) {
     const builder = BUILDERS[type] || BUILDERS.furgon;
