@@ -16,7 +16,7 @@ const Scene3D = (function () {
   // Referencias a luces + cielo/estrellas (biomas por terreno): se guardan
   // a nivel de módulo para que setTerrainVisual() pueda retocar color e
   // intensidad sin tener que reconstruir toda la escena.
-  let hemiLight, sunLight, rimLight, skyMesh, starsMesh;
+  let hemiLight, sunLight, rimLight, skyMesh, starsMesh, sunSprite;
   let currentEnvKey = 'asfalto';
   // Ronda 7: se pone en `true` solo si init() construyó la escena real
   // (WebGL disponible). El resto de las funciones públicas de este módulo
@@ -512,6 +512,26 @@ const Scene3D = (function () {
   }
 
   /**
+   * Recoloca en Y (altura) las instancias de pasto ya existentes según la
+   * ondulación/pendiente ACTUAL del terreno, sin volver a sortear X/Z
+   * (así el campo de pasto no "salta" a posiciones nuevas, solo sube o
+   * baja para pegarse al suelo). Se llama desde rebuildTerrainGeometry()
+   * cada vez que cambia Inclinación Máxima o el Perfil de camino.
+   */
+  const _grassDummy = new THREE.Object3D();
+  function repositionGrassField() {
+    if (!grassMesh) return;
+    for (let i = 0; i < GRASS_MAX; i++) {
+      grassMesh.getMatrixAt(i, _grassDummy.matrix);
+      _grassDummy.matrix.decompose(_grassDummy.position, _grassDummy.quaternion, _grassDummy.scale);
+      _grassDummy.position.y = getHeightAt(_grassDummy.position.z);
+      _grassDummy.updateMatrix();
+      grassMesh.setMatrixAt(i, _grassDummy.matrix);
+    }
+    grassMesh.instanceMatrix.needsUpdate = true;
+  }
+
+  /**
    * Conos de seguridad anaranjados (elementos de "faena minera"), generados
    * proceduralmente con ConeGeometry — sin archivos .gltf externos, así que
    * no hay bloqueos CORS al abrir el proyecto localmente. Se ubican a ambos
@@ -663,6 +683,12 @@ const Scene3D = (function () {
     buildDistanceMarkers();
     buildSafetyCones();
     buildImpactWall();
+    // El césped es un InstancedMesh aparte (nunca se reconstruye, ver
+    // buildGrassField): si cambia la pendiente/perfil de camino hay que
+    // reubicar sus instancias en Y para que sigan la nueva ondulación,
+    // o quedarían flotando o enterradas respecto al terreno recién
+    // reconstruido.
+    repositionGrassField();
   }
 
   /**
@@ -1132,6 +1158,7 @@ const Scene3D = (function () {
     sunLight.shadow.camera.far = 200;
     // Bordes de sombra más duros y definidos (menos "bias" de suavizado)
     sunLight.shadow.radius = 1;
+    sunLight.shadow.bias = -0.0018; // reduce "shadow acne" (bandas/moiré) en superficies casi paralelas al sol
     scene.add(sunLight);
 
     // Luz de relleno fría desde el lado opuesto al sol: separa la
@@ -1144,6 +1171,41 @@ const Scene3D = (function () {
     const accent = new THREE.PointLight(0xe63946, 0.4, 40);
     accent.position.set(-10, 8, -10);
     scene.add(accent);
+
+    // Disco de resplandor del sol: sin esto el DirectionalLight es
+    // invisible (solo se nota su efecto sobre otros objetos) — un sprite
+    // con textura radial ubicado lejos, en la misma dirección que la luz,
+    // le da al cielo un punto focal real que además cambia de color/
+    // intensidad por bioma (ver applyEnvironment).
+    const glowTex = makeSunGlowTexture(0xfff2d6);
+    sunSprite = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: glowTex,
+      color: 0xffffff,
+      transparent: true,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending,
+      fog: false
+    }));
+    const sunDir = sunLight.position.clone().normalize();
+    sunSprite.position.copy(sunDir.multiplyScalar(300));
+    sunSprite.scale.set(70, 70, 1);
+    scene.add(sunSprite);
+  }
+
+  /** Textura radial (canvas 2D) para el disco de resplandor del sol. */
+  function makeSunGlowTexture(hexColor) {
+    const size = 256;
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = size;
+    const ctx = canvas.getContext('2d');
+    const c = new THREE.Color(hexColor);
+    const grd = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+    grd.addColorStop(0, 'rgba(255,255,255,1)');
+    grd.addColorStop(0.22, `rgba(${c.r * 255}, ${c.g * 255}, ${c.b * 255}, 0.9)`);
+    grd.addColorStop(1, `rgba(${c.r * 255}, ${c.g * 255}, ${c.b * 255}, 0)`);
+    ctx.fillStyle = grd;
+    ctx.fillRect(0, 0, size, size);
+    return new THREE.CanvasTexture(canvas);
   }
 
   /**
@@ -1249,6 +1311,14 @@ const Scene3D = (function () {
     if (sunLight) {
       sunLight.color.setHex(env.sunColor);
       sunLight.intensity = env.sunIntensity;
+    }
+    if (sunSprite) {
+      sunSprite.material.map.dispose(); // libera la textura de canvas anterior antes de crear la nueva
+      sunSprite.material.map = makeSunGlowTexture(env.sunColor);
+      sunSprite.material.needsUpdate = true;
+      // más opaco/brillante en cielos despejados (mucha luz), más tenue
+      // cuando el sol es débil (nieve/hielo con niebla densa)
+      sunSprite.material.opacity = THREE.MathUtils.clamp(env.sunIntensity / 1.8, 0.5, 1);
     }
     if (hemiLight) {
       hemiLight.color.setHex(env.hemiSky);
