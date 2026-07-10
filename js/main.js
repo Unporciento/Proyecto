@@ -45,6 +45,9 @@
     vehicleHalfLength: 1,
     vehicleWheelRadius: 0.4,
     vehicleTrackWidth: 2.0,
+    vehicleHeadlights: [],       // THREE.SpotLight[] del vehículo activo (ver VehicleModels.addHeadlights)
+    vehicleHeadlightLenses: [],  // THREE.Mesh[] lente emisivo de cada faro
+    headlightsOn: true,          // estado persistente entre reconstrucciones de vehículo (cambiar de maquinaria no los apaga)
 
     // Acumulador de tiempo para espaciar la generación de huellas/humo
     // (no queremos un plano nuevo en cada frame a 60fps, sino cada ~90ms).
@@ -108,6 +111,7 @@
     cinemaBtn: document.getElementById('cinemaBtn'),
     restoreBtn: document.getElementById('restoreBtn'),
     soundBtn: document.getElementById('soundBtn'),
+    headlightsBtn: document.getElementById('headlightsBtn'),
     driverViewBtn: document.getElementById('driverViewBtn'),
     speedChips: document.querySelectorAll('.slider-presets[data-target="speedSlider"] .chip'),
     brakeChips: document.querySelectorAll('.slider-presets[data-target="brakeSlider"] .chip'),
@@ -134,7 +138,10 @@
     eventOverlay: document.getElementById('eventOverlay'),
     presenterCursor: document.getElementById('presenterCursor'),
     boardCard: document.getElementById('boardCard'),
-    boardModalBackdrop: document.getElementById('boardModalBackdrop')
+    boardModalBackdrop: document.getElementById('boardModalBackdrop'),
+
+    // Ronda 20 — restablecer configuración a los valores por defecto
+    resetSettingsBtn: document.getElementById('resetSettingsBtn')
   };
 
   // --------------------------------------------------------------------
@@ -243,6 +250,25 @@
   // Nunca se llama antes de eso: init() llama primero a Scene3D.init()
   // y solo después a rebuildVehicle(). Si en el futuro se invoca desde
   // otro punto del código, hay que verificar `sceneRefs` antes de usarla.
+  /**
+   * Prende/apaga los faros del vehículo activo: sube/baja la intensidad
+   * real del THREE.SpotLight (así realmente ilumina o deja de iluminar la
+   * pista) y la emisividad de su lente visible (para que el faro se vea
+   * "apagado", no solo que deje de alumbrar). Guarda la intensidad
+   * original en userData la primera vez que se toca cada luz/lente, para
+   * poder restaurarla exactamente al volver a encenderla.
+   */
+  function applyHeadlightsState(on) {
+    state.vehicleHeadlights.forEach((light) => {
+      if (light.userData.baseIntensity === undefined) light.userData.baseIntensity = light.intensity;
+      light.intensity = on ? light.userData.baseIntensity : 0;
+    });
+    state.vehicleHeadlightLenses.forEach((lens) => {
+      if (lens.userData.baseEmissive === undefined) lens.userData.baseEmissive = lens.material.emissiveIntensity;
+      lens.material.emissiveIntensity = on ? lens.userData.baseEmissive : 0.05;
+    });
+  }
+
   function rebuildVehicle() {
     if (!sceneRefs) {
       console.warn('rebuildVehicle() llamada antes de que Scene3D.init() terminara.');
@@ -261,6 +287,12 @@
     state.vehicleHalfLength = built.halfLength;
     state.vehicleWheelRadius = built.wheelRadius;
     state.vehicleTrackWidth = built.trackWidth || 2.0;
+    // Cada reconstrucción crea faros NUEVOS (son parte del modelo, ver
+    // vehicleModels.js:addHeadlights) — hay que volver a aplicarles el
+    // estado on/off vigente, si no siempre nacerían encendidos.
+    state.vehicleHeadlights = built.headlights || [];
+    state.vehicleHeadlightLenses = built.headlightLenses || [];
+    applyHeadlightsState(state.headlightsOn);
 
     // Orientar el vehículo para que avance a lo largo del eje Z
     state.vehicleGroup.rotation.y = Math.PI / 2;
@@ -329,6 +361,33 @@
     chips.forEach((chip) => {
       chip.classList.toggle('active', Number(chip.dataset.value) === value);
     });
+  }
+
+  // --------------------------------------------------------------------
+  // RONDA 20 — SINCRONIZAR LOS CONTROLES DEL DOM CON `state`
+  // --------------------------------------------------------------------
+  // Extraído del bloque que antes vivía solo dentro de init() para que
+  // resetToDefaults() (más abajo) pueda reutilizarlo exactamente igual,
+  // sin duplicar la lista de 9 asignaciones + fills + chips. Cualquier
+  // control nuevo que dependa de `state` debe sincronizarse aquí para que
+  // tanto la carga inicial como el restablecimiento de fábrica lo reflejen.
+  function syncControlsFromState() {
+    dom.vehicleSelect.value = state.vehicleType;
+    dom.terrainSelect.value = state.terrain;
+    dom.roadProfileSelect.value = state.roadProfile;
+    dom.speedSlider.value = state.initialSpeedKmh;
+    dom.speedValue.textContent = state.initialSpeedKmh;
+    dom.brakeSlider.value = state.brakePressure;
+    dom.brakeValue.textContent = state.brakePressure;
+    dom.maxSlopeSlider.value = state.maxSlopeDeg;
+    dom.maxSlopeValue.textContent = state.maxSlopeDeg;
+    updateSliderFill(dom.speedSlider);
+    updateSliderFill(dom.brakeSlider);
+    updateSliderFill(dom.maxSlopeSlider);
+    highlightChips(dom.speedChips, state.initialSpeedKmh);
+    highlightChips(dom.brakeChips, state.brakePressure);
+    highlightChips(dom.maxSlopeChips, state.maxSlopeDeg);
+    updateRoadProfileUI();
   }
 
   // --------------------------------------------------------------------
@@ -520,6 +579,55 @@
         toggleBoardModal(false);
       }
     });
+  }
+
+  // --------------------------------------------------------------------
+  // RONDA 20 — RESTABLECER VALORES POR DEFECTO
+  // --------------------------------------------------------------------
+  // Complementa los "Casos de prueba" (que configuran escenarios
+  // específicos para la defensa): este botón vuelve la maquinaria, el
+  // terreno, el perfil de camino y los tres sliders a los valores de
+  // fábrica del simulador (los mismos que main.js usa si no hay nada
+  // guardado en localStorage ni parámetros en la URL), por si el usuario
+  // quedó en una configuración extrema (p. ej. tras el Caso B/C) y quiere
+  // volver a empezar sin recordar cuáles eran los valores originales.
+  // Reutiliza `applyStateFromPlainObject()` (la misma validación que ya
+  // usan loadSettings()/loadSettingsFromURL()) para no duplicar reglas.
+  const DEFAULT_SETTINGS = Object.freeze({
+    vehicleType: 'furgon',
+    terrain: 'asfalto',
+    roadProfile: 'lomas',
+    initialSpeedKmh: 80,
+    brakePressure: 100,
+    maxSlopeDeg: 8
+  });
+
+  function resetToDefaults() {
+    // Igual que con los Casos de prueba, no se permite restablecer a
+    // mitad de una corrida (corrompería el HUD/gráficos en curso).
+    if (state.isRunning) {
+      showToast('Detené la simulación antes de restablecer');
+      return;
+    }
+
+    applyStateFromPlainObject(DEFAULT_SETTINGS);
+    syncControlsFromState();
+
+    AudioEngine.setVehicle(state.vehicleType);
+    rebuildVehicle();
+    // setMaxSlope/setRoadProfile reconstruyen la geometría del terreno
+    // (pista, bermas, marcadores, conos); se llaman ambas porque tanto la
+    // pendiente máxima como el perfil de camino pueden volver a su
+    // default — es una acción puntual de un solo clic, no un hot path.
+    Scene3D.setMaxSlope(state.maxSlopeDeg);
+    Scene3D.setRoadProfile(state.roadProfile);
+    Scene3D.setTerrainVisual(state.terrain, MathCore.getTerrainData(state.terrain));
+
+    recomputeCoefficients();
+    showStaticPreview();
+    Dashboard.clearGhost(); // un restablecimiento total también descarta la comparación fantasma
+    persistSettings();
+    showToast('↺ Configuración restablecida');
   }
 
   // --------------------------------------------------------------------
@@ -1099,6 +1207,16 @@
       dom.soundBtn.setAttribute('aria-pressed', String(muted));
     });
 
+    if (dom.headlightsBtn) {
+      dom.headlightsBtn.addEventListener('click', () => {
+        state.headlightsOn = !state.headlightsOn;
+        applyHeadlightsState(state.headlightsOn);
+        dom.headlightsBtn.textContent = state.headlightsOn ? '💡 Faros' : '🔦 Faros';
+        dom.headlightsBtn.classList.toggle('muted', !state.headlightsOn);
+        dom.headlightsBtn.setAttribute('aria-pressed', String(state.headlightsOn));
+      });
+    }
+
     dom.cinemaBtn.addEventListener('click', () => {
       toggleBoardModal(false); // ver nota en toggleBoardModal: no pueden coexistir
       dom.appShell.classList.add('cinema-mode');
@@ -1126,6 +1244,10 @@
     dom.scenarioButtons.forEach((btn) => {
       btn.addEventListener('click', () => applyScenario(btn.dataset.scenario));
     });
+
+    if (dom.resetSettingsBtn) {
+      dom.resetSettingsBtn.addEventListener('click', resetToDefaults);
+    }
 
     if (dom.boardCard) {
       dom.boardCard.addEventListener('click', () => toggleBoardModal());
@@ -1515,15 +1637,7 @@
     // Refleja la configuración cargada (o los valores por defecto del HTML)
     // en los controles ANTES de construir la escena, para que el terreno
     // inicial ya nazca con la pendiente máxima correcta.
-    dom.vehicleSelect.value = state.vehicleType;
-    dom.terrainSelect.value = state.terrain;
-    dom.roadProfileSelect.value = state.roadProfile;
-    dom.speedSlider.value = state.initialSpeedKmh;
-    dom.speedValue.textContent = state.initialSpeedKmh;
-    dom.brakeSlider.value = state.brakePressure;
-    dom.brakeValue.textContent = state.brakePressure;
-    dom.maxSlopeSlider.value = state.maxSlopeDeg;
-    dom.maxSlopeValue.textContent = state.maxSlopeDeg;
+    syncControlsFromState();
 
     sceneRefs = Scene3D.init(dom.canvasContainer, state.maxSlopeDeg, state.roadProfile);
     Dashboard.init();
@@ -1531,13 +1645,6 @@
     rebuildVehicle();
     recomputeCoefficients();
     Scene3D.setTerrainVisual(state.terrain, MathCore.getTerrainData(state.terrain));
-    updateSliderFill(dom.speedSlider);
-    updateSliderFill(dom.brakeSlider);
-    updateSliderFill(dom.maxSlopeSlider);
-    highlightChips(dom.speedChips, state.initialSpeedKmh);
-    highlightChips(dom.brakeChips, state.brakePressure);
-    highlightChips(dom.maxSlopeChips, state.maxSlopeDeg);
-    updateRoadProfileUI();
     showStaticPreview();
     bindEvents();
     initHudSpacingObserver();
