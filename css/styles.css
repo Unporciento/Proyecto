@@ -1,0 +1,1380 @@
+/* ============================================================================
+   styles.css
+   SISTEMA DE DISEÑO — DASHBOARD INDUSTRIAL DE FRENADO DE EMERGENCIA
+   ============================================================================
+   Paleta: negro industrial + amarillo Caterpillar + rojo peligro.
+   Estilo: paneles de cristal (glassmorphism) flotando sobre el canvas 3D.
+   ============================================================================ */
+
+:root {
+  /* --- Superficies --- */
+  --void: #06070a;
+  --panel-bg: rgba(18, 21, 25, 0.62);
+  --panel-border: rgba(255, 255, 255, 0.08);
+  --panel-border-strong: rgba(255, 204, 0, 0.35);
+
+  /* --- Acentos industriales --- */
+  --cat-yellow: #ffcc00;
+  --cat-yellow-dim: #b38f00;
+  --danger-red: #e63946;
+  --ok-green: #4ade80;
+  --steel: #4a5d6a;
+
+  /* --- Texto --- */
+  --text-primary: #eef0f2;
+  --text-muted: #8a9199;
+  --text-faint: #565c63;
+
+  /* --- Tipografía --- */
+  --font-display: 'Rajdhani', 'Barlow Semi Condensed', sans-serif;
+  --font-body: 'Barlow', 'Segoe UI', sans-serif;
+  --font-mono: 'Share Tech Mono', 'Consolas', monospace;
+
+  /* --- Radios y sombras --- */
+  --radius: 16px;
+  --blur: 18px;
+  --shadow-panel: 0 10px 34px rgba(0, 0, 0, 0.5);
+
+  /* --- Espaciado entre tarjetas (Ronda 6): antes todo vivía apretado
+     dentro de un único glass-panel por columna; ahora cada columna es un
+     wrapper de layout con varias tarjetas reales separadas por --stack-gap,
+     así ninguna se percibe "encima" de otra. --- */
+  --stack-gap: 18px;
+
+  /* --- Altura real del HUD inferior, medida en vivo por main.js (syncHudSpacing) ---
+     Empieza con un valor de respaldo razonable para el primer frame antes de que
+     JS pueda medir el elemento; luego se sobreescribe con la altura exacta.
+     Ronda 6: ahora el HUD tiene 2 filas fijas (métricas + acciones), así
+     que el valor de respaldo sube para reflejar esa altura real. */
+  --hud-height: 176px;
+
+  /* --- Colchón de seguridad extra bajo el HUD (Ronda 6): además de la
+     altura medida, siempre se reserva este margen fijo para que, aunque
+     el cálculo en vivo llegue un frame tarde, jamás se vea un panel
+     tapado por el HUD ni fundido visualmente con su blur. --- */
+  --hud-safety-gap: 40px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--void);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  overflow: hidden;
+}
+
+/* ----------------------------------------------------------------------
+   CAPA 3D DE FONDO
+   ---------------------------------------------------------------------- */
+#canvasContainer {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+#canvasContainer canvas {
+  display: block;
+}
+
+/* ----------------------------------------------------------------------
+   FALLBACK SIN WEBGL (Ronda 7) — se inyecta dentro de #canvasContainer
+   cuando Scene3D detecta que el navegador/GPU no puede crear un contexto
+   WebGL. El resto del dashboard (gráficos, HUD, pizarra) sigue
+   funcionando con normalidad; solo la capa 3D queda reemplazada por este
+   aviso.
+   ---------------------------------------------------------------------- */
+.webgl-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 40px;
+  text-align: center;
+  background: radial-gradient(circle at 50% 40%, #1c2126 0%, var(--void) 75%);
+}
+
+.webgl-fallback-icon {
+  font-size: 42px;
+  line-height: 1;
+  color: var(--danger-red);
+  text-shadow: 0 0 24px rgba(230, 57, 70, 0.5);
+}
+
+.webgl-fallback-title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  max-width: 560px;
+}
+
+.webgl-fallback-text {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-muted);
+  max-width: 480px;
+  line-height: 1.5;
+}
+
+/* ----------------------------------------------------------------------
+   ESTRUCTURA GENERAL DEL DASHBOARD
+   ---------------------------------------------------------------------- */
+.app-shell {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 300px 1fr 320px;
+  grid-template-rows: 1fr;
+  grid-template-areas: "left . right";
+  gap: 20px;
+  padding: 20px;
+  /* Deja espacio bajo el HUD (que es position:fixed, fuera del flujo del grid).
+     Antes esto era un número fijo (128px) que asumía una altura de HUD que
+     dejó de ser cierta apenas el HUD creció (texto de estado más largo,
+     brake fade, viewports angostos que envuelven los botones a una segunda
+     fila) → los paneles quedaban tapados por el HUD. Luego (Ronda 5) pasó a
+     depender solo de --hud-height medido en vivo por main.js, pero un
+     ResizeObserver que aún no disparó su primer callback (p. ej. el frame
+     inicial, o navegadores lentos) podía dejar, por un instante, el gráfico
+     de temperatura asomándose bajo el HUD (ver captura de la Ronda 6).
+     Ahora se suma SIEMPRE --hud-safety-gap como colchón fijo además de la
+     medición en vivo, así el espacio reservado nunca es insuficiente. */
+  padding-bottom: calc(var(--hud-height) + var(--hud-safety-gap));
+  pointer-events: none; /* deja pasar los clics al canvas salvo en los paneles */
+}
+
+.app-shell > * {
+  pointer-events: auto;
+}
+
+/* ----------------------------------------------------------------------
+   PANEL DE CRISTAL — BASE COMPARTIDA
+   ---------------------------------------------------------------------- */
+.glass-panel {
+  position: relative;
+  background: var(--panel-bg);
+  border: 1px solid var(--panel-border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(var(--blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--blur)) saturate(140%);
+  box-shadow: var(--shadow-panel);
+  transition: opacity 0.5s ease, transform 0.5s ease, filter 0.5s ease, border-color 0.25s ease;
+  overflow: hidden;
+}
+
+/* Filete superior de acento (Ronda 6): un borde amarillo sutil en el
+   borde superior de cada tarjeta le da identidad propia y refuerza,
+   visualmente, dónde empieza y termina cada bloque — útil ahora que hay
+   más tarjetas independientes en pantalla. */
+.glass-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--cat-yellow) 30%, var(--cat-yellow) 70%, transparent);
+  opacity: 0.5;
+}
+
+.glass-panel:hover {
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px 10px 18px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.panel-header .eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 2px;
+  color: var(--cat-yellow);
+  text-transform: uppercase;
+}
+
+.panel-header h2 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: 0.5px;
+  margin: 0;
+  text-transform: uppercase;
+}
+
+.panel-body {
+  padding: 16px 18px 20px 18px;
+  overflow-y: auto;
+}
+
+/* ----------------------------------------------------------------------
+   COLUMNAS COMO WRAPPERS DE LAYOUT (Ronda 6)
+   ---------------------------------------------------------------------- */
+/* `.panel-left` y `.panel-right` ya NO son ellas mismas glass-panel: son
+   simples contenedores flex en columna que organizan varias tarjetas
+   `.glass-panel` reales, cada una con su propio fondo/blur/sombra y
+   separadas por un gap real (`--stack-gap`). Antes todo el contenido de
+   una columna vivía dentro de un único glass-panel (o, en el caso del
+   panel derecho, dentro de secciones con `style="border:none"` que las
+   dejaba sin identidad visual propia) → todo se sentía apilado "encima
+   de sí mismo". Con tarjetas independientes y gap real, nada se solapa
+   ni se funde visualmente con lo de al lado. */
+.panel-left,
+.panel-right {
+  grid-area: left;
+  display: flex;
+  flex-direction: column;
+  gap: var(--stack-gap);
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.panel-right {
+  grid-area: right;
+}
+
+.panel-left::-webkit-scrollbar,
+.panel-right::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panel-left::-webkit-scrollbar-thumb,
+.panel-right::-webkit-scrollbar-thumb {
+  background: rgba(255, 204, 0, 0.25);
+  border-radius: 4px;
+}
+
+/* Tarjeta base para el panel izquierdo (comparte look con .chart-panel) */
+.panel-card {
+  flex: 0 0 auto;
+}
+
+/* La tarjeta de la Pizarra no debe encogerse si el contenedor scrollea */
+.panel-card-board {
+  flex-shrink: 0;
+}
+
+.control-group {
+  margin-bottom: 18px;
+}
+
+.control-group label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+
+.control-group label .value-tag {
+  font-family: var(--font-mono);
+  color: var(--cat-yellow);
+  font-size: 13px;
+}
+
+select, input[type="range"] {
+  width: 100%;
+}
+
+/* ----------------------------------------------------------------------
+   SISTEMA DE SLIDERS — velocidad / freno
+   ---------------------------------------------------------------------- */
+.slider-group {
+  margin-bottom: 24px;
+}
+
+.slider-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.slider-label-row label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.slider-pill {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cat-yellow);
+  background: rgba(255, 204, 0, 0.08);
+  border: 1px solid var(--panel-border-strong);
+  padding: 4px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+
+.brake-control .slider-pill {
+  color: var(--danger-red);
+  background: rgba(230, 57, 70, 0.08);
+  border-color: rgba(230, 57, 70, 0.4);
+}
+
+.slider-track-wrap {
+  position: relative;
+  padding-bottom: 16px;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  position: relative;
+  z-index: 2;
+  height: 8px;
+  border-radius: 6px;
+  background: linear-gradient(90deg,
+    var(--cat-yellow) 0%,
+    var(--cat-yellow) var(--fill, 50%),
+    rgba(255, 255, 255, 0.08) var(--fill, 50%));
+  cursor: pointer;
+  transition: box-shadow 0.15s ease;
+}
+
+.brake-control input[type="range"] {
+  background: linear-gradient(90deg,
+    var(--danger-red) 0%,
+    var(--danger-red) var(--fill, 50%),
+    rgba(255, 255, 255, 0.08) var(--fill, 50%));
+}
+
+input[type="range"]:hover {
+  box-shadow: 0 0 0 4px rgba(255, 204, 0, 0.08);
+}
+
+.brake-control input[type="range"]:hover {
+  box-shadow: 0 0 0 4px rgba(230, 57, 70, 0.08);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--cat-yellow);
+  border: 3px solid #14171a;
+  box-shadow: 0 0 10px rgba(255, 204, 0, 0.7), 0 2px 6px rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: transform 0.12s ease;
+}
+
+input[type="range"]:active::-webkit-slider-thumb {
+  transform: scale(1.15);
+}
+
+.brake-control input[type="range"]::-webkit-slider-thumb {
+  background: var(--danger-red);
+  box-shadow: 0 0 10px rgba(230, 57, 70, 0.7), 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--cat-yellow);
+  border: 3px solid #14171a;
+  box-shadow: 0 0 10px rgba(255, 204, 0, 0.7);
+  cursor: pointer;
+}
+
+.brake-control input[type="range"]::-moz-range-thumb {
+  background: var(--danger-red);
+  box-shadow: 0 0 10px rgba(230, 57, 70, 0.7);
+}
+
+.slider-ticks {
+  display: flex;
+  justify-content: space-between;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 18px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.3px;
+  color: var(--text-faint);
+  pointer-events: none;
+}
+
+/* Los extremos (min/max) se alinean a los bordes reales del thumb en vez
+   de al borde del track, y los del medio quedan centrados — así ningún
+   número queda pegado al valor actual mostrado en la píldora ni se corta
+   contra el borde de la tarjeta. */
+.slider-ticks span:first-child { text-align: left; }
+.slider-ticks span:last-child { text-align: right; }
+.slider-ticks span:not(:first-child):not(:last-child) { text-align: center; }
+
+.slider-presets {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.chip {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--panel-border);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  padding: 7px 0;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.chip:hover {
+  border-color: var(--cat-yellow);
+  color: var(--cat-yellow);
+}
+
+.chip.active {
+  background: rgba(255, 204, 0, 0.14);
+  border-color: var(--cat-yellow);
+  color: var(--cat-yellow);
+}
+
+.brake-control .chip:hover {
+  border-color: var(--danger-red);
+  color: var(--danger-red);
+}
+
+.brake-control .chip.active {
+  background: rgba(230, 57, 70, 0.14);
+  border-color: var(--danger-red);
+  color: var(--danger-red);
+}
+
+/* Ronda 9 — Perfil de camino: el slider de "Inclinación máxima" solo
+   aplica cuando el perfil activo es "Lomas" (sinusoidal); en "Recto" y
+   "Bajada pronunciada" se atenúa y bloquea para no sugerir un ajuste
+   sin efecto real. */
+.slope-control.profile-disabled {
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-color: rgba(255, 255, 255, 0.05);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'><path d='M1 1l6 6 6-6' fill='none' stroke='%23FFCC00' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  border: 1px solid var(--panel-border);
+  color: var(--text-primary);
+  padding: 10px 36px 10px 12px;
+  border-radius: 8px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+select option {
+  background-color: #14171a;
+  color: var(--text-primary);
+  padding: 8px;
+}
+
+select:hover {
+  border-color: var(--panel-border-strong);
+}
+
+select:focus, input:focus, button:focus {
+  outline: 2px solid var(--cat-yellow);
+  outline-offset: 1px;
+}
+
+.divider {
+  height: 1px;
+  background: var(--panel-border);
+  margin: 18px 0;
+}
+
+/* Panel de fórmula en vivo */
+.formula-box {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--panel-border-strong);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--text-muted);
+  margin-bottom: 18px;
+}
+
+.formula-box .fx {
+  color: var(--ok-green);
+}
+
+.formula-box strong {
+  color: var(--text-primary);
+}
+
+/* Aviso de pendiente crítica (Ronda 8): el terreno + la gravedad ya no
+   dejan margen real de frenado con el μ y la presión actuales. */
+.slope-warning {
+  display: block;
+  margin-top: 6px;
+  color: var(--danger-red);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Botón "Vista Cabina" activo: mismo lenguaje visual que los chips/estado activos */
+#driverViewBtn.active {
+  color: var(--cat-yellow);
+  border-color: var(--cat-yellow);
+  background: rgba(255, 204, 0, 0.08);
+}
+
+/* ----------------------------------------------------------------------
+   PIZARRA DE ECUACIONES EN VIVO
+   ---------------------------------------------------------------------- */
+.blackboard {
+  background: linear-gradient(160deg, rgba(10, 22, 16, 0.75) 0%, rgba(6, 10, 9, 0.85) 100%);
+  border: 1px dashed rgba(74, 222, 128, 0.35);
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 4px;
+  font-family: var(--font-mono);
+}
+
+.blackboard-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed rgba(74, 222, 128, 0.25);
+}
+
+.blackboard-subtitle {
+  font-family: var(--font-body);
+  font-size: 10px;
+  color: var(--text-faint);
+  text-transform: none;
+  letter-spacing: 0.2px;
+}
+
+.blackboard-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 2;
+  color: var(--ok-green);
+  white-space: nowrap;
+}
+
+.blackboard-row .bb-label {
+  color: #7fdba0;
+  flex-shrink: 0;
+}
+
+.blackboard-row .bb-eq,
+.blackboard-row .bb-value {
+  color: #d8ffe4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.blackboard-divider {
+  height: 1px;
+  background: rgba(74, 222, 128, 0.2);
+  margin: 6px 0;
+}
+
+.btn {
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: 9px;
+  border: none;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.2s ease;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btn-primary {
+  background: linear-gradient(180deg, var(--cat-yellow) 0%, var(--cat-yellow-dim) 100%);
+  color: #1a1400;
+  box-shadow: 0 4px 18px rgba(255, 204, 0, 0.25);
+}
+
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-primary);
+  border: 1px solid var(--panel-border);
+  margin-top: 10px;
+}
+
+.btn-secondary:hover {
+  border-color: var(--danger-red);
+}
+
+/* ----------------------------------------------------------------------
+   PANEL DERECHO — TELEMETRÍA (tarjetas de gráficos)
+   ---------------------------------------------------------------------- */
+.chart-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 220px; /* evita que Chart.js reciba un canvas de alto 0
+                         cuando el viewport es muy bajo */
+}
+
+.chart-panel .panel-body {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+}
+
+.chart-panel canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* ----------------------------------------------------------------------
+   PANEL INFERIOR — HUD
+   ---------------------------------------------------------------------- */
+.panel-hud {
+  grid-area: hud;
+  position: fixed;
+  left: 50%;
+  bottom: 16px;
+  transform: translateX(-50%);
+  z-index: 1000;
+  /* Ronda 6 — layout robusto en DOS filas fijas en vez de un único flex
+     "wrap" cuyo punto de quiebre era impredecible (dependía de cuánto
+     texto/botones cupieran en una fila): antes, si los 8 clusters + los 3
+     botones no cabían en ~1180px, el contenido se salía literalmente de
+     la tarjeta y quedaba cortado por el borde de la ventana ("EXPORTAR
+     DATOS" recortado en la captura de la Ronda 6). Ahora `.hud-metrics`
+     (fila 1) y `.hud-actions` (fila 2) son bloques independientes,
+     apilados con `flex-direction: column`, cada uno con su propio
+     `flex-wrap` interno: si algo no cabe, esa fila específica crece
+     hacia arriba, nunca se recorta ni invade a la otra fila. */
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  padding: 14px 26px 18px;
+  width: min(1180px, calc(100vw - 24px));
+  max-width: calc(100vw - 24px);
+  box-shadow: 0 -4px 34px rgba(0, 0, 0, 0.4), var(--shadow-panel);
+  /* Los tooltips de Fuerza/Energía (`::after` en `.hud-cluster[data-tooltip]`)
+     se posicionan por encima del borde superior del HUD, así que este
+     panel específico necesita `overflow: visible` — de lo contrario el
+     `overflow: hidden` que ahora tiene `.glass-panel` por defecto (para
+     que el filete de acento superior no se salga del borde redondeado)
+     recortaría el tooltip antes de que llegara a mostrarse. */
+  overflow: visible;
+}
+
+.hud-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  row-gap: 10px;
+  column-gap: 26px;
+}
+
+.hud-cluster {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex: 0 0 auto;
+}
+
+/* Fila de acciones: siempre debajo de las métricas, separada por un
+   filete superior sutil que además sirve de referencia visual constante
+   (ya no depende de si comparte fila con las métricas o no). */
+.hud-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--panel-border);
+}
+
+/* ---- Tooltips explicativos (Fuerza de Frenado, Energía Cinética, etc.) ---- */
+.hud-cluster[data-tooltip] {
+  position: relative;
+  cursor: help;
+}
+
+.hud-cluster[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%) translateY(6px);
+  width: 230px;
+  background: rgba(10, 12, 14, 0.96);
+  border: 1px solid var(--panel-border-strong);
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 400;
+  line-height: 1.45;
+  text-transform: none;
+  letter-spacing: normal;
+  padding: 10px 12px;
+  border-radius: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55);
+  z-index: 10;
+}
+
+.hud-cluster[data-tooltip]:hover::after,
+.hud-cluster[data-tooltip]:focus-within::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ----------------------------------------------------------------------
+   BANNER DE ADVERTENCIA — BRAKE FADE (falla térmica > 400°C)
+   ---------------------------------------------------------------------- */
+.brake-fade-banner {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-14px);
+  z-index: 1100;
+  background: rgba(40, 6, 9, 0.92);
+  border: 1px solid var(--danger-red);
+  color: #ffe2e4;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 12px 26px;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(230, 57, 70, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.brake-fade-banner.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+  animation: bfBannerBlink 0.8s ease-in-out infinite alternate;
+}
+
+@keyframes bfBannerBlink {
+  from { background: rgba(40, 6, 9, 0.92); box-shadow: 0 10px 30px rgba(230, 57, 70, 0.3); }
+  to   { background: rgba(90, 12, 18, 0.96); box-shadow: 0 10px 44px rgba(230, 57, 70, 0.75); }
+}
+
+/* ---- Alerta de falla térmica (brake fade) ---- */
+.hud-temp.brake-fade .hud-value,
+.hud-status.brake-fade .hud-value {
+  color: var(--danger-red);
+  animation: bfPulse 0.85s ease-in-out infinite alternate;
+}
+
+@keyframes bfPulse {
+  from { text-shadow: 0 0 6px rgba(230, 57, 70, 0.35); }
+  to   { text-shadow: 0 0 22px rgba(230, 57, 70, 0.95); }
+}
+
+.hud-cluster .hud-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.hud-cluster .hud-value {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--text-primary);
+}
+
+.hud-cluster .hud-unit {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+.hud-speed .hud-value {
+  font-size: 44px;
+  color: var(--cat-yellow);
+  text-shadow: 0 0 18px rgba(255, 204, 0, 0.4);
+  line-height: 1;
+}
+
+.hud-temp .hud-value {
+  color: var(--danger-red);
+}
+
+.hud-status .hud-value {
+  font-size: 15px;
+  color: var(--ok-green);
+  letter-spacing: 1px;
+}
+
+.hud-actions .btn {
+  width: auto;
+  padding: 12px 20px;
+}
+
+.btn-icon {
+  transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+}
+
+.btn-icon.muted {
+  color: var(--text-faint);
+  border-color: var(--panel-border);
+  opacity: 0.7;
+}
+
+/* ----------------------------------------------------------------------
+   MODO CINE
+   ---------------------------------------------------------------------- */
+.app-shell.cinema-mode .panel-left,
+.app-shell.cinema-mode .panel-right,
+.app-shell.cinema-mode .panel-hud {
+  opacity: 0;
+  transform: translateY(12px);
+  pointer-events: none;
+  filter: blur(4px);
+}
+
+.restore-hint {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 2;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+  pointer-events: none;
+}
+
+.app-shell.cinema-mode ~ .restore-hint,
+body:has(.cinema-mode) .restore-hint {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.restore-hint button {
+  background: rgba(18, 21, 25, 0.72);
+  border: 1px solid var(--panel-border-strong);
+  color: var(--cat-yellow);
+  backdrop-filter: blur(12px);
+  border-radius: 999px;
+  padding: 10px 18px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1px;
+  cursor: pointer;
+}
+
+/* ----------------------------------------------------------------------
+   SCROLLBARS DISCRETAS
+   ---------------------------------------------------------------------- */
+.panel-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.panel-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 204, 0, 0.25);
+  border-radius: 4px;
+}
+
+/* ----------------------------------------------------------------------
+   RESPONSIVE — TABLET / MÓVIL
+   ---------------------------------------------------------------------- */
+@media (max-width: 1024px) {
+  .app-shell {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    grid-template-areas:
+      "left"
+      "right";
+    overflow-y: auto;
+    pointer-events: auto;
+  }
+
+  /* En una sola columna ambos wrappers ya no necesitan su propio scroll
+     interno (el `.app-shell` entero scrollea); se deja que crezcan con
+     su contenido para que las tarjetas no queden apretadas dentro de
+     una caja de 640px fija. */
+  .panel-left,
+  .panel-right {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .panel-hud {
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+    padding: 12px 16px 16px;
+  }
+
+  .hud-metrics {
+    column-gap: 18px;
+  }
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    padding: 10px;
+    padding-bottom: calc(var(--hud-height) + var(--hud-safety-gap));
+  }
+
+  .panel-hud {
+    bottom: 10px;
+    padding: 10px 14px 14px;
+    gap: 10px;
+  }
+
+  .hud-metrics {
+    row-gap: 10px;
+    column-gap: 14px;
+  }
+
+  .hud-actions {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .hud-cluster .hud-value {
+    font-size: 18px;
+  }
+
+  .hud-speed .hud-value {
+    font-size: 30px;
+  }
+
+  .hud-actions {
+    gap: 6px;
+  }
+
+  .hud-actions .btn {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+
+  .brake-fade-banner {
+    font-size: 13px;
+    padding: 9px 16px;
+    top: 12px;
+    width: calc(100vw - 24px);
+    text-align: center;
+  }
+
+  .panel-header h2 {
+    font-size: 14px;
+  }
+}
+
+/* ----------------------------------------------------------------------
+   ACCESIBILIDAD — REDUCED MOTION
+   ---------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+/* ============================================================================
+   RONDA 10 — HERRAMIENTAS DE BROADCASTING / DEFENSA EN VIVO (Google Meet)
+   ============================================================================
+   Todo lo agregado aquí es exclusivamente para la demostración en vivo:
+   Modo Presentación (fuentes/líneas grandes, cursor de puntero), overlays
+   gigantes de eventos críticos, casos de prueba, pausa exacta, modal de la
+   pizarra y el muro de impacto. Ver REGISTRO_TECNICO.md §18.
+   ============================================================================ */
+
+/* ----------------------------------------------------------------------
+   00. CASOS DE PRUEBA (bookmarks) — tarjeta sobre "Parámetros"
+   ---------------------------------------------------------------------- */
+.scenario-bar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.scenario-btn {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 10px 14px;
+  text-align: left;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease, transform 0.1s ease;
+}
+
+.scenario-btn:hover {
+  border-color: var(--panel-border-strong);
+  background: rgba(255, 204, 0, 0.06);
+}
+
+.scenario-btn:active {
+  transform: scale(0.98);
+}
+
+.scenario-btn strong {
+  font-family: var(--font-display);
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  color: var(--cat-yellow);
+  text-transform: uppercase;
+}
+
+.scenario-btn span {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.scenario-btn.just-applied {
+  border-color: var(--ok-green);
+  background: rgba(74, 222, 128, 0.08);
+}
+
+/* ----------------------------------------------------------------------
+   Botón "Simular" + "Pausar" en una misma fila
+   ---------------------------------------------------------------------- */
+.sim-actions-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.sim-actions-row .btn-primary {
+  flex: 1 1 auto;
+  margin-top: 0;
+}
+
+.btn-pause {
+  flex: 0 0 auto;
+  min-width: 118px;
+  background: linear-gradient(180deg, #3a3f45, #24282c);
+  color: var(--text-primary);
+}
+
+.btn-pause:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-pause.is-paused {
+  background: linear-gradient(180deg, var(--cat-yellow), var(--cat-yellow-dim));
+  color: #1a1400;
+  font-weight: 700;
+}
+
+/* ----------------------------------------------------------------------
+   01. MODO PRESENTACIÓN / "MEET MODE" — combate la compresión de video
+   ---------------------------------------------------------------------- */
+/* Ronda 10 — NOTA: `font-size: 1em` en CSS siempre se resuelve contra el
+   PADRE del elemento, nunca contra el propio valor que el elemento tenía
+   en otra regla. Por eso aquí se escriben tamaños explícitos en vez de
+   `calc(1em * 1.3)` para los elementos que ya definen su propio
+   font-size base (evita que "agrandar" termine, por accidente,
+   encogiendo el texto al tomar como referencia el font-size heredado
+   del contenedor en vez del valor original). */
+.presentation-mode .hud-cluster .hud-value {
+  font-size: 29px; /* base 22px × 1.3 */
+}
+
+.presentation-mode .hud-cluster .hud-label {
+  font-size: 13px; /* base 10px × 1.3 */
+  letter-spacing: 2px;
+}
+
+.presentation-mode .hud-speed .hud-value {
+  font-size: 57px; /* base 44px × 1.3 */
+}
+
+.presentation-mode .panel-header h2 {
+  font-size: 21px; /* base 16px × 1.3 */
+}
+
+.presentation-mode .control-group label {
+  font-size: 16px; /* base 12px × 1.3 */
+}
+
+.presentation-mode .formula-box {
+  font-size: 16px; /* base 12px × 1.3 — sus hijos (fx/strong) heredan y escalan con él */
+}
+
+/* .bb-label/.bb-eq/.bb-value NO fijan su propio font-size (heredan los
+   12px de .blackboard-row), así que aquí SÍ es correcto usar 1em: se
+   resuelve exactamente contra esos 12px heredados del padre. */
+.presentation-mode .bb-label,
+.presentation-mode .bb-eq,
+.presentation-mode .bb-value {
+  font-size: calc(1em * 1.3);
+}
+
+.presentation-mode .formula-box strong {
+  font-size: calc(1em * 1.15);
+}
+
+.presentation-mode .glass-panel {
+  border-width: 2px;
+  border-color: var(--panel-border-strong);
+}
+
+.presentation-mode .glass-panel::before {
+  height: 4px;
+  opacity: 0.85;
+}
+
+.presentation-mode .hud-status .hud-value {
+  font-size: calc(15px * 1.3);
+}
+
+/* Colores más saturados/brillantes: la compresión H.264 de Meet aplana
+   tonos apagados; subimos saturación y brillo de los acentos clave. */
+.presentation-mode {
+  --cat-yellow: #ffe14a;
+  --danger-red: #ff4d5e;
+  --ok-green: #6bffa3;
+  --text-primary: #ffffff;
+}
+
+.presentation-mode .btn {
+  border-width: 2px;
+  font-weight: 700;
+}
+
+.presentation-mode #presentationBtn {
+  border-color: var(--cat-yellow);
+  color: var(--cat-yellow);
+}
+
+/* Cursor real del navegador oculto: lo reemplaza #presenterCursor */
+.presentation-mode,
+.presentation-mode * {
+  cursor: none !important;
+}
+
+/* ----------------------------------------------------------------------
+   Cursor de presentador — círculo amarillo grande que sigue al mouse
+   ---------------------------------------------------------------------- */
+.presenter-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 46px;
+  height: 46px;
+  margin-left: -23px;
+  margin-top: -23px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 225, 74, 0.55) 0%, rgba(255, 225, 74, 0.28) 55%, rgba(255, 225, 74, 0) 78%);
+  border: 2px solid rgba(255, 225, 74, 0.85);
+  pointer-events: none;
+  z-index: 5000;
+  opacity: 0;
+  transition: opacity 0.15s ease, transform 0.06s linear;
+  will-change: transform;
+}
+
+.presentation-mode .presenter-cursor {
+  opacity: 1;
+}
+
+/* ----------------------------------------------------------------------
+   02. OVERLAY GIGANTE DE EVENTOS — "¡FRENANDO!", "¡DETENIDO!",
+       "¡FALLA TÉRMICA!", "¡IMPACTO!"
+   ---------------------------------------------------------------------- */
+.event-overlay {
+  position: fixed;
+  top: 16%;
+  left: 50%;
+  transform: translate(-50%, -12px) scale(0.92);
+  z-index: 900;
+  pointer-events: none;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(38px, 7vw, 96px);
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  text-align: center;
+  color: var(--cat-yellow);
+  text-shadow:
+    0 0 18px rgba(0, 0, 0, 0.9),
+    0 0 40px rgba(255, 204, 0, 0.55),
+    0 4px 0 rgba(0, 0, 0, 0.6);
+  opacity: 0;
+  -webkit-text-stroke: 2px rgba(0, 0, 0, 0.55);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+}
+
+.event-overlay.is-visible {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+  animation: eventPop 0.4s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.event-overlay.event-danger {
+  color: var(--danger-red);
+  text-shadow:
+    0 0 18px rgba(0, 0, 0, 0.9),
+    0 0 46px rgba(230, 57, 70, 0.7),
+    0 4px 0 rgba(0, 0, 0, 0.6);
+}
+
+.event-overlay.event-ok {
+  color: var(--ok-green);
+  text-shadow:
+    0 0 18px rgba(0, 0, 0, 0.9),
+    0 0 40px rgba(74, 222, 128, 0.6),
+    0 4px 0 rgba(0, 0, 0, 0.6);
+}
+
+.event-overlay.event-impact {
+  color: #ffffff;
+  animation: eventShake 0.35s ease;
+}
+
+@keyframes eventPop {
+  0%   { transform: translate(-50%, 10px) scale(0.7); opacity: 0; }
+  60%  { transform: translate(-50%, -4px) scale(1.06); opacity: 1; }
+  100% { transform: translate(-50%, 0) scale(1); opacity: 1; }
+}
+
+@keyframes eventShake {
+  0%, 100% { transform: translate(-50%, 0) scale(1); }
+  20% { transform: translate(calc(-50% - 10px), 0) scale(1.02); }
+  40% { transform: translate(calc(-50% + 10px), 0) scale(1.02); }
+  60% { transform: translate(calc(-50% - 6px), 0) scale(1.01); }
+  80% { transform: translate(calc(-50% + 6px), 0) scale(1.01); }
+}
+
+/* ----------------------------------------------------------------------
+   09. PIZARRA MATEMÁTICA — MODAL / LIGHTBOX
+   ---------------------------------------------------------------------- */
+.board-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(4, 5, 7, 0.82);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 1499;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+
+.board-modal-backdrop.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#boardCard {
+  cursor: zoom-in;
+}
+
+.board-zoom-hint {
+  position: absolute;
+  top: 10px;
+  right: 14px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--text-faint);
+  z-index: 2;
+  pointer-events: none;
+}
+
+#boardCard.board-modal-open {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(760px, 92vw);
+  max-height: 84vh;
+  z-index: 1500;
+  cursor: zoom-out;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.7), 0 0 0 2px var(--panel-border-strong);
+}
+
+#boardCard.board-modal-open .blackboard-row {
+  font-size: 1.5em;
+  padding: 10px 0;
+}
+
+#boardCard.board-modal-open .bb-eq,
+#boardCard.board-modal-open .bb-value {
+  font-size: 1.15em;
+}
+
+#boardCard.board-modal-open .board-zoom-hint::after {
+  content: ' — Esc o clic para cerrar';
+}
+
+/* ----------------------------------------------------------------------
+   RESPONSIVE — Modo Presentación en pantallas angostas
+   ---------------------------------------------------------------------- */
+@media (max-width: 900px) {
+  #boardCard.board-modal-open {
+    width: 94vw;
+  }
+  .event-overlay {
+    font-size: clamp(28px, 9vw, 56px);
+  }
+}
