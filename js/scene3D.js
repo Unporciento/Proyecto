@@ -13,6 +13,11 @@ const Scene3D = (function () {
 
   let scene, camera, renderer, controls;
   let roadGroup, markerGroup, skidMarksGroup, smokeGroup, weatherGroup, coneGroup;
+  // Referencias a luces + cielo/estrellas (biomas por terreno): se guardan
+  // a nivel de módulo para que setTerrainVisual() pueda retocar color e
+  // intensidad sin tener que reconstruir toda la escena.
+  let hemiLight, sunLight, rimLight, skyMesh, starsMesh;
+  let currentEnvKey = 'asfalto';
   // Ronda 7: se pone en `true` solo si init() construyó la escena real
   // (WebGL disponible). El resto de las funciones públicas de este módulo
   // lo consultan como guardia para no operar sobre `scene`/`renderer`
@@ -27,6 +32,69 @@ const Scene3D = (function () {
   // Longitud total de la carretera en unidades del mundo 3D (metros virtuales)
   const ROAD_LENGTH = 260;
   const ROAD_WIDTH = 14;
+
+  // --------------------------------------------------------------------
+  // BIOMAS POR TERRENO — cielo, niebla, luz y estrellas
+  // --------------------------------------------------------------------
+  // Cada terreno (el mismo selector que ya alimenta fricción/roadTint en
+  // mathCore.js) además dispone ahora de un "ambiente espacial" propio:
+  // gradiente de cielo (horizonte→cenit), color/densidad de niebla, y
+  // color/intensidad de sol + relleno frío. La identidad industrial
+  // (amarillo/rojo de la UI y de las luces de peligro) NO cambia — esto
+  // solo afecta la atmósfera detrás del vehículo, igual que cambiaría el
+  // clima real en cada superficie. Se mantiene siempre un cielo oscuro
+  // tipo "nave nodriza" (nunca cielo diurno celeste) para que el fondo
+  // estrellado sea coherente en los seis terrenos.
+  const TERRAIN_ENVIRONMENTS = {
+    asfalto: {
+      skyTop: 0x05070c, skyBottom: 0x141a22,
+      fogColor: 0x0a0d10, fogNear: 60, fogFar: 220,
+      sunColor: 0xfff2d6, sunIntensity: 1.6,
+      hemiSky: 0x9fb8c8, hemiGround: 0x14171a, hemiIntensity: 0.38,
+      rimColor: 0x9fd0ff, rimIntensity: 0.55,
+      starOpacity: 0.55
+    },
+    mojado: {
+      skyTop: 0x050a10, skyBottom: 0x0f1b24,
+      fogColor: 0x11151a, fogNear: 45, fogFar: 200,
+      sunColor: 0xcfe0ff, sunIntensity: 1.25,
+      hemiSky: 0x7d99b3, hemiGround: 0x11151a, hemiIntensity: 0.4,
+      rimColor: 0x7fc2ff, rimIntensity: 0.65,
+      starOpacity: 0.25
+    },
+    grava: {
+      skyTop: 0x0a0805, skyBottom: 0x241d14,
+      fogColor: 0x181209, fogNear: 55, fogFar: 210,
+      sunColor: 0xffdca8, sunIntensity: 1.55,
+      hemiSky: 0xc9a877, hemiGround: 0x1a1611, hemiIntensity: 0.36,
+      rimColor: 0xffb35c, rimIntensity: 0.4,
+      starOpacity: 0.5
+    },
+    barro: {
+      skyTop: 0x070907, skyBottom: 0x1a1f16,
+      fogColor: 0x11150e, fogNear: 40, fogFar: 190,
+      sunColor: 0xd8c98f, sunIntensity: 1.2,
+      hemiSky: 0x8a9a6c, hemiGround: 0x0f120c, hemiIntensity: 0.34,
+      rimColor: 0x6fae7a, rimIntensity: 0.35,
+      starOpacity: 0.2
+    },
+    nieve: {
+      skyTop: 0x0a1018, skyBottom: 0x2c3a44,
+      fogColor: 0xaebac2, fogNear: 40, fogFar: 200,
+      sunColor: 0xeaf4ff, sunIntensity: 1.7,
+      hemiSky: 0xdcecff, hemiGround: 0x1c232a, hemiIntensity: 0.5,
+      rimColor: 0xbfe3ff, rimIntensity: 0.6,
+      starOpacity: 0.35
+    },
+    hielo: {
+      skyTop: 0x040810, skyBottom: 0x122430,
+      fogColor: 0x0d1820, fogNear: 55, fogFar: 220,
+      sunColor: 0xcdeeff, sunIntensity: 1.35,
+      hemiSky: 0x8fd8ff, hemiGround: 0x0c161c, hemiIntensity: 0.42,
+      rimColor: 0x6fe3ff, rimIntensity: 0.75,
+      starOpacity: 0.7
+    }
+  };
 
   // --------------------------------------------------------------------
   // TERRENO CON PENDIENTE (Ronda 8 — Faena Minera Dinámica)
@@ -406,17 +474,10 @@ const Scene3D = (function () {
 
     setWeather(terrainMeta.weather);
 
-    // Niebla/ambiente ligeramente más fríos y densos con nieve/hielo.
-    if (terrainMeta.weather === 'nieve') {
-      scene.fog.color.setHex(0xaebac2);
-      scene.fog.near = 40;
-    } else if (terrainMeta.weather === 'lluvia') {
-      scene.fog.color.setHex(0x11151a);
-      scene.fog.near = 45;
-    } else {
-      scene.fog.color.setHex(0x0a0d10);
-      scene.fog.near = 60;
-    }
+    // Bioma visual completo (cielo, niebla, sol/relleno/ambiental,
+    // estrellas) — reemplaza el ajuste manual de solo-niebla que había
+    // antes; ver TERRAIN_ENVIRONMENTS y applyEnvironment() más arriba.
+    applyEnvironment(terrainKey);
   }
 
   // --------------------------------------------------------------------
@@ -818,32 +879,150 @@ const Scene3D = (function () {
    *     shaded" propiamente dicho).
    */
   function buildLights() {
-    const hemi = new THREE.HemisphereLight(0x9fb8c8, 0x14171a, 0.38);
-    scene.add(hemi);
+    hemiLight = new THREE.HemisphereLight(0x9fb8c8, 0x14171a, 0.38);
+    scene.add(hemiLight);
 
-    const sun = new THREE.DirectionalLight(0xfff2d6, 1.6);
-    sun.position.set(40, 60, 20);
-    sun.castShadow = true;
-    sun.shadow.mapSize.set(2048, 2048);
-    sun.shadow.camera.left = -80;
-    sun.shadow.camera.right = 80;
-    sun.shadow.camera.top = 80;
-    sun.shadow.camera.bottom = -80;
-    sun.shadow.camera.far = 200;
+    sunLight = new THREE.DirectionalLight(0xfff2d6, 1.6);
+    sunLight.position.set(40, 60, 20);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.set(2048, 2048);
+    sunLight.shadow.camera.left = -80;
+    sunLight.shadow.camera.right = 80;
+    sunLight.shadow.camera.top = 80;
+    sunLight.shadow.camera.bottom = -80;
+    sunLight.shadow.camera.far = 200;
     // Bordes de sombra más duros y definidos (menos "bias" de suavizado)
-    sun.shadow.radius = 1;
-    scene.add(sun);
+    sunLight.shadow.radius = 1;
+    scene.add(sunLight);
 
     // Luz de relleno fría desde el lado opuesto al sol: separa la
     // silueta del vehículo del fondo oscuro sin depender de ambiental.
-    const rim = new THREE.DirectionalLight(0x9fd0ff, 0.55);
-    rim.position.set(-30, 20, -35);
-    scene.add(rim);
+    rimLight = new THREE.DirectionalLight(0x9fd0ff, 0.55);
+    rimLight.position.set(-30, 20, -35);
+    scene.add(rimLight);
 
     // Luz de acento "peligro" muy tenue para reforzar la identidad visual
     const accent = new THREE.PointLight(0xe63946, 0.4, 40);
     accent.position.set(-10, 8, -10);
     scene.add(accent);
+  }
+
+  /**
+   * Domo de cielo degradado (horizonte → cenit), técnica de shader clásica
+   * de Three.js (vertex pasa la posición mundial, fragment mezcla dos
+   * colores según la altura). Reemplaza el fondo de color plano por un
+   * ambiente con profundidad, la base visual de cada "bioma" de terreno.
+   */
+  function buildSky() {
+    const geo = new THREE.SphereGeometry(400, 32, 16);
+    const mat = new THREE.ShaderMaterial({
+      uniforms: {
+        topColor: { value: new THREE.Color(0x05070c) },
+        bottomColor: { value: new THREE.Color(0x141a22) },
+        offset: { value: 15 },
+        exponent: { value: 0.7 }
+      },
+      vertexShader: `
+        varying vec3 vWorldPosition;
+        void main() {
+          vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+          vWorldPosition = worldPosition.xyz;
+          gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        }
+      `,
+      fragmentShader: `
+        uniform vec3 topColor;
+        uniform vec3 bottomColor;
+        uniform float offset;
+        uniform float exponent;
+        varying vec3 vWorldPosition;
+        void main() {
+          float h = normalize(vWorldPosition + offset).y;
+          gl_FragColor = vec4(mix(bottomColor, topColor, max(pow(max(h, 0.0), exponent), 0.0)), 1.0);
+        }
+      `,
+      side: THREE.BackSide,
+      fog: false,
+      depthWrite: false
+    });
+    skyMesh = new THREE.Mesh(geo, mat);
+    scene.add(skyMesh);
+  }
+
+  /**
+   * Campo de estrellas lejano: un `THREE.Points` de puntos blancos
+   * distribuidos sobre una esfera grande, con opacidad variable por
+   * terreno (más visibles en cielos despejados/fríos como hielo, casi
+   * imperceptibles bajo lluvia/niebla densa). Da la identidad "espacial"
+   * al fondo sin competir con la niebla/luces propias de cada terreno.
+   */
+  function buildStars() {
+    const count = 1400;
+    const positions = new Float32Array(count * 3);
+    for (let i = 0; i < count; i++) {
+      // Distribución esférica uniforme, solo en el hemisferio superior
+      // (bajo el horizonte quedaría oculto por el terreno de todos modos).
+      const radius = 380;
+      const theta = Math.random() * Math.PI * 2;
+      const phi = Math.acos(Math.random() * 0.85); // sesgado hacia arriba
+      positions[i * 3] = radius * Math.sin(phi) * Math.cos(theta);
+      positions[i * 3 + 1] = Math.abs(radius * Math.cos(phi)) + 10;
+      positions[i * 3 + 2] = radius * Math.sin(phi) * Math.sin(theta);
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    const mat = new THREE.PointsMaterial({
+      color: 0xffffff,
+      size: 1.15,
+      sizeAttenuation: false,
+      transparent: true,
+      opacity: 0.55,
+      depthWrite: false,
+      fog: false
+    });
+    starsMesh = new THREE.Points(geo, mat);
+    scene.add(starsMesh);
+  }
+
+  /**
+   * Aplica el "bioma visual" de `terrainKey` (ver TERRAIN_ENVIRONMENTS):
+   * cielo, niebla, sol/relleno/ambiental y opacidad de estrellas. Se llama
+   * desde setTerrainVisual() cada vez que cambia el selector de Terreno.
+   * Todo se aplica al instante (sin transición animada) — coherente con
+   * que el resto de setTerrainVisual (textura de pista, clima) también
+   * cambia sin transición.
+   */
+  function applyEnvironment(terrainKey) {
+    const env = TERRAIN_ENVIRONMENTS[terrainKey] || TERRAIN_ENVIRONMENTS.asfalto;
+    currentEnvKey = terrainKey;
+
+    if (skyMesh) {
+      skyMesh.material.uniforms.topColor.value.setHex(env.skyTop);
+      skyMesh.material.uniforms.bottomColor.value.setHex(env.skyBottom);
+    }
+    if (scene.fog) {
+      scene.fog.color.setHex(env.fogColor);
+      scene.fog.near = env.fogNear;
+      scene.fog.far = env.fogFar;
+    }
+    scene.background = new THREE.Color(env.fogColor);
+
+    if (sunLight) {
+      sunLight.color.setHex(env.sunColor);
+      sunLight.intensity = env.sunIntensity;
+    }
+    if (hemiLight) {
+      hemiLight.color.setHex(env.hemiSky);
+      hemiLight.groundColor.setHex(env.hemiGround);
+      hemiLight.intensity = env.hemiIntensity;
+    }
+    if (rimLight) {
+      rimLight.color.setHex(env.rimColor);
+      rimLight.intensity = env.rimIntensity;
+    }
+    if (starsMesh) {
+      starsMesh.material.opacity = env.starOpacity;
+    }
   }
 
   /**
@@ -900,6 +1079,9 @@ const Scene3D = (function () {
     scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0a0d10);
     scene.fog = new THREE.Fog(0x0a0d10, 60, 220);
+    // fog.far no era controlado dinámicamente antes; ahora cada bioma de
+    // terreno también puede ajustar la distancia de niebla (ver
+    // TERRAIN_ENVIRONMENTS), no solo su color/near.
 
     const width = canvasContainer.clientWidth;
     const height = canvasContainer.clientHeight;
@@ -940,11 +1122,14 @@ const Scene3D = (function () {
       : 'lomas';
 
     buildLights();
+    buildSky();
+    buildStars();
     buildRoad();
     buildDistanceMarkers();
     buildSafetyCones();
     buildImpactWall();
     initEffectsGroups();
+    applyEnvironment('asfalto'); // bioma por defecto, coherente con el <option> inicial de terrainSelect
 
     window.addEventListener('resize', () => onResize(canvasContainer));
 
