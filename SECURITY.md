@@ -18,6 +18,7 @@ Forja es una aplicación estática sin servidor. Esto elimina cuentas remotas, c
 - Restauración de respaldo limitada a 10 MB, con estructura, referencias, cantidades y claves peligrosas validadas antes de escribir.
 - La restauración reemplaza todas las colecciones en una única transacción: o se completa entera o no modifica nada.
 - Navegación por hash restringida a una lista cerrada de vistas; el menú móvil bloquea el fondo y ofrece cinco vías de cierre.
+- Las rachas se derivan de intentos reales almacenados, no de un contador editable en la interfaz.
 - Borrado local requiere confirmación.
 
 ## Límites honestos
@@ -25,6 +26,7 @@ Forja es una aplicación estática sin servidor. Esto elimina cuentas remotas, c
 - Quien tenga acceso al perfil del navegador y al dispositivo puede leer los datos locales. Forja no cifra con contraseña porque una clave gestionada en el mismo frontend no protege frente a un atacante con acceso al navegador.
 - Limpiar los datos de Safari/Chrome elimina la biblioteca. Se recomienda exportar respaldos con regularidad.
 - El perfil es local, no sincroniza entre dispositivos.
+- GitHub Pages no incluye cuentas: una futura sincronización deberá usar autenticación en servidor y cifrado previo en el dispositivo.
 - La calidad del OCR depende de la imagen. El usuario debe revisar el texto y las respuestas generadas antes de un examen de alta importancia.
 
 ## Reporte

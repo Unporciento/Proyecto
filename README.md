@@ -9,6 +9,7 @@ Forja es una aplicación web local para convertir materiales de estudio en sesio
 - Organiza materiales persistentes por materias.
 - Genera preguntas trazables al documento: definiciones, listas, fórmulas, cálculos, procedimientos, comparación, causa–efecto y diagnóstico.
 - Programa repasos adaptativos según dificultad y errores.
+- Calcula rachas por día local, conserva el récord y desbloquea seis recompensas permanentes.
 - Mezcla materias o permite estudiar una sola carpeta.
 - Incluye simulacros cronometrados sin corrección inmediata.
 - Compara confianza declarada con rendimiento para descubrir puntos ciegos.
@@ -18,6 +19,7 @@ Forja es una aplicación web local para convertir materiales de estudio en sesio
 - Personaliza tema claro, oscuro o automático y seis paletas más un color libre.
 - Exporta y restaura respaldos JSON con validación previa y reemplazo atómico.
 - Se instala como PWA y mantiene disponible la interfaz sin conexión.
+- Ajusta efectos y procesamiento según el dispositivo; pausa temporizadores y tareas evitables al quedar en segundo plano.
 
 ## Método de aprendizaje
 

@@ -21,6 +21,7 @@
   .hero-orbit { opacity: .65; }
   .due-card { align-items: center; }
   .metric-grid, .progress-grid { grid-template-columns: 1fr; }
+  .reward-grid { grid-template-columns: repeat(3, 1fr); }
   .page-intro, .library-tools { align-items: stretch; flex-direction: column; }
   .page-actions { flex-wrap: wrap; }
   .segmented { width: max-content; }
@@ -43,6 +44,7 @@
   .drop-zone { min-height: 250px; padding: 24px 16px; }
   .confidence-row { align-items: flex-start; flex-direction: column; }
   .topic-row { grid-template-columns: 1fr 70px 36px; }
+  .reward-grid { grid-template-columns: repeat(2, 1fr); }
   .modal-actions { align-items: stretch; flex-direction: column-reverse; gap: 12px; }
 }
 

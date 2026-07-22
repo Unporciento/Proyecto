@@ -1,18 +1,24 @@
-import { validateBackup } from './backup.js?v=20260722-3';
-import * as db from './db.js?v=20260722-3';
-import { closeDrawer } from './drawer.js?v=20260722-3';
-import { generateCards } from './generator.js?v=20260722-3';
-import { parseFile } from './parsers.js?v=20260722-3';
-import { downloadCalendar, examCountdown } from './planner.js?v=20260722-3';
-import { paintAvatarPreview, paintProfile, prepareAvatar } from './profile.js?v=20260722-3';
-import { buildSession, schedule } from './scheduler.js?v=20260722-3';
-import { ExamSession, StudySession } from './sessions.js?v=20260722-3';
-import { applyTheme, normalizeHex } from './theme.js?v=20260722-3';
-import { clearBusy, renderDashboard, renderDocuments, renderProgress, renderSubjects, setBusy, setupNavigation, showView, toast, updateBusy } from './ui.js?v=20260722-3';
+import { validateBackup } from './backup.js?v=20260722-4';
+import * as db from './db.js?v=20260722-4';
+import { closeDrawer } from './drawer.js?v=20260722-4';
+import { applyEnergyMode, monitorEnergy } from './energy.js?v=20260722-4';
+import { setupFocusTimer } from './focus.js?v=20260722-4';
+import { generateCards } from './generator.js?v=20260722-4';
+import { parseFile } from './parsers.js?v=20260722-4';
+import { downloadCalendar, examCountdown } from './planner.js?v=20260722-4';
+import { paintAvatarPreview, paintProfile, prepareAvatar } from './profile.js?v=20260722-4';
+import { buildSession, schedule } from './scheduler.js?v=20260722-4';
+import { ExamSession, StudySession } from './sessions.js?v=20260722-4';
+import { newlyUnlocked, streakStats } from './streak.js?v=20260722-4';
+import { applyTheme, normalizeHex } from './theme.js?v=20260722-4';
+import { clearBusy, renderDashboard, renderDocuments, renderProgress, renderSubjects, setBusy, setupNavigation, showView, toast, updateBusy } from './ui.js?v=20260722-4';
 
 const $ = selector => document.querySelector(selector);
-let state = { subjects: [], documents: [], cards: [], attempts: [], settings: {}, streak: 0, activeSubject: 'all', libraryFilter: 'all' };
-let focus = { seconds: 25 * 60, running: false, timer: null };
+let state = { subjects: [], documents: [], cards: [], attempts: [], settings: {}, streak: streakStats([]), activeSubject: 'all', libraryFilter: 'all' };
+
+function paintEnergyStatus(mode) {
+  $('#energyStatus').textContent = mode === 'saver' ? 'Modo activo: ahorro de energía.' : 'Modo activo: visual completo.';
+}
 
 async function loadState() {
   let subjects = await db.all('subjects');
@@ -23,8 +29,12 @@ async function loadState() {
   const [documents, cards, attempts, settings] = await Promise.all([
     db.all('documents'), db.all('cards'), db.all('attempts'), db.getSettings()
   ]);
-  state = { ...state, subjects, documents, cards, attempts, settings, streak: calculateStreak(attempts) };
-  applyTheme(settings);
+  state = { ...state, subjects, documents, cards, attempts, settings, streak: streakStats(attempts, new Date(), settings.bestStreak) };
+  if (state.streak.best > (Number(settings.bestStreak) || 0)) {
+    state.settings = { ...settings, bestStreak: state.streak.best };
+    await db.saveSettings(state.settings);
+  }
+  applyTheme(settings); paintEnergyStatus(applyEnergyMode(settings.energyMode || 'auto'));
   refresh();
 }
 
@@ -32,7 +42,7 @@ function refresh() {
   renderDocuments(state.documents, state.cards, $('#librarySearch')?.value || '', state.activeSubject, state.libraryFilter);
   renderSubjects(state.subjects, state.documents, state.activeSubject);
   renderDashboard(state.documents, state.cards, state.attempts, state.streak);
-  renderProgress(state.documents, state.cards, state.attempts);
+  renderProgress(state.documents, state.cards, state.attempts, state.streak);
   paintProfile(state.settings);
   const selector = $('#studySubject');
   const previous = selector.value;
@@ -47,14 +57,15 @@ function refresh() {
   $('#startTodayBtn').firstChild.textContent = count ? `Repasar ${Math.min(count, 18)} ahora ` : 'Practicar por adelantado ';
 }
 
-function calculateStreak(attempts) {
-  const days = new Set(attempts.map(item => item.createdAt.slice(0, 10)));
-  let streak = 0;
-  const cursor = new Date();
-  const today = cursor.toISOString().slice(0, 10);
-  if (!days.has(today)) cursor.setDate(cursor.getDate() - 1);
-  while (days.has(cursor.toISOString().slice(0, 10))) { streak += 1; cursor.setDate(cursor.getDate() - 1); }
-  return streak;
+function updateStreak() {
+  const previous = state.streak;
+  state.streak = streakStats(state.attempts, new Date(), Math.max(previous.best, Number(state.settings.bestStreak) || 0));
+  if (state.streak.best > (Number(state.settings.bestStreak) || 0)) {
+    state.settings = { ...state.settings, bestStreak: state.streak.best };
+    db.saveSettings(state.settings).catch(() => toast('No pude guardar el récord de racha.', 'error'));
+  }
+  const rewards = newlyUnlocked(previous, state.streak);
+  if (rewards.length) toast(`${rewards.at(-1).icon} Premio desbloqueado: ${rewards.at(-1).name}.`);
 }
 
 function bindUploadHandlers() {
@@ -133,7 +144,7 @@ async function deleteDocument(id) {
   state.documents = state.documents.filter(item => item.id !== id);
   state.cards = state.cards.filter(card => card.docId !== id);
   state.attempts = state.attempts.filter(item => !removedCards.has(item.cardId));
-  refresh(); toast('Material eliminado del dispositivo.');
+  updateStreak(); refresh(); toast('Material eliminado del dispositivo.');
 }
 
 function startStudy() {
@@ -153,7 +164,7 @@ function startStudy() {
       state.cards = state.cards.map(item => item.id === updated.id ? updated : item);
       state.attempts.push(attempt);
     },
-    onFinish: () => { state.streak = calculateStreak(state.attempts); refresh(); showView('inicio'); }
+    onFinish: () => { updateStreak(); refresh(); showView('inicio'); }
   }).start();
 }
 
@@ -174,6 +185,7 @@ function startExam() {
       state.attempts.push(...attempts);
       const updateMap = new Map(updates.map(card => [card.id, card]));
       state.cards = state.cards.map(card => updateMap.get(card.id) || card);
+      updateStreak();
       $('#examSetup').hidden = false; $('#examSession').hidden = true;
       refresh(); showView('progreso');
     }
@@ -201,11 +213,13 @@ function setupSettings() {
     $('#themeModeSetting').value = state.settings.themeMode || 'system';
     $('#paletteSetting').value = state.settings.palette || 'forja';
     $('#customAccentSetting').value = normalizeHex(state.settings.customAccent);
+    $('#energyModeSetting').value = state.settings.energyMode || 'auto';
     previewTheme(); dialog.showModal();
   });
   dialog.addEventListener('close', async () => {
     if (dialog.returnValue !== 'save') { applyTheme(state.settings); return; }
-    state.settings = { ...state.settings, ...themeValues(), examDate: $('#examDateSetting').value, dailyGoal: Number($('#dailyGoalSetting').value), studyTime: $('#studyTimeSetting').value, sound: $('#soundSetting').checked };
+    state.settings = { ...state.settings, ...themeValues(), energyMode: $('#energyModeSetting').value, examDate: $('#examDateSetting').value, dailyGoal: Number($('#dailyGoalSetting').value), studyTime: $('#studyTimeSetting').value, sound: $('#soundSetting').checked };
+    paintEnergyStatus(applyEnergyMode(state.settings.energyMode));
     await db.saveSettings(state.settings); toast('Plan de estudio guardado.'); refresh();
   });
   $('#themeModeSetting').addEventListener('change', previewTheme);
@@ -256,27 +270,6 @@ function setupProfile() {
   });
 }
 
-function setupFocus() {
-  const dialog = $('#focusDialog');
-  const paint = () => {
-    const value = `${String(Math.floor(focus.seconds / 60)).padStart(2, '0')}:${String(focus.seconds % 60).padStart(2, '0')}`;
-    $('#focusBig').textContent = value; $('#focusTime').textContent = value;
-    $('#focusToggle').textContent = focus.running ? 'Pausar' : 'Comenzar';
-  };
-  $('#focusBtn').addEventListener('click', () => dialog.showModal());
-  $('#focusToggle').addEventListener('click', () => {
-    focus.running = !focus.running;
-    clearInterval(focus.timer);
-    if (focus.running) focus.timer = setInterval(() => {
-      focus.seconds -= 1; paint();
-      if (focus.seconds <= 0) { clearInterval(focus.timer); focus.running = false; focus.seconds = 5 * 60; $('#focusState').textContent = 'Descanso breve. Levántate y respira.'; paint(); }
-    }, 1000);
-    paint();
-  });
-  $('#focusReset').addEventListener('click', () => { clearInterval(focus.timer); focus = { seconds: 25 * 60, running: false, timer: null }; paint(); });
-  paint();
-}
-
 async function exportBackup() {
   const payload = await db.exportData();
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -316,7 +309,7 @@ function setupLibraryFilters() {
 }
 
 function setupEvents() {
-  setupNavigation(); bindUploadHandlers(); setupSettings(); setupSubjects(); setupProfile(); setupFocus(); setupPasteMaterial(); setupBackupRestore(); setupLibraryFilters();
+  setupNavigation(); bindUploadHandlers(); setupSettings(); setupSubjects(); setupProfile(); setupFocusTimer(); setupPasteMaterial(); setupBackupRestore(); setupLibraryFilters();
   $('#addMaterialBtn').addEventListener('click', () => $('#fileInput').click());
   $('#startTodayBtn').addEventListener('click', startStudy);
   $('#startStudyBtn').addEventListener('click', startStudy);
@@ -329,7 +322,8 @@ function setupEvents() {
 async function boot() {
   $('#todayLabel').textContent = new Intl.DateTimeFormat('es-CL', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
   setupEvents(); await loadState();
-  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./service-worker.js?v=20260722-3').catch(() => {});
+  monitorEnergy(() => state.settings.energyMode || 'auto', paintEnergyStatus);
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./service-worker.js?v=20260722-4').catch(() => {});
 }
 
 boot().catch(error => { console.error(error); toast('No pude iniciar el almacenamiento local. Revisa el modo privado del navegador.', 'error'); });

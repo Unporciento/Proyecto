@@ -7,6 +7,8 @@ import { validateBackup } from '../js/backup.js';
 import { isDismissSwipe, resolveView } from '../js/drawer.js';
 import { contrastText, normalizeHex, resolveAccent } from '../js/theme.js';
 import { isSafeAvatar } from '../js/profile.js';
+import { localDayKey, newlyUnlocked, streakStats } from '../js/streak.js';
+import { resolveEnergyMode } from '../js/energy.js';
 
 const doc = {
   id: 'doc_test', name: 'Guía de prueba',
@@ -82,4 +84,27 @@ test('restaura un respaldo coherente y bloquea referencias manipuladas', () => {
   assert.throws(() => validateBackup({ ...backup, cards: [{ id: 'card_1', docId: 'doc_missing' }] }), /sin material/);
   const poisoned = JSON.parse(JSON.stringify(backup).replace('"question"', '"__proto__"'));
   assert.throws(() => validateBackup(poisoned), /clave bloqueada/);
+});
+
+test('la racha usa días locales, conserva récord y calcula el próximo premio', () => {
+  const attempts = [10, 11, 20, 21, 22].flatMap(day => [1, 2, 3].map(index => ({ createdAt: `2026-07-${day}T18:00:0${index}` })));
+  const streak = streakStats(attempts, new Date('2026-07-22T20:00:00'));
+  assert.equal(streak.current, 3);
+  assert.equal(streak.best, 3);
+  assert.equal(streak.next.days, 7);
+  assert.equal(streak.unlocked[0].name, 'Arranque');
+  assert.equal(localDayKey('2026-07-22T23:30:00'), '2026-07-22');
+  assert.equal(streakStats([], new Date('2026-07-22T20:00:00'), 30).best, 30);
+});
+
+test('detecta recompensas nuevas sin repetir las anteriores', () => {
+  const rewards = newlyUnlocked({ best: 6 }, { best: 7 });
+  assert.deepEqual(rewards.map(item => item.days), [7]);
+});
+
+test('el modo automático ahorra en móvil o hardware modesto', () => {
+  const powerful = { saveData: false, reducedMotion: false, coarsePointer: false, lowBattery: false, hardwareConcurrency: 8, deviceMemory: 8 };
+  assert.equal(resolveEnergyMode('auto', powerful), 'standard');
+  assert.equal(resolveEnergyMode('auto', { ...powerful, coarsePointer: true }), 'saver');
+  assert.equal(resolveEnergyMode('standard', { ...powerful, lowBattery: true }), 'standard');
 });

@@ -33,6 +33,24 @@ function loadScript(src, globalName) {
   });
 }
 
+async function waitUntilVisible() {
+  if (!document.hidden) return;
+  await new Promise(resolve => document.addEventListener('visibilitychange', resolve, { once: true }));
+}
+
+async function optimizeImage(file) {
+  if (!('createImageBitmap' in window)) return file;
+  const bitmap = await createImageBitmap(file);
+  const maxEdge = document.documentElement.dataset.energy === 'saver' ? 2200 : 2800;
+  const scale = Math.min(1, maxEdge / Math.max(bitmap.width, bitmap.height));
+  if (scale === 1) { bitmap.close?.(); return file; }
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(bitmap.width * scale); canvas.height = Math.round(bitmap.height * scale);
+  canvas.getContext('2d', { alpha: false }).drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+  bitmap.close?.();
+  return new Promise((resolve, reject) => canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('No pude preparar la imagen.')), 'image/jpeg', .9));
+}
+
 async function parsePdf(file, onProgress) {
   onProgress?.('Abriendo PDF…');
   const pdfjs = await import(`https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDF_VERSION}/build/pdf.min.mjs`);
@@ -41,6 +59,7 @@ async function parsePdf(file, onProgress) {
   const pdf = await pdfjs.getDocument({ data }).promise;
   const pages = [];
   for (let number = 1; number <= pdf.numPages; number += 1) {
+    await waitUntilVisible();
     onProgress?.(`Leyendo página ${number} de ${pdf.numPages}…`);
     const page = await pdf.getPage(number);
     const content = await page.getTextContent();
@@ -62,7 +81,9 @@ async function parseDocx(file, onProgress) {
 async function parseImage(file, onProgress) {
   onProgress?.('Preparando reconocimiento de imagen…');
   const Tesseract = await loadScript(`https://cdn.jsdelivr.net/npm/tesseract.js@${TESSERACT_VERSION}/dist/tesseract.min.js`, 'Tesseract');
-  const result = await Tesseract.recognize(file, 'spa', {
+  await waitUntilVisible();
+  const source = await optimizeImage(file);
+  const result = await Tesseract.recognize(source, 'spa', {
     logger: message => {
       if (message.status === 'recognizing text') onProgress?.(`Reconociendo texto · ${Math.round((message.progress || 0) * 100)}%`);
     }
@@ -72,6 +93,7 @@ async function parseImage(file, onProgress) {
 }
 
 export async function parseFile(file, onProgress) {
+  await waitUntilVisible();
   const ext = extension(file.name);
   const max = 35 * 1024 * 1024;
   if (file.size > max) throw new Error('El archivo supera 35 MB. Divídelo en partes para procesarlo mejor.');

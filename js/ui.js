@@ -1,5 +1,6 @@
-import { closeDrawer, resolveView, setupDrawer } from './drawer.js?v=20260722-3';
-import { isDue, nextLabel, summarize } from './scheduler.js?v=20260722-3';
+import { closeDrawer, resolveView, setupDrawer } from './drawer.js?v=20260722-4';
+import { isDue, nextLabel, summarize } from './scheduler.js?v=20260722-4';
+import { REWARDS } from './streak.js?v=20260722-4';
 
 const $ = selector => document.querySelector(selector);
 
@@ -82,7 +83,7 @@ export function renderSubjects(subjects, documents, activeId = 'all') {
   }).join('') + '<button class="subject-chip add" id="newSubjectBtn">+ Nueva materia</button>';
 }
 
-export function renderDashboard(documents, cards, attempts, streak = 0) {
+export function renderDashboard(documents, cards, attempts, streak) {
   const stats = summarize(cards, attempts);
   $('#dueCount').textContent = stats.due;
   $('#dueRing').style.setProperty('--progress', Math.min(100, stats.due * 6));
@@ -92,7 +93,11 @@ export function renderDashboard(documents, cards, attempts, streak = 0) {
   $('#timeMetric').textContent = `${stats.minutes} min`;
   $('#answerMetric').textContent = stats.answers;
   $('#accuracyMetric').textContent = stats.answers ? `${stats.accuracy}% recordadas correctamente` : 'Sin respuestas todavía';
-  $('#streakSide').textContent = `${streak} día${streak === 1 ? '' : 's'}`;
+  $('#streakSide').textContent = `${streak.current} día${streak.current === 1 ? '' : 's'}`;
+  $('#streakNextSide').textContent = streak.remainingToday
+    ? `${streak.remainingToday} respuesta${streak.remainingToday === 1 ? '' : 's'} para activar hoy`
+    : streak.next ? `${streak.next.days - streak.current} días para ${streak.next.name}` : 'Todos los premios desbloqueados';
+  $('#streakMiniBar').style.width = `${streak.progress}%`;
   $('#heroCopy').textContent = documents.length
     ? `Tienes ${stats.due || Math.min(12, stats.total)} preguntas listas. Una sesión breve vale más que otra relectura completa.`
     : 'Carga tu primer material y Forja preparará una ruta breve para comenzar.';
@@ -112,10 +117,11 @@ function renderQueue(documents, cards) {
   target.innerHTML = dueByDoc.map(({ doc, cards: list }) => `<div class="topic-row"><span><strong>${escapeHtml(doc.name)}</strong><small>${escapeHtml(list[0]?.type || 'repaso activo')}</small></span><div class="bar"><i style="width:${Math.min(100, list.length * 12)}%"></i></div><b>${list.length}</b></div>`).join('');
 }
 
-export function renderProgress(documents, cards, attempts) {
+export function renderProgress(documents, cards, attempts, streak) {
   const stats = summarize(cards, attempts);
   $('#globalMastery').textContent = `${stats.mastery}%`;
   $('#globalBar').style.width = `${stats.mastery}%`;
+  renderStreak(streak);
   const confident = attempts.filter(attempt => attempt.confidence >= 4);
   const blind = confident.filter(attempt => attempt.rating < 3);
   if (confident.length) {
@@ -131,6 +137,19 @@ export function renderProgress(documents, cards, attempts) {
     const reviewed = group.filter(card => card.repetitions);
     const score = reviewed.length ? Math.round(reviewed.reduce((sum, card) => sum + card.mastery, 0) / reviewed.length) : 0;
     return `<div class="topic-row"><span><strong>${escapeHtml(doc.name)}</strong><small>${reviewed.length}/${group.length} practicadas</small></span><div class="bar"><i style="width:${score}%"></i></div><b>${score}%</b></div>`;
+  }).join('');
+}
+
+function renderStreak(streak) {
+  $('#streakCurrent').textContent = streak.current;
+  $('#streakBest').textContent = streak.best;
+  $('#rewardProgressBar').style.width = `${streak.progress}%`;
+  $('#nextRewardCopy').textContent = streak.next
+    ? `${streak.remainingToday ? `Completa ${streak.remainingToday} respuesta${streak.remainingToday === 1 ? '' : 's'} más hoy. ` : ''}Faltan ${streak.next.days - streak.current} día${streak.next.days - streak.current === 1 ? '' : 's'} para desbloquear ${streak.next.icon} ${streak.next.name}.`
+    : 'Desbloqueaste todos los premios de constancia.';
+  $('#rewardGrid').innerHTML = REWARDS.map(reward => {
+    const unlocked = reward.days <= streak.best;
+    return `<div class="reward ${unlocked ? 'unlocked' : ''}" title="${escapeHtml(reward.copy)}"><span>${reward.icon}</span><strong>${escapeHtml(reward.name)}</strong><small>${reward.days} días${unlocked ? ' · logrado' : ''}</small></div>`;
   }).join('');
 }
 

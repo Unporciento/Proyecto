@@ -90,3 +90,17 @@ button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focu
 .empty-state > span { font-size: 2.2rem; color: var(--muted-2); }
 .empty-state.compact { min-height: 160px; }
 .empty-state p { margin: 8px 0 0; }
+
+:root[data-energy="saver"] .ambient { display: none; }
+:root[data-energy="saver"] .sidebar,
+:root[data-energy="saver"] .topbar,
+:root[data-energy="saver"] dialog::backdrop,
+:root[data-energy="saver"] .nav-backdrop { backdrop-filter: none; }
+:root[data-energy="saver"] .panel,
+:root[data-energy="saver"] .sidebar { box-shadow: none; }
+:root[data-energy="saver"] *,
+:root[data-energy="saver"] *::before,
+:root[data-energy="saver"] *::after { animation: none !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+:root[data-page-hidden] *,
+:root[data-page-hidden] *::before,
+:root[data-page-hidden] *::after { animation-play-state: paused !important; }

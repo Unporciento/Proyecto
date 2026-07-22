@@ -1,6 +1,6 @@
 const LIMITS = Object.freeze({ subjects: 100, documents: 500, cards: 30_000, attempts: 100_000, settings: 100 });
 const BLOCKED_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
-const SETTING_KEYS = new Set(['examDate', 'dailyGoal', 'studyTime', 'sound', 'profileName', 'avatar', 'themeMode', 'palette', 'customAccent']);
+const SETTING_KEYS = new Set(['examDate', 'dailyGoal', 'studyTime', 'sound', 'profileName', 'avatar', 'themeMode', 'palette', 'customAccent', 'energyMode', 'bestStreak']);
 
 function fail(message) {
   throw new Error(`Respaldo no válido: ${message}`);

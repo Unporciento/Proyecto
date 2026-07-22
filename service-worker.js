@@ -1,10 +1,11 @@
-const CACHE = 'forja-shell-v4';
+const CACHE = 'forja-shell-v5';
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './assets/icon.svg',
   './css/tokens.css', './css/app.css', './css/responsive.css',
-  './js/app.js', './js/backup.js', './js/db.js', './js/drawer.js', './js/generator.js',
-  './js/parsers.js', './js/planner.js', './js/profile.js', './js/scheduler.js',
-  './js/sessions.js', './js/theme.js', './js/ui.js'
+  './js/app.js', './js/backup.js', './js/db.js', './js/drawer.js', './js/energy.js',
+  './js/focus.js', './js/generator.js', './js/parsers.js', './js/planner.js',
+  './js/profile.js', './js/scheduler.js', './js/sessions.js', './js/streak.js',
+  './js/theme.js', './js/ui.js'
 ];
 
 self.addEventListener('install', event => {
