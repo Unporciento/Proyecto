@@ -1,11 +1,11 @@
-import * as db from './db.js';
-import { generateCards } from './generator.js';
-import { parseFile } from './parsers.js';
-import { downloadCalendar, examCountdown } from './planner.js';
-import { paintProfile, prepareAvatar } from './profile.js';
-import { buildSession, schedule } from './scheduler.js';
-import { ExamSession, StudySession } from './sessions.js';
-import { clearBusy, renderDashboard, renderDocuments, renderProgress, renderSubjects, setBusy, setupNavigation, showView, toast, updateBusy } from './ui.js';
+import * as db from './db.js?v=20260722-2';
+import { generateCards } from './generator.js?v=20260722-2';
+import { parseFile } from './parsers.js?v=20260722-2';
+import { downloadCalendar, examCountdown } from './planner.js?v=20260722-2';
+import { paintProfile, prepareAvatar } from './profile.js?v=20260722-2';
+import { buildSession, schedule } from './scheduler.js?v=20260722-2';
+import { ExamSession, StudySession } from './sessions.js?v=20260722-2';
+import { clearBusy, renderDashboard, renderDocuments, renderProgress, renderSubjects, setBusy, setupNavigation, showView, toast, updateBusy } from './ui.js?v=20260722-2';
 
 const $ = selector => document.querySelector(selector);
 let state = { subjects: [], documents: [], cards: [], attempts: [], settings: {}, streak: 0, activeSubject: 'all' };
@@ -247,7 +247,7 @@ function setupEvents() {
 async function boot() {
   $('#todayLabel').textContent = new Intl.DateTimeFormat('es-CL', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
   setupEvents(); await loadState();
-  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./service-worker.js').catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./service-worker.js?v=20260722-2').catch(() => {});
 }
 
 boot().catch(error => { console.error(error); toast('No pude iniciar el almacenamiento local. Revisa el modo privado del navegador.', 'error'); });

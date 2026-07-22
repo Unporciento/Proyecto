@@ -1,4 +1,4 @@
-import { isDue, nextLabel, summarize } from './scheduler.js';
+import { isDue, nextLabel, summarize } from './scheduler.js?v=20260722-2';
 
 const $ = selector => document.querySelector(selector);
 

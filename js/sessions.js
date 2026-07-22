@@ -1,6 +1,6 @@
-import { uid } from './db.js';
-import { buildChoices, scoreTypedAnswer } from './generator.js';
-import { nextLabel } from './scheduler.js';
+import { uid } from './db.js?v=20260722-2';
+import { buildChoices, scoreTypedAnswer } from './generator.js?v=20260722-2';
+import { nextLabel } from './scheduler.js?v=20260722-2';
 
 const escapeHtml = value => {
   const node = document.createElement('div'); node.textContent = value || ''; return node.innerHTML;

@@ -1,4 +1,4 @@
-const CACHE = 'forja-shell-v2';
+const CACHE = 'forja-shell-v3';
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './assets/icon.svg',
   './css/tokens.css', './css/app.css', './css/responsive.css',
@@ -16,10 +16,13 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
-  event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request).then(response => {
-    if (response.ok && new URL(event.request.url).origin === location.origin) {
-      const copy = response.clone(); caches.open(CACHE).then(cache => cache.put(event.request, copy));
-    }
-    return response;
-  }).catch(error => event.request.mode === 'navigate' ? caches.match('./index.html') : Promise.reject(error))));
+  const sameOrigin = new URL(event.request.url).origin === location.origin;
+  if (sameOrigin) {
+    event.respondWith(fetch(event.request).then(response => {
+      if (response.ok) caches.open(CACHE).then(cache => cache.put(event.request, response.clone()));
+      return response;
+    }).catch(() => caches.match(event.request).then(cached => cached || (event.request.mode === 'navigate' ? caches.match('./index.html') : Promise.reject(new Error('offline'))))));
+    return;
+  }
+  event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request)));
 });
