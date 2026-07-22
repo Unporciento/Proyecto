@@ -1,0 +1,13 @@
+{
+  "name": "Forja · Estudio que sí se queda",
+  "short_name": "Forja",
+  "description": "Convierte tus materiales en recuperación activa, repetición espaciada y simulacros.",
+  "lang": "es-CL",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#0b100e",
+  "theme_color": "#0d1512",
+  "icons": [
+    { "src": "assets/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

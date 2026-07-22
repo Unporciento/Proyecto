@@ -1,0 +1,29 @@
+# Seguridad de Forja
+
+## Modelo
+
+Forja es una aplicación estática sin servidor. Esto elimina cuentas remotas, contraseñas, base de datos pública y endpoints de subida. La frontera de confianza es el navegador del usuario.
+
+## Controles aplicados
+
+- Política CSP restrictiva: recursos propios y versiones fijadas de jsDelivr; sin `eval`, objetos ni formularios externos.
+- Verificación de tamaño, formato permitido y firma binaria antes de procesar un archivo.
+- Archivos HTML, SVG, JavaScript y formatos no declarados se rechazan.
+- Todo contenido procedente de documentos o nombres se escapa antes de insertarse en la interfaz.
+- OCR y extracción ocurren en el navegador; no se transmite el archivo.
+- Perfil y avatar se almacenan localmente; el avatar se decodifica, recorta y vuelve a codificar como JPEG.
+- Límite de 35 MB por material y 3 MB por avatar para reducir agotamiento de memoria.
+- Dependencias externas con versiones exactas, cargadas solo para el formato correspondiente.
+- Exportación de respaldo iniciada explícitamente por el usuario.
+- Borrado local requiere confirmación.
+
+## Límites honestos
+
+- Quien tenga acceso al perfil del navegador y al dispositivo puede leer los datos locales. Forja no cifra con contraseña porque una clave gestionada en el mismo frontend no protege frente a un atacante con acceso al navegador.
+- Limpiar los datos de Safari/Chrome elimina la biblioteca. Se recomienda exportar respaldos con regularidad.
+- El perfil es local, no sincroniza entre dispositivos.
+- La calidad del OCR depende de la imagen. El usuario debe revisar el texto y las respuestas generadas antes de un examen de alta importancia.
+
+## Reporte
+
+No publiques materiales personales ni datos sensibles en un issue público. Describe únicamente el comportamiento técnico y pasos mínimos para reproducirlo.
