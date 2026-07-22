@@ -1,4 +1,4 @@
-const CACHE = 'forja-shell-v1';
+const CACHE = 'forja-shell-v2';
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './assets/icon.svg',
   './css/tokens.css', './css/app.css', './css/responsive.css',

@@ -1,7 +1,9 @@
 const ACCEPTED = new Set(['image/jpeg', 'image/png', 'image/webp']);
 
 export function initials(name = 'Yo') {
-  return name.trim().split(/\s+/).slice(0, 2).map(part => part[0]).join('').toUpperCase() || 'YO';
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase() || 'YO';
+  return parts.slice(0, 2).map(part => part[0]).join('').toUpperCase();
 }
 
 export async function prepareAvatar(file) {
