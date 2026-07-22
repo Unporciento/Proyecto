@@ -1,9 +1,10 @@
-const CACHE = 'forja-shell-v3';
+const CACHE = 'forja-shell-v4';
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './assets/icon.svg',
   './css/tokens.css', './css/app.css', './css/responsive.css',
-  './js/app.js', './js/db.js', './js/generator.js', './js/parsers.js',
-  './js/planner.js', './js/profile.js', './js/scheduler.js', './js/sessions.js', './js/ui.js'
+  './js/app.js', './js/backup.js', './js/db.js', './js/drawer.js', './js/generator.js',
+  './js/parsers.js', './js/planner.js', './js/profile.js', './js/scheduler.js',
+  './js/sessions.js', './js/theme.js', './js/ui.js'
 ];
 
 self.addEventListener('install', event => {
@@ -21,7 +22,7 @@ self.addEventListener('fetch', event => {
     event.respondWith(fetch(event.request).then(response => {
       if (response.ok) caches.open(CACHE).then(cache => cache.put(event.request, response.clone()));
       return response;
-    }).catch(() => caches.match(event.request).then(cached => cached || (event.request.mode === 'navigate' ? caches.match('./index.html') : Promise.reject(new Error('offline'))))));
+    }).catch(() => caches.match(event.request, { ignoreSearch: true }).then(cached => cached || (event.request.mode === 'navigate' ? caches.match('./index.html') : Promise.reject(new Error('offline'))))));
     return;
   }
   event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request)));

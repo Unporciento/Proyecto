@@ -64,6 +64,43 @@ export async function putMany(name, values) {
   });
 }
 
+export async function putMaterial(document, cards) {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(['documents', 'cards'], 'readwrite');
+    tx.objectStore('documents').put(document);
+    cards.forEach(card => tx.objectStore('cards').put(card));
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error || new Error('No se pudo guardar el material.'));
+  });
+}
+
+export async function putProgress(cards, attempts) {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(['cards', 'attempts'], 'readwrite');
+    cards.forEach(card => tx.objectStore('cards').put(card));
+    attempts.forEach(attempt => tx.objectStore('attempts').put(attempt));
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error || new Error('No se pudo guardar el progreso.'));
+  });
+}
+
+export async function removeMaterial(documentId, cardIds, attemptIds) {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(['documents', 'cards', 'attempts'], 'readwrite');
+    tx.objectStore('documents').delete(documentId);
+    cardIds.forEach(id => tx.objectStore('cards').delete(id));
+    attemptIds.forEach(id => tx.objectStore('attempts').delete(id));
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error || new Error('No se pudo eliminar el material.'));
+  });
+}
+
 export async function get(name, key) {
   return requestResult((await store(name)).get(key));
 }
@@ -106,14 +143,30 @@ export async function exportData() {
   return data;
 }
 
-export async function clearAll() {
+export async function replaceAll(data) {
   const db = await openDatabase();
-  await Promise.all(STORES.map(name => new Promise((resolve, reject) => {
-    const tx = db.transaction(name, 'readwrite');
-    tx.objectStore(name).clear();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(STORES, 'readwrite');
+    STORES.forEach(name => {
+      const target = tx.objectStore(name);
+      target.clear();
+      data[name].forEach(value => target.put(value));
+    });
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
-  })));
+    tx.onabort = () => reject(tx.error || new Error('La restauración fue cancelada.'));
+  });
+}
+
+export async function clearAll() {
+  const db = await openDatabase();
+  await new Promise((resolve, reject) => {
+    const tx = db.transaction(STORES, 'readwrite');
+    STORES.forEach(name => tx.objectStore(name).clear());
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+    tx.onabort = () => reject(tx.error || new Error('No se pudieron borrar los datos.'));
+  });
 }
 
 export function uid(prefix = 'id') {

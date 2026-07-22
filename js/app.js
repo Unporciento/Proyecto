@@ -1,14 +1,17 @@
-import * as db from './db.js?v=20260722-2';
-import { generateCards } from './generator.js?v=20260722-2';
-import { parseFile } from './parsers.js?v=20260722-2';
-import { downloadCalendar, examCountdown } from './planner.js?v=20260722-2';
-import { paintProfile, prepareAvatar } from './profile.js?v=20260722-2';
-import { buildSession, schedule } from './scheduler.js?v=20260722-2';
-import { ExamSession, StudySession } from './sessions.js?v=20260722-2';
-import { clearBusy, renderDashboard, renderDocuments, renderProgress, renderSubjects, setBusy, setupNavigation, showView, toast, updateBusy } from './ui.js?v=20260722-2';
+import { validateBackup } from './backup.js?v=20260722-3';
+import * as db from './db.js?v=20260722-3';
+import { closeDrawer } from './drawer.js?v=20260722-3';
+import { generateCards } from './generator.js?v=20260722-3';
+import { parseFile } from './parsers.js?v=20260722-3';
+import { downloadCalendar, examCountdown } from './planner.js?v=20260722-3';
+import { paintAvatarPreview, paintProfile, prepareAvatar } from './profile.js?v=20260722-3';
+import { buildSession, schedule } from './scheduler.js?v=20260722-3';
+import { ExamSession, StudySession } from './sessions.js?v=20260722-3';
+import { applyTheme, normalizeHex } from './theme.js?v=20260722-3';
+import { clearBusy, renderDashboard, renderDocuments, renderProgress, renderSubjects, setBusy, setupNavigation, showView, toast, updateBusy } from './ui.js?v=20260722-3';
 
 const $ = selector => document.querySelector(selector);
-let state = { subjects: [], documents: [], cards: [], attempts: [], settings: {}, streak: 0, activeSubject: 'all' };
+let state = { subjects: [], documents: [], cards: [], attempts: [], settings: {}, streak: 0, activeSubject: 'all', libraryFilter: 'all' };
 let focus = { seconds: 25 * 60, running: false, timer: null };
 
 async function loadState() {
@@ -21,16 +24,21 @@ async function loadState() {
     db.all('documents'), db.all('cards'), db.all('attempts'), db.getSettings()
   ]);
   state = { ...state, subjects, documents, cards, attempts, settings, streak: calculateStreak(attempts) };
+  applyTheme(settings);
   refresh();
 }
 
 function refresh() {
-  renderDocuments(state.documents, state.cards, $('#librarySearch')?.value || '', state.activeSubject);
+  renderDocuments(state.documents, state.cards, $('#librarySearch')?.value || '', state.activeSubject, state.libraryFilter);
   renderSubjects(state.subjects, state.documents, state.activeSubject);
   renderDashboard(state.documents, state.cards, state.attempts, state.streak);
   renderProgress(state.documents, state.cards, state.attempts);
   paintProfile(state.settings);
-  $('#studySubject').innerHTML = '<option value="all">Mezclar todas las materias</option>' + state.subjects.map(subject => `<option value="${subject.id}">${subject.name.replace(/[<>&"]/g, '')}</option>`).join('');
+  const selector = $('#studySubject');
+  const previous = selector.value;
+  selector.replaceChildren(new Option('Mezclar todas las materias', 'all'));
+  state.subjects.forEach(subject => selector.add(new Option(subject.name, subject.id)));
+  selector.value = [...selector.options].some(option => option.value === previous) ? previous : 'all';
   const days = examCountdown(state.settings.examDate);
   if (days !== null && days >= 0) $('#timeDelta').textContent = days ? `Tu examen es en ${days} día${days === 1 ? '' : 's'}` : 'Tu examen es hoy';
   const count = state.cards.filter(card => !card.dueAt || new Date(card.dueAt) <= new Date()).length;
@@ -69,16 +77,8 @@ async function processFiles(files) {
   for (const file of files) {
     try {
       const parsed = await parseFile(file, updateBusy);
-      const document = {
-        id: db.uid('doc'), name: file.name, type: parsed.type, size: parsed.size,
-        subjectId: state.activeSubject === 'all' ? state.subjects[0].id : state.activeSubject,
-        text: parsed.text, preview: parsed.text.replace(/\s+/g, ' ').slice(0, 130),
-        createdAt: new Date().toISOString(), meta: { pageCount: parsed.pageCount, confidence: parsed.confidence }
-      };
-      const cards = generateCards(document);
-      if (cards.length < 3) throw new Error('Hay muy poco texto útil para crear preguntas fiables.');
-      await Promise.all([db.put('documents', document), db.putMany('cards', cards)]);
-      state.documents.push(document); state.cards.push(...cards); imported += 1;
+      await persistDocument({ name: file.name, type: parsed.type, size: parsed.size, text: parsed.text, meta: { pageCount: parsed.pageCount, confidence: parsed.confidence } });
+      imported += 1;
     } catch (error) {
       toast(`${file.name}: ${error.message}`, 'error');
     }
@@ -88,14 +88,50 @@ async function processFiles(files) {
   if (imported) toast(`${imported} material${imported === 1 ? '' : 'es'} listo${imported === 1 ? '' : 's'} para practicar.`);
 }
 
+async function persistDocument({ name, type = 'txt', size = 0, text, meta = {} }) {
+  const document = {
+    id: db.uid('doc'), name: name.slice(0, 255), type, size,
+    subjectId: state.activeSubject === 'all' ? state.subjects[0].id : state.activeSubject,
+    text, preview: text.replace(/\s+/g, ' ').slice(0, 130),
+    createdAt: new Date().toISOString(), meta
+  };
+  const cards = generateCards(document);
+  if (cards.length < 3) throw new Error('Hay muy poco texto útil para crear preguntas fiables.');
+  await db.putMaterial(document, cards);
+  state.documents.push(document); state.cards.push(...cards);
+  return cards.length;
+}
+
+function setupPasteMaterial() {
+  const dialog = $('#pasteDialog');
+  $('#pasteMaterialBtn').addEventListener('click', () => {
+    $('#pasteTitle').value = ''; $('#pasteText').value = '';
+    dialog.returnValue = 'cancel'; dialog.showModal();
+  });
+  dialog.querySelector('form').addEventListener('submit', event => {
+    if ($('#pasteText').value.replaceAll('\0', '').trim().length >= 80) return;
+    event.preventDefault(); toast('Añade al menos 80 caracteres útiles.', 'error');
+  });
+  dialog.addEventListener('close', async () => {
+    if (dialog.returnValue !== 'save') return;
+    const name = $('#pasteTitle').value.trim();
+    const text = $('#pasteText').value.replaceAll('\0', '').trim();
+    if (!name || text.length < 80) return;
+    try {
+      const count = await persistDocument({ name: `${name}.txt`, text, size: new Blob([text]).size, meta: { origin: 'pasted' } });
+      refresh(); toast(`Apuntes guardados: ${count} preguntas creadas.`);
+    } catch (error) { toast(error.message, 'error'); }
+  });
+}
+
 async function deleteDocument(id) {
   const document = state.documents.find(item => item.id === id);
   if (!document || !confirm(`¿Eliminar “${document.name}” y todas sus preguntas?`)) return;
-  await Promise.all([db.remove('documents', id), db.removeByIndex('cards', 'docId', id)]);
   const removedCards = new Set(state.cards.filter(card => card.docId === id).map(card => card.id));
+  const removedAttempts = state.attempts.filter(item => removedCards.has(item.cardId)).map(item => item.id);
+  await db.removeMaterial(id, [...removedCards], removedAttempts);
   state.documents = state.documents.filter(item => item.id !== id);
   state.cards = state.cards.filter(card => card.docId !== id);
-  for (const attempt of state.attempts.filter(item => removedCards.has(item.cardId))) await db.remove('attempts', attempt.id);
   state.attempts = state.attempts.filter(item => !removedCards.has(item.cardId));
   refresh(); toast('Material eliminado del dispositivo.');
 }
@@ -113,7 +149,7 @@ function startStudy() {
     onRate: async (card, result) => {
       const updated = schedule(card, result.rating);
       const attempt = { id: db.uid('attempt'), cardId: card.id, docId: card.docId, createdAt: new Date().toISOString(), ...result };
-      await Promise.all([db.put('cards', updated), db.put('attempts', attempt)]);
+      await db.putProgress([updated], [attempt]);
       state.cards = state.cards.map(item => item.id === updated.id ? updated : item);
       state.attempts.push(attempt);
     },
@@ -134,7 +170,7 @@ function startExam() {
         confidence: 0, durationMs: 0, mode: 'exam'
       }));
       const updates = answers.map(item => schedule(item.card, item.correct ? 3 : 1));
-      await Promise.all([db.putMany('attempts', attempts), db.putMany('cards', updates)]);
+      await db.putProgress(updates, attempts);
       state.attempts.push(...attempts);
       const updateMap = new Map(updates.map(card => [card.id, card]));
       state.cards = state.cards.map(card => updateMap.get(card.id) || card);
@@ -146,19 +182,35 @@ function startExam() {
 
 function setupSettings() {
   const dialog = $('#settingsDialog');
+  const themeValues = () => ({
+    themeMode: $('#themeModeSetting').value,
+    palette: $('#paletteSetting').value,
+    customAccent: normalizeHex($('#customAccentSetting').value)
+  });
+  const previewTheme = () => {
+    $('#customAccentRow').hidden = $('#paletteSetting').value !== 'custom';
+    applyTheme({ ...state.settings, ...themeValues() });
+  };
   $('#settingsBtn').addEventListener('click', () => {
+    closeDrawer({ restoreFocus: false });
     dialog.returnValue = 'cancel';
     $('#examDateSetting').value = state.settings.examDate || '';
     $('#dailyGoalSetting').value = state.settings.dailyGoal || 25;
     $('#studyTimeSetting').value = state.settings.studyTime || '19:00';
     $('#soundSetting').checked = state.settings.sound !== false;
-    dialog.showModal();
+    $('#themeModeSetting').value = state.settings.themeMode || 'system';
+    $('#paletteSetting').value = state.settings.palette || 'forja';
+    $('#customAccentSetting').value = normalizeHex(state.settings.customAccent);
+    previewTheme(); dialog.showModal();
   });
   dialog.addEventListener('close', async () => {
-    if (dialog.returnValue !== 'save') return;
-    state.settings = { ...state.settings, examDate: $('#examDateSetting').value, dailyGoal: Number($('#dailyGoalSetting').value), studyTime: $('#studyTimeSetting').value, sound: $('#soundSetting').checked };
+    if (dialog.returnValue !== 'save') { applyTheme(state.settings); return; }
+    state.settings = { ...state.settings, ...themeValues(), examDate: $('#examDateSetting').value, dailyGoal: Number($('#dailyGoalSetting').value), studyTime: $('#studyTimeSetting').value, sound: $('#soundSetting').checked };
     await db.saveSettings(state.settings); toast('Plan de estudio guardado.'); refresh();
   });
+  $('#themeModeSetting').addEventListener('change', previewTheme);
+  $('#paletteSetting').addEventListener('change', previewTheme);
+  $('#customAccentSetting').addEventListener('input', previewTheme);
   $('#clearDataBtn').addEventListener('click', async () => {
     if (!confirm('Esto borrará materiales, preguntas y progreso solo de este dispositivo. ¿Continuar?')) return;
     await db.clearAll(); dialog.close('cancel'); await loadState(); toast('Datos locales eliminados.');
@@ -193,10 +245,10 @@ function setupProfile() {
     $('#profileName').value = state.settings.profileName || ''; paintProfile(state.settings); dialog.showModal();
   });
   $('#avatarInput').addEventListener('change', async event => {
-    try { pendingAvatar = await prepareAvatar(event.target.files[0]); $('#avatarPreview').innerHTML = `<img src="${pendingAvatar}" alt="Vista previa">`; }
+    try { pendingAvatar = await prepareAvatar(event.target.files[0]); paintAvatarPreview($('#avatarPreview'), pendingAvatar, 'YO', 'Vista previa'); }
     catch (error) { toast(error.message, 'error'); }
   });
-  $('#removeAvatarBtn').addEventListener('click', () => { pendingAvatar = null; $('#avatarPreview').textContent = 'YO'; });
+  $('#removeAvatarBtn').addEventListener('click', () => { pendingAvatar = null; paintAvatarPreview($('#avatarPreview'), null, 'YO'); });
   dialog.addEventListener('close', async () => {
     if (dialog.returnValue !== 'save') return;
     state.settings = { ...state.settings, profileName: $('#profileName').value.trim().slice(0, 60) || 'Yo', avatar: pendingAvatar };
@@ -233,21 +285,51 @@ async function exportBackup() {
   setTimeout(() => URL.revokeObjectURL(link.href), 1000);
 }
 
+async function importBackup(file) {
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) throw new Error('El respaldo supera el límite de 10 MB.');
+  const data = validateBackup(JSON.parse(await file.text()));
+  if (!confirm(`Se reemplazarán los datos locales por ${data.documents.length} materiales y ${data.cards.length} preguntas. ¿Continuar?`)) return;
+  await db.replaceAll(data);
+  state.activeSubject = 'all'; state.libraryFilter = 'all';
+  await loadState(); toast('Respaldo restaurado de forma completa.');
+}
+
+function setupBackupRestore() {
+  const input = $('#backupInput');
+  $('#importBackupBtn').addEventListener('click', () => input.click());
+  input.addEventListener('change', async () => {
+    try { await importBackup(input.files[0]); }
+    catch (error) { toast(error instanceof SyntaxError ? 'Ese archivo no contiene JSON válido.' : error.message, 'error'); }
+    finally { input.value = ''; }
+  });
+}
+
+function setupLibraryFilters() {
+  document.querySelector('.segmented').addEventListener('click', event => {
+    const button = event.target.closest('[data-filter]');
+    if (!button) return;
+    state.libraryFilter = button.dataset.filter;
+    document.querySelectorAll('[data-filter]').forEach(item => item.classList.toggle('active', item === button));
+    renderDocuments(state.documents, state.cards, $('#librarySearch').value, state.activeSubject, state.libraryFilter);
+  });
+}
+
 function setupEvents() {
-  setupNavigation(); bindUploadHandlers(); setupSettings(); setupSubjects(); setupProfile(); setupFocus();
+  setupNavigation(); bindUploadHandlers(); setupSettings(); setupSubjects(); setupProfile(); setupFocus(); setupPasteMaterial(); setupBackupRestore(); setupLibraryFilters();
   $('#addMaterialBtn').addEventListener('click', () => $('#fileInput').click());
   $('#startTodayBtn').addEventListener('click', startStudy);
   $('#startStudyBtn').addEventListener('click', startStudy);
   $('#startExamBtn').addEventListener('click', startExam);
   $('#exportBackupBtn').addEventListener('click', exportBackup);
-  $('#librarySearch').addEventListener('input', event => renderDocuments(state.documents, state.cards, event.target.value, state.activeSubject));
+  $('#librarySearch').addEventListener('input', event => renderDocuments(state.documents, state.cards, event.target.value, state.activeSubject, state.libraryFilter));
   $('#documentGrid').addEventListener('click', event => { const id = event.target.dataset.deleteDoc; if (id) deleteDocument(id); });
 }
 
 async function boot() {
   $('#todayLabel').textContent = new Intl.DateTimeFormat('es-CL', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
   setupEvents(); await loadState();
-  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./service-worker.js?v=20260722-2').catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./service-worker.js?v=20260722-3').catch(() => {});
 }
 
 boot().catch(error => { console.error(error); toast('No pude iniciar el almacenamiento local. Revisa el modo privado del navegador.', 'error'); });

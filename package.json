@@ -4,6 +4,6 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "check": "node --check js/app.js && node --check js/db.js && node --check js/generator.js && node --check js/parsers.js && node --check js/planner.js && node --check js/profile.js && node --check js/scheduler.js && node --check js/sessions.js && node --check js/ui.js"
+    "check": "for file in js/*.js; do node --check \"$file\" || exit 1; done"
   }
 }

@@ -1,4 +1,5 @@
-import { isDue, nextLabel, summarize } from './scheduler.js?v=20260722-2';
+import { closeDrawer, resolveView, setupDrawer } from './drawer.js?v=20260722-3';
+import { isDue, nextLabel, summarize } from './scheduler.js?v=20260722-3';
 
 const $ = selector => document.querySelector(selector);
 
@@ -11,22 +12,29 @@ export function toast(message, tone = 'default') {
 }
 
 export function showView(name) {
-  document.querySelectorAll('.view').forEach(panel => panel.classList.toggle('active', panel.dataset.viewPanel === name));
-  document.querySelectorAll('.nav-item[data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === name));
+  const safeName = resolveView(name);
+  if (!safeName) return false;
+  document.querySelectorAll('.view').forEach(panel => panel.classList.toggle('active', panel.dataset.viewPanel === safeName));
+  document.querySelectorAll('.nav-item[data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === safeName));
   const titles = { inicio: 'Tu centro de estudio', biblioteca: 'Biblioteca', estudiar: 'Sesión inteligente', examen: 'Simulacro', progreso: 'Progreso verificable' };
-  $('#viewTitle').textContent = titles[name] || 'Forja';
-  $('#sidebar').classList.remove('open');
-  history.replaceState(null, '', `#${name}`);
+  $('#viewTitle').textContent = titles[safeName];
+  closeDrawer({ restoreFocus: false, focusMain: true });
+  history.replaceState(null, '', `#${safeName}`);
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  return true;
 }
 
 export function setupNavigation() {
+  setupDrawer();
   document.querySelectorAll('[data-view], [data-go]').forEach(button => {
     button.addEventListener('click', () => showView(button.dataset.view || button.dataset.go));
   });
-  $('#menuBtn').addEventListener('click', () => $('#sidebar').classList.toggle('open'));
-  const initial = location.hash.slice(1);
-  if (document.querySelector(`[data-view-panel="${initial}"]`)) showView(initial);
+  const initial = resolveView(location.hash.slice(1));
+  if (initial) showView(initial);
+  window.addEventListener('hashchange', () => {
+    const view = resolveView(location.hash.slice(1));
+    if (view) showView(view);
+  });
 }
 
 function dateLabel(value) {
@@ -39,9 +47,15 @@ function escapeHtml(value = '') {
   return div.innerHTML;
 }
 
-export function renderDocuments(documents, cards, query = '', subjectId = 'all') {
+export function renderDocuments(documents, cards, query = '', subjectId = 'all', filter = 'all') {
   const grid = $('#documentGrid');
-  const filtered = documents.filter(doc => (subjectId === 'all' || doc.subjectId === subjectId) && `${doc.name} ${doc.preview}`.toLowerCase().includes(query.toLowerCase()));
+  const filtered = documents.filter(doc => {
+    const group = cards.filter(card => card.docId === doc.id);
+    const reviewed = group.filter(card => card.repetitions);
+    const mastery = reviewed.length ? reviewed.reduce((sum, card) => sum + (card.mastery || 0), 0) / reviewed.length : 0;
+    const matchesFilter = filter === 'ready' ? group.length >= 3 : filter === 'weak' ? group.length > 0 && (!reviewed.length || mastery < 70) : true;
+    return matchesFilter && (subjectId === 'all' || doc.subjectId === subjectId) && `${doc.name} ${doc.preview}`.toLowerCase().includes(query.toLowerCase());
+  });
   if (!filtered.length) {
     grid.innerHTML = `<div class="empty-state"><span>▧</span><h3>${documents.length ? 'No hay coincidencias' : 'Tu biblioteca está vacía'}</h3><p>${documents.length ? 'Prueba otra búsqueda.' : 'Empieza con una guía, un PDF o incluso una foto de tus apuntes.'}</p></div>`;
     return;
@@ -95,7 +109,7 @@ function renderQueue(documents, cards) {
     return;
   }
   target.className = 'topic-progress';
-  target.innerHTML = dueByDoc.map(({ doc, cards: list }) => `<div class="topic-row"><span><strong>${escapeHtml(doc.name)}</strong><small>${list[0]?.type || 'repaso activo'}</small></span><div class="bar"><i style="width:${Math.min(100, list.length * 12)}%"></i></div><b>${list.length}</b></div>`).join('');
+  target.innerHTML = dueByDoc.map(({ doc, cards: list }) => `<div class="topic-row"><span><strong>${escapeHtml(doc.name)}</strong><small>${escapeHtml(list[0]?.type || 'repaso activo')}</small></span><div class="bar"><i style="width:${Math.min(100, list.length * 12)}%"></i></div><b>${list.length}</b></div>`).join('');
 }
 
 export function renderProgress(documents, cards, attempts) {

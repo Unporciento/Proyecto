@@ -7,8 +7,11 @@
 
 @media (max-width: 760px) {
   :root { --topbar: 68px; }
-  .sidebar { transform: translateX(-102%); transition: transform .28s var(--ease); box-shadow: 30px 0 60px rgba(0,0,0,.35); }
+  .sidebar { width: min(84vw, 330px); height: 100dvh; padding-top: max(28px, env(safe-area-inset-top)); padding-bottom: max(20px, env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; transform: translateX(-102%); transition: transform .28s var(--ease); box-shadow: 30px 0 60px rgba(0,0,0,.35); }
   .sidebar.open { transform: translateX(0); }
+  .sidebar-close { position: absolute; display: grid; place-content: center; right: 14px; top: max(14px, env(safe-area-inset-top)); width: 42px; height: 42px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); color: var(--muted); font-size: 1.5rem; cursor: pointer; }
+  .nav-backdrop { position: fixed; inset: 0; z-index: 18; display: block; border: 0; background: rgba(0, 0, 0, .5); backdrop-filter: blur(2px); }
+  body.nav-open { overflow: hidden; overscroll-behavior: none; }
   .topbar { left: 0; padding: 0 14px; }
   .menu-btn { display: block; }
   .crumb { display: none; }
@@ -19,6 +22,7 @@
   .due-card { align-items: center; }
   .metric-grid, .progress-grid { grid-template-columns: 1fr; }
   .page-intro, .library-tools { align-items: stretch; flex-direction: column; }
+  .page-actions { flex-wrap: wrap; }
   .segmented { width: max-content; }
   .document-grid { grid-template-columns: 1fr; }
   .exam-setup { grid-template-columns: 1fr; gap: 24px; align-content: center; }
@@ -27,7 +31,9 @@
 
 @media (max-width: 480px) {
   h1 { font-size: 2.35rem; }
-  .avatar { display: none; }
+  .top-actions { gap: 8px; }
+  .focus-chip { min-width: 102px; padding-inline: 10px; }
+  .avatar { display: block; width: 38px; height: 38px; }
   .hero-card { padding: 26px 22px; }
   .hero-actions { align-items: stretch; flex-direction: column; gap: 8px; }
   .hero-actions .text-btn { text-align: left; }

@@ -12,16 +12,17 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/tokens.css?v=20260722-2">
-  <link rel="stylesheet" href="css/app.css?v=20260722-2">
-  <link rel="stylesheet" href="css/responsive.css?v=20260722-2">
+  <link rel="stylesheet" href="css/tokens.css?v=20260722-3">
+  <link rel="stylesheet" href="css/app.css?v=20260722-3">
+  <link rel="stylesheet" href="css/responsive.css?v=20260722-3">
 </head>
 <body>
   <a class="skip-link" href="#main">Saltar al contenido</a>
   <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
 
-  <aside class="sidebar" id="sidebar">
-    <a class="brand" href="#inicio" aria-label="Forja, inicio">
+  <aside class="sidebar" id="sidebar" aria-label="Menú lateral">
+    <button class="sidebar-close" id="sidebarClose" type="button" aria-label="Cerrar menú">×</button>
+    <a class="brand" href="#inicio" data-go="inicio" aria-label="Forja, inicio">
       <span class="brand-mark" aria-hidden="true">F</span>
       <span><strong>Forja</strong><small>estudio que sí se queda</small></span>
     </a>
@@ -37,9 +38,10 @@
       <button class="nav-item" id="settingsBtn"><span>⚙</span>Ajustes</button>
     </div>
   </aside>
+  <button class="nav-backdrop" id="navBackdrop" type="button" aria-label="Cerrar menú" hidden></button>
 
   <header class="topbar">
-    <button class="icon-btn menu-btn" id="menuBtn" aria-label="Abrir menú">☰</button>
+    <button class="icon-btn menu-btn" id="menuBtn" aria-label="Abrir menú" aria-controls="sidebar" aria-expanded="false">☰</button>
     <div class="crumb"><span id="todayLabel"></span><strong id="viewTitle">Tu centro de estudio</strong></div>
     <div class="top-actions">
       <button class="focus-chip" id="focusBtn"><span>◷</span><strong id="focusTime">25:00</strong><small>Enfocarme</small></button>
@@ -47,7 +49,7 @@
     </div>
   </header>
 
-  <main id="main">
+  <main id="main" tabindex="-1">
     <section class="view active" data-view-panel="inicio">
       <div class="hero-grid">
         <article class="hero-card">
@@ -75,7 +77,7 @@
     </section>
 
     <section class="view" data-view-panel="biblioteca">
-      <div class="page-intro"><div><span class="eyebrow">TU FUENTE DE VERDAD</span><h1>Biblioteca de estudio</h1><p>Todo se procesa y guarda en este dispositivo. Tus archivos no se suben a ningún servidor.</p></div><button class="primary-btn" id="addMaterialBtn">+ Añadir material</button></div>
+      <div class="page-intro"><div><span class="eyebrow">TU FUENTE DE VERDAD</span><h1>Biblioteca de estudio</h1><p>Todo se procesa y guarda en este dispositivo. Tus archivos no se suben a ningún servidor.</p></div><div class="page-actions"><button class="secondary-btn" id="pasteMaterialBtn">Pegar apuntes</button><button class="primary-btn" id="addMaterialBtn">+ Añadir archivo</button></div></div>
       <div class="drop-zone" id="dropZone" tabindex="0" role="button"><div class="drop-icon">⇧</div><h2>Arrastra aquí tus apuntes</h2><p>PDF, Word, Markdown, texto e imágenes · varios archivos a la vez</p><button class="secondary-btn">Elegir archivos</button><input id="fileInput" type="file" multiple accept=".pdf,.docx,.txt,.md,.markdown,.png,.jpg,.jpeg,.webp" hidden><small>Las imágenes usan reconocimiento de texto local; puede tardar en iPhone.</small></div>
       <div class="library-tools"><label class="search-box">⌕<input id="librarySearch" type="search" placeholder="Buscar tema o archivo…"></label><div class="segmented"><button class="active" data-filter="all">Todos</button><button data-filter="ready">Listos</button><button data-filter="weak">Por reforzar</button></div></div>
       <div class="subject-rail" id="subjectRail" aria-label="Materias"></div>
@@ -93,19 +95,20 @@
     </section>
 
     <section class="view" data-view-panel="progreso">
-      <div class="page-intro"><div><span class="eyebrow">NO CONFUNDAS FLUIDEZ CON DOMINIO</span><h1>Progreso verificable</h1><p>La métrica principal cuenta lo que puedes recuperar sin mirar, no cuánto tiempo pasaste leyendo.</p></div><button class="secondary-btn" id="exportBackupBtn">Exportar respaldo</button></div>
+      <div class="page-intro"><div><span class="eyebrow">NO CONFUNDAS FLUIDEZ CON DOMINIO</span><h1>Progreso verificable</h1><p>La métrica principal cuenta lo que puedes recuperar sin mirar, no cuánto tiempo pasaste leyendo.</p></div><div class="page-actions"><button class="text-btn" id="importBackupBtn">Restaurar</button><button class="secondary-btn" id="exportBackupBtn">Exportar respaldo</button><input id="backupInput" type="file" accept="application/json,.json" hidden></div></div>
       <div class="progress-grid"><article class="panel big-stat"><span class="eyebrow">DOMINIO GLOBAL</span><strong id="globalMastery">0%</strong><div class="bar"><i id="globalBar"></i></div><p>Meta recomendada antes del examen: 85% en dos sesiones separadas.</p></article><article class="panel"><span class="eyebrow">CALIBRACIÓN</span><h2 id="calibrationTitle">Aún sin datos</h2><p id="calibrationCopy">Después de responder, compararemos tu confianza con tu resultado para detectar puntos ciegos.</p></article></div>
       <article class="panel"><div class="panel-head"><div><span class="eyebrow">POR MATERIAL</span><h2>Mapa de dominio</h2></div></div><div id="topicProgress" class="topic-progress empty-state compact"><p>Tus temas aparecerán al comenzar a practicar.</p></div></article>
       <article class="panel evidence-note"><span>i</span><div><h3>Por qué funciona este sistema</h3><p>La práctica de recuperación y el estudio distribuido son dos de las técnicas con respaldo más consistente. Forja también intercala temas y exige explicar errores, para entrenar discriminación y comprensión.</p></div></article>
     </section>
   </main>
 
-  <dialog id="settingsDialog"><form method="dialog" class="modal-card"><button class="modal-close" value="cancel" aria-label="Cerrar">×</button><span class="eyebrow">AJUSTES</span><h2>Tu plan realista</h2><label>Fecha del próximo examen<input id="examDateSetting" type="date"></label><label>Meta diaria<input id="dailyGoalSetting" type="number" min="5" max="180" step="5" value="25"><span>minutos</span></label><label>Hora preferida<input id="studyTimeSetting" type="time" value="19:00"></label><label class="check-row"><input id="soundSetting" type="checkbox" checked><span>Lectura en voz alta cuando yo la active</span></label><button class="secondary-btn" type="button" id="calendarBtn">Añadir plan a mi calendario</button><div class="modal-actions"><button class="danger-text" type="button" id="clearDataBtn">Borrar datos locales</button><button class="primary-btn" value="save">Guardar cambios</button></div></form></dialog>
+  <dialog id="settingsDialog"><form method="dialog" class="modal-card"><button class="modal-close" value="cancel" aria-label="Cerrar">×</button><span class="eyebrow">AJUSTES</span><h2>Tu plan y apariencia</h2><fieldset class="appearance-settings"><legend>Personalización</legend><label>Tema<select id="themeModeSetting"><option value="system">Automático</option><option value="dark">Oscuro</option><option value="light">Claro</option></select></label><label>Paleta<select id="paletteSetting"><option value="forja">Forja · verde</option><option value="ocean">Océano · azul</option><option value="amethyst">Amatista · violeta</option><option value="coral">Coral</option><option value="solar">Solar · ámbar</option><option value="rose">Rosa</option><option value="custom">Color personalizado</option></select></label><label id="customAccentRow" hidden>Tu color<input id="customAccentSetting" type="color" value="#b9ef73"></label><div class="palette-preview" id="palettePreview"><span>Vista previa</span><button type="button">Acción principal</button></div></fieldset><details class="name-story"><summary>¿Por qué se llama Forja?</summary><p>Porque aprender de verdad se parece a forjar: recordar, fallar, corregir y repetir vuelve el conocimiento más resistente.</p></details><label>Fecha del próximo examen<input id="examDateSetting" type="date"></label><label>Meta diaria<input id="dailyGoalSetting" type="number" min="5" max="180" step="5" value="25"><span>minutos</span></label><label>Hora preferida<input id="studyTimeSetting" type="time" value="19:00"></label><label class="check-row"><input id="soundSetting" type="checkbox" checked><span>Lectura en voz alta cuando yo la active</span></label><button class="secondary-btn" type="button" id="calendarBtn">Añadir plan a mi calendario</button><div class="modal-actions"><button class="danger-text" type="button" id="clearDataBtn">Borrar datos locales</button><button class="primary-btn" value="save">Guardar cambios</button></div></form></dialog>
   <dialog id="focusDialog"><form method="dialog" class="focus-modal"><button class="modal-close" value="cancel">×</button><span class="eyebrow">BLOQUE DE ENFOQUE</span><strong id="focusBig">25:00</strong><p id="focusState">Una tarea. Sin cambiar de pestaña.</p><div><button type="button" class="secondary-btn" id="focusReset">Reiniciar</button><button type="button" class="primary-btn" id="focusToggle">Comenzar</button></div></form></dialog>
   <dialog id="subjectDialog"><form method="dialog" class="modal-card"><button class="modal-close" value="cancel">×</button><span class="eyebrow">NUEVA CARPETA</span><h2>Crear una materia</h2><label>Nombre<input id="subjectName" maxlength="60" autocomplete="off" placeholder="Ej.: Mecánica automotriz" required></label><div class="modal-actions"><span></span><button class="primary-btn" value="save">Crear materia</button></div></form></dialog>
   <dialog id="profileDialog"><form method="dialog" class="modal-card"><button class="modal-close" value="cancel">×</button><span class="eyebrow">PERFIL LOCAL</span><h2>Tu espacio de estudio</h2><div class="profile-row"><div class="avatar-preview" id="avatarPreview">YO</div><label class="secondary-btn" style="display:grid;place-content:center;cursor:pointer">Elegir foto<input id="avatarInput" type="file" accept="image/jpeg,image/png,image/webp" hidden></label></div><label>Tu nombre<input id="profileName" maxlength="60" autocomplete="name" placeholder="¿Cómo te llamamos?"></label><p>Este perfil y la foto se guardan solo en este navegador; no se envían a internet.</p><div class="modal-actions"><button class="danger-text" type="button" id="removeAvatarBtn">Quitar foto</button><button class="primary-btn" value="save">Guardar perfil</button></div></form></dialog>
+  <dialog id="pasteDialog"><form method="dialog" class="modal-card"><button class="modal-close" value="cancel">×</button><span class="eyebrow">ENTRADA RÁPIDA</span><h2>Pegar apuntes</h2><p>Copia aquí una clase, resumen o transcripción. Forja creará preguntas sin subir el texto.</p><label>Título<input id="pasteTitle" maxlength="100" autocomplete="off" placeholder="Ej.: Sistema de frenos" required></label><label>Contenido<textarea id="pasteText" minlength="80" maxlength="500000" rows="10" placeholder="Pega al menos unas cuantas ideas completas…" required></textarea></label><div class="modal-actions"><span></span><button class="primary-btn" value="save">Crear preguntas</button></div></form></dialog>
   <div id="toastRegion" class="toast-region" aria-live="polite"></div>
 
-  <script type="module" src="js/app.js?v=20260722-2"></script>
+  <script type="module" src="js/app.js?v=20260722-3"></script>
 </body>
 </html>
