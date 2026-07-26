@@ -1,15 +1,28 @@
 # AI handoff — FORJA
 
-Última fase completada: estabilización, 2026-07-26.
+Última etapa preparada para producción: puente compatible 2A, 2026-07-26.
 
 ## Estado
 
 - FORJA sigue siendo una PWA estática centrada en estudio.
-- No se inició el núcleo académico ni se agregaron proyectos, rúbricas, informes, investigación, evidencias o presentaciones.
+- El primer flujo académico está implementado solo como dominio, repositorio y pruebas.
+- No existe interfaz académica y no se implementaron investigación, presentaciones, IA, calendario, colaboración ni exportación documental.
 - `SYNC_ENDPOINT` está vacío: la nube no está activa.
 - Bóvedas portátiles v1 siguen compatibles.
-- IndexedDB continúa en versión 2, sin migraciones nuevas.
-- Verificación actual: 25 pruebas aprobadas, sintaxis válida, Worker empaquetado por Wrangler y todos los archivos propios bajo 400 líneas.
+- IndexedDB objetivo efectivo de producción continúa en v2.
+- `ACADEMIC_DB_VERSION = 3` existe únicamente para migraciones y pruebas aisladas.
+- Una base v2 normal no crea stores académicos.
+- Verificación actual: 38 pruebas aprobadas, sintaxis válida y todos los archivos propios bajo 400 líneas.
+
+## Núcleo académico
+
+- Stores: `academicProjects`, `projectArtifacts`, `artifactRelations`, `artifactRevisions`.
+- Contratos habilitados: `source`, `document_ref`, `rubric`, `rubric_criterion`, `evidence`, `report`, `report_section`.
+- Escrituras y consultas: `js/academic/academic-repository.js`.
+- Migración y puente: `js/academic/academic-migrations.js`.
+- Respaldo v2: `js/academic/backup-v2.js`; los respaldos v1 se convierten en memoria.
+- `app.js` no fue modificado.
+- No cambiar `TARGET_DB_VERSION` de 2 a 3 hasta aprobar físicamente la Etapa 2A.
 
 ## Decisiones de seguridad
 
@@ -57,4 +70,7 @@ python3 -m http.server 4173
 - Validación visual/manual en Brave o Chrome de computador y Safari iPhone.
 - Interfaz de resolución de conflictos entre dispositivos.
 - Decidir alojamiento local o CDN de PDF.js, Mammoth, Tesseract y fuentes.
-- No comenzar Fase 2 hasta aprobación explícita del usuario.
+- Aprobar la prueba vertical interna antes de diseñar cualquier interfaz.
+- Medir el volumen en Safari iPhone y Chrome/Brave reales; `fake-indexeddb` no representa hardware móvil.
+- Para 2B: cambiar únicamente el objetivo efectivo a 3, actualizar caché/documentación,
+  repetir migración, respaldo, rollback y pruebas reales antes de publicar.

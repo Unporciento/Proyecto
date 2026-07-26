@@ -1,5 +1,45 @@
 # Changelog
 
+## 2026-07-26 — Etapa 2A: puente IndexedDB v2
+
+### Producción
+
+- El detector abre primero la versión instalada y nunca solicita una versión inferior.
+- El objetivo efectivo permanece en IndexedDB v2.
+- Una instalación v2 no crea `academicProjects`, `projectArtifacts`, `artifactRelations` ni `artifactRevisions`.
+- Exportación, restauración y borrado operan únicamente sobre los stores disponibles.
+- Una base de prueba v3 puede abrirse con el puente configurado para v2 sin `VersionError`.
+
+### Preparado, pero inactivo
+
+- Migración v2 → v3, contratos, repositorio y respaldo académico permanecen en el código y las pruebas.
+- No existe interfaz académica y `app.js` no cambió.
+- `SYNC_ENDPOINT` continúa vacío.
+
+## 2026-07-26 — Fase 2 interna: núcleo académico
+
+### Añadido
+
+- Modelo versionado para proyectos, fuentes, referencias documentales, rúbricas, criterios, evidencias, informes y secciones.
+- Relaciones semánticas cerradas y trazabilidad completa por proyecto.
+- Repositorio académico con validación previa y transacciones atómicas.
+- Puente de compatibilidad y migración aditiva IndexedDB v2 → v3.
+- Respaldo v2 con conversión inmutable de respaldos v1.
+- Pruebas unitarias, negativas, verticales, de migración, respaldo, atomicidad y volumen.
+
+### Compatibilidad
+
+- Los cinco stores anteriores y sus datos permanecen intactos.
+- No se convierten automáticamente materias ni documentos en proyectos.
+- `app.js` no cambió y no existe interfaz académica todavía.
+- El sobre cifrado de bóveda continúa en versión 1; solo su contenido validado pasa a respaldo v2.
+
+### Verificación
+
+- 38 pruebas aprobadas y 0 fallidas.
+- Volumen comprobado: 200 proyectos, 20 000 artefactos y 50 000 relaciones.
+- Todos los archivos propios comprobados permanecen por debajo de 400 líneas.
+
 ## 2026-07-26 — Estabilización de cuentas y datos
 
 ### Corregido

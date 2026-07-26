@@ -4,8 +4,8 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "check": "for file in js/*.js sync-worker/src/*.js; do node --check \"$file\" || exit 1; done",
-    "limits": "for file in index.html service-worker.js js/*.js css/*.css sync-worker/src/*.js; do lines=$(wc -l < \"$file\"); if [ \"$lines\" -gt 400 ]; then echo \"$file supera 400 líneas ($lines)\"; exit 1; fi; done",
+    "check": "find js sync-worker/src -type f -name '*.js' -exec node --check {} \\;",
+    "limits": "find . -path './node_modules' -prune -o -path './sync-worker/node_modules' -prune -o -type f \\( -name '*.js' -o -name '*.css' -o -name '*.md' -o -name '*.html' -o -name '*.json' -o -name '*.jsonc' -o -name '*.sql' -o -name '*.webmanifest' \\) -exec sh -c 'for file do lines=$(wc -l < \"$file\"); if [ \"$lines\" -gt 400 ]; then echo \"$file supera 400 líneas ($lines)\"; exit 1; fi; done' sh {} +",
     "verify": "npm run check && npm test && npm run limits"
   },
   "devDependencies": {

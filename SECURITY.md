@@ -18,6 +18,10 @@ El despliegue actual de Forja es una aplicación estática sin servidor. El modo
 - Restauración de respaldo limitada a 10 MB, con estructura, referencias, cantidades y claves peligrosas validadas antes de escribir.
 - La bóveda cifrada y el Worker admiten 16 MB para absorber el crecimiento causado por cifrado y Base64 de cualquier respaldo local aceptado.
 - La restauración reemplaza todas las colecciones en una única transacción: o se completa entera o no modifica nada.
+- Los contratos académicos rechazan tipos, versiones y campos no reconocidos antes de escribir.
+- El repositorio comprueba asignaturas, proyectos, padres, documentos, extremos y relaciones duplicadas dentro de la misma transacción.
+- Los respaldos v1 se convierten a v2 en memoria; el archivo original nunca se modifica.
+- Durante el puente 2A el objetivo efectivo permanece en v2; una instalación normal no crea stores académicos.
 - Navegación por hash restringida a una lista cerrada de vistas; el menú móvil bloquea el fondo y ofrece cinco vías de cierre.
 - Las rachas se derivan de intentos reales almacenados, no de un contador editable en la interfaz.
 - Borrado local requiere confirmación.

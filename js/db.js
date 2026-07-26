@@ -1,39 +1,31 @@
+import {
+  ACADEMIC_STORES,
+  TARGET_DB_VERSION,
+  openCompatibleDatabase
+} from './academic/academic-migrations.js';
+import { validateBackup } from './backup.js';
+
 const DB_NAME = 'forja-estudio';
-const DB_VERSION = 2;
-const STORES = ['subjects', 'documents', 'cards', 'attempts', 'settings'];
+const LEGACY_STORES = ['subjects', 'documents', 'cards', 'attempts', 'settings'];
+const STORES = [...LEGACY_STORES, ...ACADEMIC_STORES];
 
 let database;
 
 function openDatabase() {
   if (database) return Promise.resolve(database);
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open(DB_NAME, DB_VERSION);
-    request.onupgradeneeded = () => {
-      const db = request.result;
-      if (!db.objectStoreNames.contains('subjects')) {
-        db.createObjectStore('subjects', { keyPath: 'id' });
-      }
-      if (!db.objectStoreNames.contains('documents')) {
-        const docs = db.createObjectStore('documents', { keyPath: 'id' });
-        docs.createIndex('createdAt', 'createdAt');
-      }
-      if (!db.objectStoreNames.contains('cards')) {
-        const cards = db.createObjectStore('cards', { keyPath: 'id' });
-        cards.createIndex('docId', 'docId');
-        cards.createIndex('dueAt', 'dueAt');
-      }
-      if (!db.objectStoreNames.contains('attempts')) {
-        const attempts = db.createObjectStore('attempts', { keyPath: 'id' });
-        attempts.createIndex('cardId', 'cardId');
-        attempts.createIndex('createdAt', 'createdAt');
-      }
-      if (!db.objectStoreNames.contains('settings')) {
-        db.createObjectStore('settings', { keyPath: 'key' });
-      }
-    };
-    request.onsuccess = () => { database = request.result; resolve(database); };
-    request.onerror = () => reject(request.error);
-  });
+  return openCompatibleDatabase({ name: DB_NAME, targetVersion: TARGET_DB_VERSION })
+    .then(result => {
+      database = result;
+      database.onversionchange = () => {
+        database.close();
+        database = undefined;
+      };
+      return database;
+    });
+}
+
+export function openForjaDatabase() {
+  return openDatabase();
 }
 
 function requestResult(request) {
@@ -44,8 +36,20 @@ function requestResult(request) {
 }
 
 async function store(name, mode = 'readonly') {
+  if (!LEGACY_STORES.includes(name)) {
+    throw new TypeError('Los datos académicos solo se gestionan mediante su repositorio.');
+  }
   const db = await openDatabase();
   return db.transaction(name, mode).objectStore(name);
+}
+
+async function allRows(name) {
+  const db = await openDatabase();
+  return requestResult(db.transaction(name).objectStore(name).getAll());
+}
+
+function availableStores(db) {
+  return STORES.filter(name => db.objectStoreNames.contains(name));
 }
 
 export async function put(name, value) {
@@ -138,20 +142,29 @@ export async function saveSettings(values) {
 }
 
 export async function exportData() {
-  const data = { version: 1, exportedAt: new Date().toISOString() };
-  for (const name of STORES) data[name] = await all(name);
+  return exportDatabase(await openDatabase());
+}
+
+export async function exportDatabase(db) {
+  const stores = availableStores(db);
+  const version = ACADEMIC_STORES.every(name => stores.includes(name)) ? 2 : 1;
+  const data = { version, exportedAt: new Date().toISOString() };
+  for (const name of stores) {
+    data[name] = await requestResult(db.transaction(name).objectStore(name).getAll());
+  }
   return data;
 }
 
-export async function replaceAll(data) {
-  const db = await openDatabase();
+export async function replaceDatabase(db, data) {
+  const validated = validateBackup(data);
+  const stores = availableStores(db);
   return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORES, 'readwrite');
+    const tx = db.transaction(stores, 'readwrite');
     try {
-      STORES.forEach(name => {
+      stores.forEach(name => {
         const target = tx.objectStore(name);
         target.clear();
-        data[name].forEach(value => target.put(value));
+        validated[name].forEach(value => target.put(value));
       });
     } catch (error) {
       tx.abort();
@@ -163,15 +176,25 @@ export async function replaceAll(data) {
   });
 }
 
+export async function replaceAll(data) {
+  return replaceDatabase(await openDatabase(), data);
+}
+
 export async function clearAll() {
   const db = await openDatabase();
+  const stores = availableStores(db);
   await new Promise((resolve, reject) => {
-    const tx = db.transaction(STORES, 'readwrite');
-    STORES.forEach(name => tx.objectStore(name).clear());
+    const tx = db.transaction(stores, 'readwrite');
+    stores.forEach(name => tx.objectStore(name).clear());
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
     tx.onabort = () => reject(tx.error || new Error('No se pudieron borrar los datos.'));
   });
+}
+
+export function closeDatabase() {
+  database?.close();
+  database = undefined;
 }
 
 export function uid(prefix = 'id') {

@@ -36,6 +36,8 @@ test('el service worker instala el shell versionado sin query strings repetidos'
   assert.equal(skipped, true);
   assert.ok(added.includes('./js/account-restore.js'));
   assert.ok(added.includes('./js/config.js'));
+  assert.ok(added.includes('./js/academic/academic-migrations.js'));
+  assert.ok(added.includes('./js/academic/backup-v2.js'));
   assert.ok(added.every(path => !path.includes('?v=')));
   assert.match(source, /forja-shell-\$\{RELEASE_VERSION\}/);
 });

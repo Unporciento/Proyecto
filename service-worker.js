@@ -1,4 +1,4 @@
-const RELEASE_VERSION = '2026.07.26-1';
+const RELEASE_VERSION = '2026.07.26-2';
 const CACHE = `forja-shell-${RELEASE_VERSION}`;
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './assets/icon.svg',
@@ -7,7 +7,10 @@ const SHELL = [
   './js/db.js', './js/drawer.js', './js/energy.js',
   './js/focus.js', './js/generator.js', './js/parsers.js', './js/planner.js',
   './js/profile.js', './js/scheduler.js', './js/sessions.js', './js/streak.js',
-  './js/sync-client.js', './js/sync-config.js', './js/theme.js', './js/ui.js', './js/vault.js'
+  './js/sync-client.js', './js/sync-config.js', './js/theme.js', './js/ui.js', './js/vault.js',
+  './js/academic/academic-migrations.js', './js/academic/academic-repository.js',
+  './js/academic/artifact-schemas.js', './js/academic/backup-v2.js', './js/academic/project-model.js',
+  './js/academic/relation-model.js'
 ];
 
 self.addEventListener('install', event => {

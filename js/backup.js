@@ -40,7 +40,7 @@ function validateRows(name, rows) {
   });
 }
 
-export function validateBackup(raw) {
+function validateLegacyBackup(raw) {
   if (!plainObject(raw) || raw.version !== 1) fail('la versión no es compatible.');
   for (const name of Object.keys(LIMITS)) validateRows(name, raw[name]);
 
@@ -72,3 +72,11 @@ export function validateBackup(raw) {
 
   return typeof structuredClone === 'function' ? structuredClone(raw) : JSON.parse(JSON.stringify(raw));
 }
+
+export function validateBackup(raw) {
+  if (plainObject(raw) && raw.version === 2) {
+    return validateBackupV2(raw, validateLegacyBackup);
+  }
+  return upgradeBackupV1(validateLegacyBackup(raw));
+}
+import { upgradeBackupV1, validateBackupV2 } from './academic/backup-v2.js';

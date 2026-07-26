@@ -53,7 +53,11 @@ test('aceptar una bóveda válida restaura y devuelve la sesión después de esc
     confirmRestore: () => true,
     replaceData: async payload => { restored = payload; }
   });
-  assert.deepEqual(restored, backup);
+  assert.equal(restored.version, 2);
+  assert.deepEqual(restored.subjects, backup.subjects);
+  assert.deepEqual(restored.academicProjects, []);
+  assert.equal(backup.version, 1);
+  assert.equal('academicProjects' in backup, false);
   assert.equal(result.session.revision, 7);
   assert.equal(result.session.salt, envelope.salt);
 });

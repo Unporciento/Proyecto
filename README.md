@@ -50,3 +50,16 @@ npm run verify
 ```
 
 La arquitectura mantiene cada archivo por debajo de 400 líneas para facilitar revisión y mantenimiento.
+
+## Núcleo académico interno
+
+La Fase 2 incorpora, todavía sin interfaz, un flujo único de proyecto → fuente →
+rúbrica y criterio → evidencia → informe y sección. Los documentos continúan
+almacenados una sola vez en la biblioteca y el proyecto guarda referencias y
+relaciones semánticas. La interfaz futura deberá usar el repositorio académico;
+no accederá directamente a IndexedDB.
+
+La versión puente de producción conserva IndexedDB v2: acepta y exporta respaldos
+v1 y no crea todavía stores académicos. El respaldo v2 y la migración v3 se prueban
+en bases aisladas, pero permanecerán inactivos hasta la Etapa 2B. La arquitectura y el plan de entrega están documentados en
+`docs/ACADEMIC_CORE_ARCHITECTURE.md` y `docs/ACADEMIC_CORE_DELIVERY.md`.
