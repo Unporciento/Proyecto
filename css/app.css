@@ -168,6 +168,14 @@ dialog::backdrop { background: var(--dialog-backdrop); backdrop-filter: blur(8px
 .name-story { margin: 0 0 22px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
 .name-story summary { cursor: pointer; color: var(--text); font-weight: 700; }
 .name-story p { margin: 10px 0 0; font-size: .85rem; }
+.account-modal { max-height: min(820px, calc(100dvh - 28px)); overflow-y: auto; }
+.account-modal details { margin: 14px 0; padding: 14px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-2); }
+.account-modal summary { margin-bottom: 14px; cursor: pointer; font-weight: 800; }
+.account-modal details label { display: grid; gap: 7px; margin: 14px 0; color: var(--muted); font-size: .8rem; }
+.account-modal details .primary-btn { width: 100%; }
+.recovery-box { margin-top: 16px; padding: 16px; border: 1px solid rgb(var(--accent-rgb) / .32); border-radius: 12px; background: rgb(var(--accent-rgb) / .07); }
+.recovery-box strong { display: block; margin: 8px 0; overflow-wrap: anywhere; color: var(--accent); font-size: 1.05rem; letter-spacing: .08em; }
+.recovery-box p { margin-bottom: 12px; font-size: .78rem; }
 .focus-modal > strong { display: block; margin: 24px 0 10px; font-size: clamp(4rem, 15vw, 7rem); letter-spacing: -.08em; }
 .focus-modal > div { display: flex; justify-content: center; gap: 10px; margin-top: 28px; }
 .toast-region { position: fixed; right: 20px; bottom: 20px; z-index: 80; display: grid; gap: 8px; }

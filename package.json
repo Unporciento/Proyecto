@@ -4,6 +4,11 @@
   "type": "module",
   "scripts": {
     "test": "node --test",
-    "check": "for file in js/*.js; do node --check \"$file\" || exit 1; done"
+    "check": "for file in js/*.js sync-worker/src/*.js; do node --check \"$file\" || exit 1; done",
+    "limits": "for file in index.html service-worker.js js/*.js css/*.css sync-worker/src/*.js; do lines=$(wc -l < \"$file\"); if [ \"$lines\" -gt 400 ]; then echo \"$file supera 400 líneas ($lines)\"; exit 1; fi; done",
+    "verify": "npm run check && npm test && npm run limits"
+  },
+  "devDependencies": {
+    "fake-indexeddb": "6.2.4"
   }
 }

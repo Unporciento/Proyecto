@@ -9,6 +9,7 @@ import { contrastText, normalizeHex, resolveAccent } from '../js/theme.js';
 import { isSafeAvatar } from '../js/profile.js';
 import { localDayKey, newlyUnlocked, streakStats } from '../js/streak.js';
 import { resolveEnergyMode } from '../js/energy.js';
+import { accountIdentity, accountSecret, decryptVault, encryptVault, generateAccountCode, normalizeAccountCode } from '../js/vault.js';
 
 const doc = {
   id: 'doc_test', name: 'Guía de prueba',
@@ -107,4 +108,15 @@ test('el modo automático ahorra en móvil o hardware modesto', () => {
   assert.equal(resolveEnergyMode('auto', powerful), 'standard');
   assert.equal(resolveEnergyMode('auto', { ...powerful, coarsePointer: true }), 'saver');
   assert.equal(resolveEnergyMode('standard', { ...powerful, lowBattery: true }), 'standard');
+});
+
+test('la bóveda exige tanto el código como la contraseña', async () => {
+  const code = generateAccountCode();
+  assert.equal(normalizeAccountCode(code).length, 20);
+  assert.equal((await accountIdentity(code, 'contraseña-segura')).id.length, 43);
+  const payload = { version: 1, subjects: [{ id: 'subject_1' }] };
+  const envelope = await encryptVault(payload, accountSecret(code, 'contraseña-segura'));
+  assert.deepEqual(await decryptVault(envelope, accountSecret(code, 'contraseña-segura')), payload);
+  await assert.rejects(() => decryptVault(envelope, accountSecret(generateAccountCode(), 'contraseña-segura')), /incorrectos/);
+  await assert.rejects(() => decryptVault(envelope, accountSecret(code, 'otra-contraseña')), /incorrectos/);
 });

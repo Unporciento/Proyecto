@@ -46,6 +46,7 @@
   .topic-row { grid-template-columns: 1fr 70px 36px; }
   .reward-grid { grid-template-columns: repeat(2, 1fr); }
   .modal-actions { align-items: stretch; flex-direction: column-reverse; gap: 12px; }
+  .account-modal { padding: 26px 20px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

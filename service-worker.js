@@ -1,11 +1,13 @@
-const CACHE = 'forja-shell-v5';
+const RELEASE_VERSION = '2026.07.26-1';
+const CACHE = `forja-shell-${RELEASE_VERSION}`;
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './assets/icon.svg',
   './css/tokens.css', './css/app.css', './css/responsive.css',
-  './js/app.js', './js/backup.js', './js/db.js', './js/drawer.js', './js/energy.js',
+  './js/account.js', './js/account-restore.js', './js/app.js', './js/backup.js', './js/config.js',
+  './js/db.js', './js/drawer.js', './js/energy.js',
   './js/focus.js', './js/generator.js', './js/parsers.js', './js/planner.js',
   './js/profile.js', './js/scheduler.js', './js/sessions.js', './js/streak.js',
-  './js/theme.js', './js/ui.js'
+  './js/sync-client.js', './js/sync-config.js', './js/theme.js', './js/ui.js', './js/vault.js'
 ];
 
 self.addEventListener('install', event => {

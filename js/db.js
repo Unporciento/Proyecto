@@ -147,11 +147,16 @@ export async function replaceAll(data) {
   const db = await openDatabase();
   return new Promise((resolve, reject) => {
     const tx = db.transaction(STORES, 'readwrite');
-    STORES.forEach(name => {
-      const target = tx.objectStore(name);
-      target.clear();
-      data[name].forEach(value => target.put(value));
-    });
+    try {
+      STORES.forEach(name => {
+        const target = tx.objectStore(name);
+        target.clear();
+        data[name].forEach(value => target.put(value));
+      });
+    } catch (error) {
+      tx.abort();
+      reject(error);
+    }
     tx.oncomplete = resolve;
     tx.onerror = () => reject(tx.error);
     tx.onabort = () => reject(tx.error || new Error('La restauración fue cancelada.'));

@@ -18,6 +18,7 @@ Forja es una aplicación web local para convertir materiales de estudio en sesio
 - Guarda perfil, foto, documentos, preguntas y progreso en IndexedDB.
 - Personaliza tema claro, oscuro o automático y seis paletas más un color libre.
 - Exporta y restaura respaldos JSON con validación previa y reemplazo atómico.
+- Crea una identidad mediante código de recuperación y contraseña, y genera bóvedas portátiles cifradas con AES-256-GCM.
 - Se instala como PWA y mantiene disponible la interfaz sin conexión.
 - Ajusta efectos y procesamiento según el dispositivo; pausa temporizadores y tareas evitables al quedar en segundo plano.
 
@@ -34,7 +35,9 @@ Fuentes principales:
 
 ## Privacidad
 
-No existe backend, registro remoto ni analítica. El texto extraído, la foto de perfil y el progreso permanecen en el navegador. PDF.js, Mammoth y Tesseract se descargan desde versiones fijadas de jsDelivr solo cuando el formato los necesita; los archivos no se envían allí.
+El despliegue actual no tiene backend, registro remoto ni analítica. El texto extraído, la foto de perfil y el progreso permanecen en el navegador. PDF.js, Mammoth y Tesseract se descargan desde versiones fijadas de jsDelivr solo cuando el formato los necesita; los archivos no se envían allí.
+
+La bóveda de cuenta ya funciona entre dispositivos mediante archivo cifrado. `sync-worker/` contiene el backend de conocimiento cero para activar sincronización automática: hasta que su URL se configure, la aplicación indica claramente “modo portátil” y no simula una nube inexistente.
 
 ## Desarrollo
 
@@ -42,8 +45,8 @@ No requiere compilación.
 
 ```bash
 python3 -m http.server 4173
-npm test
-npm run check
+npm install
+npm run verify
 ```
 
 La arquitectura mantiene cada archivo por debajo de 400 líneas para facilitar revisión y mantenimiento.

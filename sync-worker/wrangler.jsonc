@@ -1,0 +1,16 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "forja-sync",
+  "main": "src/index.js",
+  "compatibility_date": "2026-07-22",
+  "vars": {
+    "ALLOWED_ORIGINS": "https://unporciento.github.io"
+  },
+  "d1_databases": [
+    {
+      "binding": "VAULTS",
+      "database_name": "forja-sync",
+      "database_id": "REPLACE_WITH_D1_DATABASE_ID"
+    }
+  ]
+}

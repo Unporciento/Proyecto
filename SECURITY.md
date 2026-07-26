@@ -2,7 +2,7 @@
 
 ## Modelo
 
-Forja es una aplicación estática sin servidor. Esto elimina cuentas remotas, contraseñas, base de datos pública y endpoints de subida. La frontera de confianza es el navegador del usuario.
+El despliegue actual de Forja es una aplicación estática sin servidor. El modo opcional de sincronización añade un Worker que almacena únicamente bóvedas cifradas; permanece desactivado mientras `SYNC_ENDPOINT` esté vacío. En modo local, la frontera de confianza es el navegador del usuario.
 
 ## Controles aplicados
 
@@ -16,6 +16,7 @@ Forja es una aplicación estática sin servidor. Esto elimina cuentas remotas, c
 - Límite de 35 MB por material y 3 MB por avatar para reducir agotamiento de memoria.
 - Dependencias externas con versiones exactas, cargadas solo para el formato correspondiente.
 - Restauración de respaldo limitada a 10 MB, con estructura, referencias, cantidades y claves peligrosas validadas antes de escribir.
+- La bóveda cifrada y el Worker admiten 16 MB para absorber el crecimiento causado por cifrado y Base64 de cualquier respaldo local aceptado.
 - La restauración reemplaza todas las colecciones en una única transacción: o se completa entera o no modifica nada.
 - Navegación por hash restringida a una lista cerrada de vistas; el menú móvil bloquea el fondo y ofrece cinco vías de cierre.
 - Las rachas se derivan de intentos reales almacenados, no de un contador editable en la interfaz.
@@ -26,7 +27,10 @@ Forja es una aplicación estática sin servidor. Esto elimina cuentas remotas, c
 - Quien tenga acceso al perfil del navegador y al dispositivo puede leer los datos locales. Forja no cifra con contraseña porque una clave gestionada en el mismo frontend no protege frente a un atacante con acceso al navegador.
 - Limpiar los datos de Safari/Chrome elimina la biblioteca. Se recomienda exportar respaldos con regularidad.
 - El perfil es local, no sincroniza entre dispositivos.
-- GitHub Pages no incluye cuentas: una futura sincronización deberá usar autenticación en servidor y cifrado previo en el dispositivo.
+- GitHub Pages no puede almacenar cuentas; por eso el frontend funciona con bóvedas cifradas y la sincronización remota se conecta a un Worker separado.
+- Las bóvedas portátiles usan AES-256-GCM y PBKDF2-SHA-256; la clave combina el código de recuperación con la contraseña.
+- El servidor opcional recibe solo ciphertext, una identidad y un token derivados conjuntamente de código y contraseña; nunca recibe la contraseña, el código ni datos legibles.
+- La sincronización usa revisiones optimistas para impedir sobrescrituras silenciosas desde dispositivos desactualizados.
 - La calidad del OCR depende de la imagen. El usuario debe revisar el texto y las respuestas generadas antes de un examen de alta importancia.
 
 ## Reporte

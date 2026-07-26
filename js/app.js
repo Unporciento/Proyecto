@@ -1,17 +1,19 @@
-import { validateBackup } from './backup.js?v=20260722-4';
-import * as db from './db.js?v=20260722-4';
-import { closeDrawer } from './drawer.js?v=20260722-4';
-import { applyEnergyMode, monitorEnergy } from './energy.js?v=20260722-4';
-import { setupFocusTimer } from './focus.js?v=20260722-4';
-import { generateCards } from './generator.js?v=20260722-4';
-import { parseFile } from './parsers.js?v=20260722-4';
-import { downloadCalendar, examCountdown } from './planner.js?v=20260722-4';
-import { paintAvatarPreview, paintProfile, prepareAvatar } from './profile.js?v=20260722-4';
-import { buildSession, schedule } from './scheduler.js?v=20260722-4';
-import { ExamSession, StudySession } from './sessions.js?v=20260722-4';
-import { newlyUnlocked, streakStats } from './streak.js?v=20260722-4';
-import { applyTheme, normalizeHex } from './theme.js?v=20260722-4';
-import { clearBusy, renderDashboard, renderDocuments, renderProgress, renderSubjects, setBusy, setupNavigation, showView, toast, updateBusy } from './ui.js?v=20260722-4';
+import { setupAccount, syncIfConnected } from './account.js';
+import { validateBackup } from './backup.js';
+import { MAX_BACKUP_BYTES } from './config.js';
+import * as db from './db.js';
+import { closeDrawer } from './drawer.js';
+import { applyEnergyMode, monitorEnergy } from './energy.js';
+import { setupFocusTimer } from './focus.js';
+import { generateCards } from './generator.js';
+import { parseFile } from './parsers.js';
+import { downloadCalendar, examCountdown } from './planner.js';
+import { paintAvatarPreview, paintProfile, prepareAvatar } from './profile.js';
+import { buildSession, schedule } from './scheduler.js';
+import { ExamSession, StudySession } from './sessions.js';
+import { newlyUnlocked, streakStats } from './streak.js';
+import { applyTheme, normalizeHex } from './theme.js';
+import { clearBusy, renderDashboard, renderDocuments, renderProgress, renderSubjects, setBusy, setupNavigation, showView, toast, updateBusy } from './ui.js';
 
 const $ = selector => document.querySelector(selector);
 let state = { subjects: [], documents: [], cards: [], attempts: [], settings: {}, streak: streakStats([]), activeSubject: 'all', libraryFilter: 'all' };
@@ -164,7 +166,10 @@ function startStudy() {
       state.cards = state.cards.map(item => item.id === updated.id ? updated : item);
       state.attempts.push(attempt);
     },
-    onFinish: () => { updateStreak(); refresh(); showView('inicio'); }
+    onFinish: async () => {
+      updateStreak(); refresh(); showView('inicio');
+      try { await syncIfConnected(); } catch (error) { toast(`Sincronización pendiente: ${error.message}`, 'error'); }
+    }
   }).start();
 }
 
@@ -188,6 +193,7 @@ function startExam() {
       updateStreak();
       $('#examSetup').hidden = false; $('#examSession').hidden = true;
       refresh(); showView('progreso');
+      try { await syncIfConnected(); } catch (error) { toast(`Sincronización pendiente: ${error.message}`, 'error'); }
     }
   }).start();
 }
@@ -280,7 +286,7 @@ async function exportBackup() {
 
 async function importBackup(file) {
   if (!file) return;
-  if (file.size > 10 * 1024 * 1024) throw new Error('El respaldo supera el límite de 10 MB.');
+  if (file.size > MAX_BACKUP_BYTES) throw new Error('El respaldo supera el límite de 10 MB.');
   const data = validateBackup(JSON.parse(await file.text()));
   if (!confirm(`Se reemplazarán los datos locales por ${data.documents.length} materiales y ${data.cards.length} preguntas. ¿Continuar?`)) return;
   await db.replaceAll(data);
@@ -309,7 +315,7 @@ function setupLibraryFilters() {
 }
 
 function setupEvents() {
-  setupNavigation(); bindUploadHandlers(); setupSettings(); setupSubjects(); setupProfile(); setupFocusTimer(); setupPasteMaterial(); setupBackupRestore(); setupLibraryFilters();
+  setupNavigation(); bindUploadHandlers(); setupSettings(); setupSubjects(); setupProfile(); setupFocusTimer(); setupPasteMaterial(); setupBackupRestore(); setupLibraryFilters(); setupAccount({ toast, reload: loadState });
   $('#addMaterialBtn').addEventListener('click', () => $('#fileInput').click());
   $('#startTodayBtn').addEventListener('click', startStudy);
   $('#startStudyBtn').addEventListener('click', startStudy);
@@ -323,7 +329,7 @@ async function boot() {
   $('#todayLabel').textContent = new Intl.DateTimeFormat('es-CL', { weekday: 'long', day: 'numeric', month: 'long' }).format(new Date());
   setupEvents(); await loadState();
   monitorEnergy(() => state.settings.energyMode || 'auto', paintEnergyStatus);
-  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./service-worker.js?v=20260722-4').catch(() => {});
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./service-worker.js').catch(() => {});
 }
 
 boot().catch(error => { console.error(error); toast('No pude iniciar el almacenamiento local. Revisa el modo privado del navegador.', 'error'); });

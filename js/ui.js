@@ -1,6 +1,6 @@
-import { closeDrawer, resolveView, setupDrawer } from './drawer.js?v=20260722-4';
-import { isDue, nextLabel, summarize } from './scheduler.js?v=20260722-4';
-import { REWARDS } from './streak.js?v=20260722-4';
+import { closeDrawer, resolveView, setupDrawer } from './drawer.js';
+import { isDue, nextLabel, summarize } from './scheduler.js';
+import { REWARDS } from './streak.js';
 
 const $ = selector => document.querySelector(selector);
 
