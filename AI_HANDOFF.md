@@ -1,6 +1,15 @@
 # AI handoff — FORJA
 
-Última etapa preparada para producción: puente compatible 2A, 2026-07-26.
+Última etapa preparada para producción: hotfix del puente 2A, 2026-07-26.
+
+## Hotfix Etapa 2A
+
+- Service worker `2026.07.26-3`: la copia destinada a caché se crea de inmediato,
+  antes de exponer la respuesta de red al consumidor.
+- La escritura asíncrona usa `event.waitUntil()` y no bloquea `respondWith()`.
+- Se preservan network-first, navegación offline y caché de recursos estáticos.
+- El objetivo de base continúa en v2; v3, sincronización e interfaz académica
+  permanecen inactivos.
 
 ## Estado
 
@@ -12,7 +21,7 @@
 - IndexedDB objetivo efectivo de producción continúa en v2.
 - `ACADEMIC_DB_VERSION = 3` existe únicamente para migraciones y pruebas aisladas.
 - Una base v2 normal no crea stores académicos.
-- Verificación actual: 38 pruebas aprobadas, sintaxis válida y todos los archivos propios bajo 400 líneas.
+- Verificación actual: 42 pruebas aprobadas, sintaxis válida y todos los archivos propios bajo 400 líneas.
 
 ## Núcleo académico
 

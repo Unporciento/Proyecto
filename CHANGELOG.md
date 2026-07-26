@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-26 — Hotfix Etapa 2A
+
+- Corregida una carrera en el `fetch` del service worker: la respuesta ahora se
+  clona antes de devolver el original y la escritura en caché queda vinculada a
+  `event.waitUntil()` sin retrasar la respuesta de red.
+- Añadidas pruebas de consumo concurrente, respuestas no exitosas, navegación
+  offline y recursos estáticos en caché.
+- Incrementada la versión del service worker a `2026.07.26-3`.
+- Verificación completa: 42 pruebas aprobadas, 0 fallidas.
+
 ## 2026-07-26 — Etapa 2A: puente IndexedDB v2
 
 ### Producción

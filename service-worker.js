@@ -1,4 +1,4 @@
-const RELEASE_VERSION = '2026.07.26-2';
+const RELEASE_VERSION = '2026.07.26-3';
 const CACHE = `forja-shell-${RELEASE_VERSION}`;
 const SHELL = [
   './', './index.html', './manifest.webmanifest', './assets/icon.svg',
@@ -25,10 +25,22 @@ self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const sameOrigin = new URL(event.request.url).origin === location.origin;
   if (sameOrigin) {
-    event.respondWith(fetch(event.request).then(response => {
-      if (response.ok) caches.open(CACHE).then(cache => cache.put(event.request, response.clone()));
+    let cacheWrite = Promise.resolve();
+    const networkResponse = fetch(event.request).then(response => {
+      if (response.ok) {
+        const cacheCopy = response.clone();
+        cacheWrite = caches.open(CACHE).then(cache => cache.put(event.request, cacheCopy));
+      }
       return response;
-    }).catch(() => caches.match(event.request, { ignoreSearch: true }).then(cached => cached || (event.request.mode === 'navigate' ? caches.match('./index.html') : Promise.reject(new Error('offline'))))));
+    });
+    event.waitUntil(networkResponse.then(() => cacheWrite).catch(() => {}));
+    event.respondWith(networkResponse.catch(() =>
+      caches.match(event.request, { ignoreSearch: true }).then(cached =>
+        cached || (event.request.mode === 'navigate'
+          ? caches.match('./index.html')
+          : Promise.reject(new Error('offline')))
+      )
+    ));
     return;
   }
   event.respondWith(caches.match(event.request).then(cached => cached || fetch(event.request)));
