@@ -10,6 +10,8 @@ Forja es una aplicación web local para convertir materiales de estudio en sesio
 - Crea, edita, archiva y elimina proyectos académicos vinculados a una asignatura.
 - Registra fuentes académicas por proyecto: archivos existentes, enlaces, libros,
   artículos, apuntes y videos.
+- Construye rúbricas con criterios ordenados, puntajes derivados, obligatoriedad
+  y estados verificables.
 - Genera preguntas trazables al documento: definiciones, listas, fórmulas, cálculos, procedimientos, comparación, causa–efecto y diagnóstico.
 - Programa repasos adaptativos según dificultad y errores.
 - Calcula rachas por día local, conserva el récord y desbloquea seis recompensas permanentes.
@@ -60,11 +62,11 @@ IndexedDB v3 contiene el flujo proyecto → fuente → rúbrica y criterio → e
 → informe y sección. Los documentos permanecen una sola vez en la biblioteca y
 los componentes académicos se conectan mediante relaciones semánticas.
 
-Los módulos visibles permiten gestionar proyectos y sus fuentes académicas.
-Rúbricas, evidencias e informes continúan internos y sin interfaz. Toda operación
-visible pasa por `AcademicRepository`; la interfaz nunca accede directamente a
-IndexedDB.
+Los módulos visibles permiten gestionar proyectos, fuentes y rúbricas académicas.
+Evidencias e informes continúan internos y sin interfaz. Toda operación visible
+pasa por `AcademicRepository`; la interfaz nunca accede directamente a IndexedDB.
 
 La arquitectura general y los módulos están documentados en
 `docs/ACADEMIC_CORE_ARCHITECTURE.md`, `docs/ACADEMIC_CORE_DELIVERY.md` y
-`docs/MODULE-1-PROJECTS.md` y `docs/MODULE-2-SOURCES.md`.
+`docs/MODULE-1-PROJECTS.md`, `docs/MODULE-2-SOURCES.md` y
+`docs/MODULE-3-RUBRICS.md`.

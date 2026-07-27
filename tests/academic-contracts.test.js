@@ -42,9 +42,15 @@ test('los contratos académicos son cerrados, estrictos y versionados', () => {
   assert.equal(validateArtifact(artifact('rubric', {
     description: '', totalPoints: 100, scaleLabel: 'puntos'
   })), true);
+  assert.equal(validateArtifact(artifact('rubric', {
+    instructions: 'Sigue la pauta', observations: '', totalPoints: 100
+  }, { schemaVersion: 2 })), true);
   assert.equal(validateArtifact(artifact('rubric_criterion', {
     code: 'C1', description: 'Argumenta', maxPoints: 20, weight: 20, required: true
   }, { parentId: 'rubric_contract' })), true);
+  assert.equal(validateArtifact(artifact('rubric_criterion', {
+    description: 'Argumenta', maxPoints: 20, required: true, state: 'pending'
+  }, { parentId: 'rubric_contract', schemaVersion: 2 })), true);
   assert.equal(validateArtifact(artifact('evidence', {
     summary: 'Resultado', excerpt: '', locator: { page: 1, section: '', timestamp: null },
     confidence: 'reviewed'
@@ -63,7 +69,7 @@ test('los contratos rechazan tipos futuros, campos arbitrarios y versiones desco
   assert.throws(
     () => validateArtifact(artifact('rubric', {
       description: '', totalPoints: 100, scaleLabel: 'puntos'
-    }, { schemaVersion: 2 })),
+    }, { schemaVersion: 3 })),
     /no es compatible/
   );
   assert.throws(() => validateProject(project({ extra: true })), /no reconocidos/);

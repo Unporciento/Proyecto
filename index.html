@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="css/app.css">
   <link rel="stylesheet" href="css/projects.css">
   <link rel="stylesheet" href="css/sources.css">
+  <link rel="stylesheet" href="css/rubrics.css">
   <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
@@ -121,6 +122,20 @@
         <div id="sourceGrid" class="source-grid" aria-live="polite"></div>
         <div class="source-more"><button class="secondary-btn" id="moreSourcesBtn" type="button" hidden>Mostrar más</button></div>
       </div>
+      <div id="rubricWorkspace" class="rubric-workspace" hidden aria-labelledby="rubricWorkspaceTitle">
+        <button class="text-btn rubric-back" id="closeRubricBtn" type="button">← Volver a proyectos</button>
+        <div class="page-intro rubric-intro">
+          <div>
+            <span class="eyebrow">CRITERIOS VERIFICABLES</span>
+            <h1 id="rubricWorkspaceTitle">Rúbrica</h1>
+            <p id="rubricProjectContext"></p>
+          </div>
+          <div class="page-actions">
+            <button class="primary-btn" id="newRubricBtn" type="button">+ Crear rúbrica</button>
+          </div>
+        </div>
+        <div id="rubricContent" aria-live="polite"></div>
+      </div>
     </section>
 
     <section class="view" data-view-panel="biblioteca">
@@ -203,11 +218,46 @@
       </div>
     </form>
   </dialog>
+  <dialog id="rubricDialog">
+    <form id="rubricForm" class="modal-card rubric-form">
+      <button class="modal-close" type="button" data-rubric-cancel aria-label="Cerrar">×</button>
+      <span class="eyebrow">RÚBRICA ACADÉMICA</span>
+      <h2 id="rubricDialogTitle">Crear rúbrica</h2>
+      <label>Título<input id="rubricTitle" maxlength="500" autocomplete="off" required></label>
+      <label>Instrucciones<textarea id="rubricInstructions" maxlength="20000" rows="4"></textarea></label>
+      <label>Observaciones<textarea id="rubricObservations" maxlength="20000" rows="3"></textarea></label>
+      <p class="form-error" id="rubricFormError" role="alert" hidden></p>
+      <div class="modal-actions">
+        <button class="secondary-btn" type="button" data-rubric-cancel>Cancelar</button>
+        <button class="primary-btn" id="saveRubricBtn" type="submit">Guardar rúbrica</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="criterionDialog">
+    <form id="criterionForm" class="modal-card criterion-form">
+      <button class="modal-close" type="button" data-criterion-cancel aria-label="Cerrar">×</button>
+      <span class="eyebrow">CRITERIO</span>
+      <h2 id="criterionDialogTitle">Añadir criterio</h2>
+      <label>Título<input id="criterionTitle" maxlength="500" autocomplete="off" required></label>
+      <label>Descripción<textarea id="criterionDescription" maxlength="20000" rows="4"></textarea></label>
+      <div class="criterion-form-grid">
+        <label>Puntaje máximo<input id="criterionPoints" type="number" min="0" max="1000000" step="0.01" required></label>
+        <label>Estado<select id="criterionState" required><option value="pending">Pendiente</option><option value="in_progress">En desarrollo</option><option value="completed">Cumplido</option><option value="not_applicable">No aplica</option></select></label>
+      </div>
+      <label class="check-row"><input id="criterionRequired" type="checkbox"><span>Criterio obligatorio</span></label>
+      <p class="form-error" id="criterionFormError" role="alert" hidden></p>
+      <div class="modal-actions">
+        <button class="secondary-btn" type="button" data-criterion-cancel>Cancelar</button>
+        <button class="primary-btn" id="saveCriterionBtn" type="submit">Guardar criterio</button>
+      </div>
+    </form>
+  </dialog>
   <dialog id="accountDialog"><form method="dialog" class="modal-card account-modal"><button class="modal-close" value="cancel">×</button><span class="eyebrow">BÓVEDA FORJA</span><h2>Tu progreso, recuperable</h2><p id="syncStatus">Comprobando disponibilidad…</p><label>Contraseña privada<input id="syncPassword" type="password" minlength="10" maxlength="128" autocomplete="new-password" placeholder="Mínimo 10 caracteres"></label><details open><summary>Crear una cuenta nueva</summary><label>Repetir contraseña<input id="syncPasswordRepeat" type="password" minlength="10" maxlength="128" autocomplete="new-password"></label><button class="primary-btn" type="button" id="createAccountBtn">Crear código y proteger progreso</button><div class="recovery-box" id="recoveryBox" hidden><small>Tu código de recuperación</small><strong id="recoveryCode"></strong><p>Guárdalo fuera del teléfono. Sin el código y la contraseña nadie puede recuperar la bóveda.</p><button class="secondary-btn" type="button" id="copyRecoveryBtn">Copiar código</button></div></details><details><summary>Entrar o recuperar en otro dispositivo</summary><label>Código personal<input id="syncCode" maxlength="24" autocomplete="off" autocapitalize="characters" placeholder="XXXXX-XXXXX-XXXXX-XXXXX"></label><label>Bóveda cifrada, si usas modo portátil<input id="vaultInput" type="file" accept="application/json,.json"></label><button class="primary-btn" type="button" id="unlockAccountBtn">Desbloquear y restaurar</button></details><div class="modal-actions"><span></span><button class="secondary-btn" type="button" id="syncNowBtn" disabled>Guardar progreso ahora</button></div></form></dialog>
   <div id="toastRegion" class="toast-region" aria-live="polite"></div>
 
   <script type="module" src="js/app.js"></script>
   <script type="module" src="js/projects/projects-controller.js"></script>
   <script type="module" src="js/sources/sources-controller.js"></script>
+  <script type="module" src="js/rubrics/rubrics-controller.js"></script>
 </body>
 </html>

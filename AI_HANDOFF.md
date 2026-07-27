@@ -1,6 +1,6 @@
 # AI handoff — FORJA
 
-Último módulo preparado para producción: Módulo 2 — Fuentes, 2026-07-26.
+Último módulo preparado para producción: Módulo 3 — Rúbricas, 2026-07-26.
 
 ## Módulos visibles
 
@@ -10,21 +10,25 @@
 - Cada tarjeta abre sus fuentes: crear, editar y eliminar PDF, Word, imagen,
   enlace, libro, artículo, apunte o video.
 - Las fuentes nuevas usan `SOURCE_SCHEMA_VERSION = 2`; el esquema 1 sigue legible.
-- La interfaz vive en `js/projects/` y `js/sources/` y usa exclusivamente
-  `AcademicRepository`.
-- Rúbricas, evidencias, informes y demás módulos siguen sin interfaz.
+- Cada proyecto admite una rúbrica con criterios editables, orden accesible,
+  puntaje derivado, obligatoriedad y cuatro estados cerrados.
+- Rúbricas y criterios visibles usan `RUBRIC_SCHEMA_VERSION = 2`; el esquema 1
+  sigue legible.
+- La interfaz vive en `js/projects/`, `js/sources/` y `js/rubrics/` y usa
+  exclusivamente `AcademicRepository`.
+- Evidencias, informes y demás módulos siguen sin interfaz.
 
 ## Estado
 
 - FORJA sigue siendo una PWA estática centrada en estudio.
-- Solo Proyectos Académicos y Fuentes tienen interfaz visible.
-- No se implementaron interfaces de rúbricas, evidencias, informes, presentaciones,
+- Proyectos Académicos, Fuentes y Rúbricas tienen interfaz visible.
+- No se implementaron interfaces de evidencias, informes, presentaciones,
   profesor IA, laboratorio, colaboración ni exportación documental.
 - `SYNC_ENDPOINT` está vacío: la nube no está activa.
 - Bóvedas portátiles v1 siguen compatibles.
 - IndexedDB objetivo efectivo de producción: v3.
 - `ACADEMIC_DB_VERSION = 3`.
-- Verificación actual: 57 pruebas aprobadas, sintaxis válida y todos los archivos propios bajo 400 líneas.
+- Verificación actual: 65 pruebas aprobadas, sintaxis válida y todos los archivos propios bajo 400 líneas.
 
 ## Núcleo académico
 
@@ -34,7 +38,7 @@
 - Migración y puente: `js/academic/academic-migrations.js`.
 - Respaldo v2: `js/academic/backup-v2.js`; los respaldos v1 se convierten en memoria.
 - `app.js` no fue modificado.
-- No comenzar el Módulo 3 hasta validar y aprobar físicamente Fuentes.
+- Módulo 4 autorizado únicamente después de publicar y verificar técnicamente Rúbricas.
 
 ## Decisiones de seguridad
 

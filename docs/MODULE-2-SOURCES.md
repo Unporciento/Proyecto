@@ -1,6 +1,6 @@
 # Módulo 2 — Fuentes
 
-Estado: implementado; pendiente de validación manual en producción  
+Estado: implementado y aprobado tras validación manual  
 Fecha: 2026-07-26
 
 ## Alcance
@@ -70,4 +70,4 @@ queda fuera del alcance autorizado.
 - Una columna bajo 760 px y controles táctiles de 38–44 px.
 - El usuario puede volver al proyecto sin perder la navegación principal.
 
-No comenzar el Módulo 3 hasta que el usuario valide este módulo manualmente.
+El Módulo 3 fue autorizado después de la validación manual del usuario.

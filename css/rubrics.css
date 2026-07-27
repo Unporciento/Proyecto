@@ -1,0 +1,39 @@
+.rubric-back { margin-bottom: 18px; }
+.rubric-intro { display: flex; align-items: end; justify-content: space-between; gap: 24px; }
+.rubric-panel { padding: 22px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.rubric-head { display: flex; align-items: start; justify-content: space-between; gap: 20px; }
+.rubric-head h2 { margin: 0 0 6px; }
+.rubric-copy { white-space: pre-wrap; }
+.rubric-notes { margin-top: 10px; color: var(--muted-2); font-size: .78rem; white-space: pre-wrap; }
+.rubric-total { flex: 0 0 auto; padding: 11px 14px; border-radius: 12px; background: rgb(var(--accent-rgb) / .12); color: var(--accent); font-weight: 800; }
+.rubric-actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0; }
+.rubric-action { min-height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 9px; background: transparent; color: var(--muted); cursor: pointer; font-weight: 700; }
+.rubric-action:hover, .rubric-action:focus-visible { border-color: var(--accent); color: var(--text); }
+.rubric-action.danger { margin-left: auto; color: var(--danger); }
+.criterion-list { display: grid; gap: 10px; margin-top: 16px; }
+.criterion-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 14px; padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
+.criterion-card h3 { margin: 0 0 5px; font-size: .95rem; }
+.criterion-description { margin: 0 0 9px; font-size: .78rem; white-space: pre-wrap; }
+.criterion-meta { display: flex; flex-wrap: wrap; gap: 7px; color: var(--muted-2); font-size: .7rem; }
+.criterion-meta span { padding: 5px 8px; border-radius: 999px; background: var(--surface-3); }
+.criterion-controls { display: grid; grid-template-columns: repeat(2, minmax(40px, auto)); gap: 6px; align-content: start; }
+.criterion-controls button { min-height: 38px; padding: 0 9px; border: 1px solid var(--line); border-radius: 8px; background: transparent; color: var(--muted); cursor: pointer; }
+.criterion-controls button:focus-visible, .criterion-controls button:hover { border-color: var(--accent); color: var(--text); }
+.criterion-controls .danger { color: var(--danger); }
+.rubric-form, .criterion-form { width: min(680px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); overflow-y: auto; }
+.rubric-form label, .criterion-form label { display: grid; gap: 7px; margin-top: 14px; color: var(--muted); font-size: .78rem; }
+.rubric-form input, .criterion-form input:not([type="checkbox"]), .criterion-form select { width: 100%; min-height: 44px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--surface-2); color: var(--text); }
+.rubric-form textarea, .criterion-form textarea { min-height: 92px; }
+.criterion-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+@media (max-width: 760px) {
+  .rubric-intro, .rubric-head { align-items: stretch; flex-direction: column; }
+  .criterion-card { grid-template-columns: 1fr; }
+  .criterion-controls { grid-template-columns: repeat(4, minmax(40px, 1fr)); }
+}
+
+@media (max-width: 480px) {
+  .rubric-panel { padding: 18px; }
+  .criterion-form-grid { grid-template-columns: 1fr; gap: 0; }
+  .rubric-form, .criterion-form { padding: 26px 20px; }
+}

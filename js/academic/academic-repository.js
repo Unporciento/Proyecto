@@ -6,6 +6,11 @@ import {
 } from './project-model.js';
 import { relationKey, validateRelation } from './relation-model.js';
 import {
+  deleteRubric,
+  getProjectRubric,
+  saveRubricBundle
+} from './rubric-repository.js';
+import {
   deleteSource,
   getSourceDetails,
   listSourceDocuments,
@@ -218,6 +223,22 @@ export class AcademicRepository {
 
   async deleteSource(sourceId) {
     return deleteSource(this.databaseProvider, sourceId);
+  }
+
+  async getProjectRubric(projectId) {
+    return getProjectRubric(this.databaseProvider, projectId);
+  }
+
+  async createRubricBundle(bundle) {
+    return saveRubricBundle(this.databaseProvider, bundle);
+  }
+
+  async updateRubricBundle(bundle) {
+    return saveRubricBundle(this.databaseProvider, bundle, { existing: true });
+  }
+
+  async deleteRubric(rubricId) {
+    return deleteRubric(this.databaseProvider, rubricId);
   }
 
   async createArtifact(artifact) {

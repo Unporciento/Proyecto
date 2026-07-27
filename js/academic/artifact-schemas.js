@@ -1,5 +1,6 @@
 export const ARTIFACT_SCHEMA_VERSION = 1;
 export const SOURCE_SCHEMA_VERSION = 2;
+export const RUBRIC_SCHEMA_VERSION = 2;
 
 export const ARTIFACT_KINDS = Object.freeze([
   'source',
@@ -18,6 +19,9 @@ const SOURCE_TYPES_V2 = new Set([
 ]);
 const DOCUMENT_ROLES = new Set(['source_file', 'instruction_file', 'evidence_file', 'working_file']);
 const CONFIDENCE = new Set(['unverified', 'reviewed', 'confirmed']);
+const CRITERION_STATUSES = new Set([
+  'pending', 'in_progress', 'completed', 'not_applicable'
+]);
 
 function fail(message) {
   throw new TypeError(`Artefacto no válido: ${message}`);
@@ -82,6 +86,27 @@ function sourceV2(data) {
   }
 }
 
+function rubricV2(data) {
+  exactObject(data, ['instructions', 'observations', 'totalPoints'], 'rubric.data');
+  text(data.instructions, 'instructions', 20_000);
+  text(data.observations, 'observations', 20_000);
+  nullableNumber(data.totalPoints, 'totalPoints', { max: 1_000_000 });
+  if (data.totalPoints === null) fail('totalPoints es obligatorio.');
+}
+
+function criterionV2(data) {
+  exactObject(
+    data,
+    ['description', 'maxPoints', 'required', 'state'],
+    'rubric_criterion.data'
+  );
+  text(data.description, 'description', 20_000);
+  nullableNumber(data.maxPoints, 'maxPoints', { max: 1_000_000 });
+  if (data.maxPoints === null) fail('maxPoints es obligatorio.');
+  if (typeof data.required !== 'boolean') fail('required es incorrecto.');
+  if (!CRITERION_STATUSES.has(data.state)) fail('state no está permitido.');
+}
+
 const DATA_VALIDATORS = {
   source(data) {
     exactObject(data, ['sourceType', 'authors', 'publicationTitle', 'publisher', 'year', 'url', 'accessedAt', 'notes'], 'source.data');
@@ -141,6 +166,14 @@ export function validateArtifactData(kind, data, schemaVersion = ARTIFACT_SCHEMA
     sourceV2(data);
     return true;
   }
+  if (schemaVersion === RUBRIC_SCHEMA_VERSION && kind === 'rubric') {
+    rubricV2(data);
+    return true;
+  }
+  if (schemaVersion === RUBRIC_SCHEMA_VERSION && kind === 'rubric_criterion') {
+    criterionV2(data);
+    return true;
+  }
   const validator = DATA_VALIDATORS[kind];
   if (!validator) fail(`el tipo ${String(kind)} no está habilitado.`);
   validator(data);
@@ -160,7 +193,9 @@ export function validateArtifact(artifact) {
   if (!STATUSES.has(artifact.status)) fail('status no está permitido.');
   if (!Number.isSafeInteger(artifact.position) || artifact.position < 0) fail('position es incorrecto.');
   const compatibleVersion = artifact.schemaVersion === ARTIFACT_SCHEMA_VERSION
-    || (artifact.kind === 'source' && artifact.schemaVersion === SOURCE_SCHEMA_VERSION);
+    || (artifact.kind === 'source' && artifact.schemaVersion === SOURCE_SCHEMA_VERSION)
+    || (['rubric', 'rubric_criterion'].includes(artifact.kind)
+      && artifact.schemaVersion === RUBRIC_SCHEMA_VERSION);
   if (!compatibleVersion) fail('schemaVersion no es compatible.');
   nullableDate(artifact.createdAt, 'createdAt');
   nullableDate(artifact.updatedAt, 'updatedAt');

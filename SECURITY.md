@@ -28,6 +28,10 @@ El despliegue actual de Forja es una aplicación estática sin servidor. El modo
   La referencia, la fuente y su relación se escriben o revierten juntas.
 - Eliminar una fuente borra solo su artefacto y referencias académicas; el archivo
   original de la Biblioteca se conserva.
+- Las rúbricas calculan su total desde los criterios; el repositorio rechaza
+  totales manipulados, puntajes negativos, estados desconocidos y duplicados.
+- Rúbrica y criterios se actualizan en una única transacción. Al quitar un criterio
+  también se eliminan sus relaciones, sin borrar los artefactos relacionados.
 - Eliminar un proyecto exige confirmación y borra su grafo en una sola transacción;
   archivar únicamente cambia su estado.
 - Los respaldos v1 se convierten a v2 en memoria; el archivo original nunca se modifica.

@@ -91,5 +91,10 @@ export async function testRepository(name = crypto.randomUUID()) {
     text: 'Resultado verificable', createdAt: NOW
   });
   await transactionDone(tx);
-  return { database, repository: new AcademicRepository(async () => database) };
+  return {
+    database,
+    factory,
+    name,
+    repository: new AcademicRepository(async () => database)
+  };
 }

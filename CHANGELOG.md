@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-26 — Módulo 3: Rúbricas
+
+- Añadida una rúbrica estructurada y consultable dentro de cada proyecto.
+- Criterios con título, descripción, puntaje, posición, obligatoriedad y estado cerrado.
+- Reordenamiento accesible mediante controles Subir y Bajar.
+- Puntaje total derivado exclusivamente de los criterios.
+- Contratos esquema 2 compatibles con rúbricas y criterios internos esquema 1.
+- Duplicados, puntajes inválidos, pertenencias cruzadas y totales manipulados rechazados.
+- Escritura y eliminación atómicas, incluida la limpieza de relaciones huérfanas.
+- Consulta por índices `projectKind` y `parentId`; comprobada con 500 criterios.
+- No se modificaron `app.js`, Service Worker, migraciones, bóveda ni sincronización.
+- Verificación completa: 65 pruebas aprobadas, 0 fallidas.
+
 ## 2026-07-26 — Módulo 2: Fuentes
 
 - Añadida la gestión de fuentes dentro de cada proyecto académico.
