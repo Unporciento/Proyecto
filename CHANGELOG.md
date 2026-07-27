@@ -7,6 +7,20 @@
 - `verify` conserva la suite completa obligatoria antes de publicar.
 - Documentación e informes separados por responsabilidad para evitar repetición.
 
+## 2026-07-26 — Módulo 4: Evidencias
+
+- Añadida la gestión de evidencias dentro de cada proyecto.
+- Ocho tipos cerrados y cuatro estados cerrados.
+- Cada evidencia exige al menos una fuente y un criterio del mismo proyecto.
+- Trazabilidad visible: fuente → sustenta evidencia → satisface criterio.
+- Asociación opcional con documento existente; documento obligatorio para
+  evidencia documental o fotografía.
+- Creación, edición y eliminación multistore atómicas.
+- Relaciones duplicadas, autorrelaciones, extremos inexistentes y cruces entre
+  proyectos son rechazados.
+- Eliminar evidencia conserva documentos, fuentes, rúbricas y criterios.
+- Listado paginado y filtrado; comprobado con 500 evidencias.
+
 ## 2026-07-26 — Módulo 3: Rúbricas
 
 - Añadida una rúbrica estructurada y consultable dentro de cada proyecto.

@@ -1,6 +1,7 @@
 export const ARTIFACT_SCHEMA_VERSION = 1;
 export const SOURCE_SCHEMA_VERSION = 2;
 export const RUBRIC_SCHEMA_VERSION = 2;
+export const EVIDENCE_SCHEMA_VERSION = 2;
 
 export const ARTIFACT_KINDS = Object.freeze([
   'source',
@@ -21,6 +22,13 @@ const DOCUMENT_ROLES = new Set(['source_file', 'instruction_file', 'evidence_fil
 const CONFIDENCE = new Set(['unverified', 'reviewed', 'confirmed']);
 const CRITERION_STATUSES = new Set([
   'pending', 'in_progress', 'completed', 'not_applicable'
+]);
+const EVIDENCE_TYPES = new Set([
+  'text', 'document', 'photo', 'technical_result',
+  'procedure', 'finding', 'calculation', 'table_record'
+]);
+const EVIDENCE_STATUSES = new Set([
+  'collected', 'review', 'approved', 'discarded'
 ]);
 
 function fail(message) {
@@ -107,6 +115,19 @@ function criterionV2(data) {
   if (!CRITERION_STATUSES.has(data.state)) fail('state no está permitido.');
 }
 
+function evidenceV2(data) {
+  exactObject(
+    data,
+    ['evidenceType', 'description', 'observation', 'date', 'state'],
+    'evidence.data'
+  );
+  if (!EVIDENCE_TYPES.has(data.evidenceType)) fail('evidenceType no está permitido.');
+  text(data.description, 'description', 20_000, { empty: false });
+  text(data.observation, 'observation', 20_000);
+  nullableDate(data.date, 'date');
+  if (!EVIDENCE_STATUSES.has(data.state)) fail('state no está permitido.');
+}
+
 const DATA_VALIDATORS = {
   source(data) {
     exactObject(data, ['sourceType', 'authors', 'publicationTitle', 'publisher', 'year', 'url', 'accessedAt', 'notes'], 'source.data');
@@ -174,6 +195,10 @@ export function validateArtifactData(kind, data, schemaVersion = ARTIFACT_SCHEMA
     criterionV2(data);
     return true;
   }
+  if (schemaVersion === EVIDENCE_SCHEMA_VERSION && kind === 'evidence') {
+    evidenceV2(data);
+    return true;
+  }
   const validator = DATA_VALIDATORS[kind];
   if (!validator) fail(`el tipo ${String(kind)} no está habilitado.`);
   validator(data);
@@ -195,7 +220,8 @@ export function validateArtifact(artifact) {
   const compatibleVersion = artifact.schemaVersion === ARTIFACT_SCHEMA_VERSION
     || (artifact.kind === 'source' && artifact.schemaVersion === SOURCE_SCHEMA_VERSION)
     || (['rubric', 'rubric_criterion'].includes(artifact.kind)
-      && artifact.schemaVersion === RUBRIC_SCHEMA_VERSION);
+      && artifact.schemaVersion === RUBRIC_SCHEMA_VERSION)
+    || (artifact.kind === 'evidence' && artifact.schemaVersion === EVIDENCE_SCHEMA_VERSION);
   if (!compatibleVersion) fail('schemaVersion no es compatible.');
   nullableDate(artifact.createdAt, 'createdAt');
   nullableDate(artifact.updatedAt, 'updatedAt');

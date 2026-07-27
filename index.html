@@ -18,6 +18,7 @@
   <link rel="stylesheet" href="css/projects.css">
   <link rel="stylesheet" href="css/sources.css">
   <link rel="stylesheet" href="css/rubrics.css">
+  <link rel="stylesheet" href="css/evidence.css">
   <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
@@ -136,6 +137,26 @@
         </div>
         <div id="rubricContent" aria-live="polite"></div>
       </div>
+      <div id="evidenceWorkspace" class="evidence-workspace" hidden aria-labelledby="evidenceWorkspaceTitle">
+        <button class="text-btn evidence-back" id="closeEvidenceBtn" type="button">← Volver a proyectos</button>
+        <div class="page-intro evidence-intro">
+          <div>
+            <span class="eyebrow">TRAZABILIDAD REAL</span>
+            <h1 id="evidenceWorkspaceTitle">Evidencias</h1>
+            <p id="evidenceProjectContext"></p>
+          </div>
+          <div class="page-actions">
+            <button class="primary-btn" id="newEvidenceBtn" type="button">+ Añadir evidencia</button>
+          </div>
+        </div>
+        <div class="evidence-tools" aria-label="Filtros de evidencias">
+          <label>Tipo<select id="evidenceTypeFilter"><option value="">Todos</option><option value="text">Texto u observación</option><option value="document">Documento</option><option value="photo">Fotografía</option><option value="technical_result">Resultado técnico</option><option value="procedure">Procedimiento</option><option value="finding">Hallazgo</option><option value="calculation">Cálculo</option><option value="table_record">Tabla o registro</option></select></label>
+          <label>Estado<select id="evidenceStateFilter"><option value="">Todos</option><option value="collected">Recopilada</option><option value="review">Por revisar</option><option value="approved">Aprobada</option><option value="discarded">Descartada</option></select></label>
+        </div>
+        <div id="evidenceSummary" class="evidence-summary" aria-live="polite"></div>
+        <div id="evidenceGrid" class="evidence-grid" aria-live="polite"></div>
+        <div class="evidence-more"><button class="secondary-btn" id="moreEvidenceBtn" type="button" hidden>Mostrar más</button></div>
+      </div>
     </section>
 
     <section class="view" data-view-panel="biblioteca">
@@ -252,6 +273,30 @@
       </div>
     </form>
   </dialog>
+  <dialog id="evidenceDialog">
+    <form id="evidenceForm" class="modal-card evidence-form">
+      <button class="modal-close" type="button" data-evidence-cancel aria-label="Cerrar">×</button>
+      <span class="eyebrow">EVIDENCIA ACADÉMICA</span>
+      <h2 id="evidenceDialogTitle">Añadir evidencia</h2>
+      <div class="evidence-form-grid">
+        <label class="wide">Título<input id="evidenceTitle" maxlength="500" autocomplete="off" required></label>
+        <label>Tipo<select id="evidenceType" required><option value="text">Texto u observación</option><option value="document">Documento</option><option value="photo">Fotografía existente</option><option value="technical_result">Resultado técnico</option><option value="procedure">Procedimiento realizado</option><option value="finding">Hallazgo</option><option value="calculation">Cálculo</option><option value="table_record">Tabla o registro</option></select></label>
+        <label>Estado<select id="evidenceState" required><option value="collected">Recopilada</option><option value="review">Por revisar</option><option value="approved">Aprobada</option><option value="discarded">Descartada</option></select></label>
+        <label>Fecha<input id="evidenceDate" type="date"></label>
+        <label>Documento de la Biblioteca<select id="evidenceDocument"><option value="">Sin documento asociado</option></select></label>
+        <label class="wide">Qué demuestra<textarea id="evidenceDescription" maxlength="20000" rows="4" required></textarea></label>
+        <label class="wide">Observación técnica<textarea id="evidenceObservation" maxlength="20000" rows="3"></textarea></label>
+      </div>
+      <fieldset class="evidence-choices"><legend>Fuentes que sustentan la evidencia</legend><div id="evidenceSourceChoices"></div></fieldset>
+      <fieldset class="evidence-choices"><legend>Criterios que intenta satisfacer</legend><div id="evidenceCriterionChoices"></div></fieldset>
+      <p class="evidence-form-hint" id="evidenceFormHint">Selecciona al menos una fuente y un criterio.</p>
+      <p class="form-error" id="evidenceFormError" role="alert" hidden></p>
+      <div class="modal-actions">
+        <button class="secondary-btn" type="button" data-evidence-cancel>Cancelar</button>
+        <button class="primary-btn" id="saveEvidenceBtn" type="submit">Guardar evidencia</button>
+      </div>
+    </form>
+  </dialog>
   <dialog id="accountDialog"><form method="dialog" class="modal-card account-modal"><button class="modal-close" value="cancel">×</button><span class="eyebrow">BÓVEDA FORJA</span><h2>Tu progreso, recuperable</h2><p id="syncStatus">Comprobando disponibilidad…</p><label>Contraseña privada<input id="syncPassword" type="password" minlength="10" maxlength="128" autocomplete="new-password" placeholder="Mínimo 10 caracteres"></label><details open><summary>Crear una cuenta nueva</summary><label>Repetir contraseña<input id="syncPasswordRepeat" type="password" minlength="10" maxlength="128" autocomplete="new-password"></label><button class="primary-btn" type="button" id="createAccountBtn">Crear código y proteger progreso</button><div class="recovery-box" id="recoveryBox" hidden><small>Tu código de recuperación</small><strong id="recoveryCode"></strong><p>Guárdalo fuera del teléfono. Sin el código y la contraseña nadie puede recuperar la bóveda.</p><button class="secondary-btn" type="button" id="copyRecoveryBtn">Copiar código</button></div></details><details><summary>Entrar o recuperar en otro dispositivo</summary><label>Código personal<input id="syncCode" maxlength="24" autocomplete="off" autocapitalize="characters" placeholder="XXXXX-XXXXX-XXXXX-XXXXX"></label><label>Bóveda cifrada, si usas modo portátil<input id="vaultInput" type="file" accept="application/json,.json"></label><button class="primary-btn" type="button" id="unlockAccountBtn">Desbloquear y restaurar</button></details><div class="modal-actions"><span></span><button class="secondary-btn" type="button" id="syncNowBtn" disabled>Guardar progreso ahora</button></div></form></dialog>
   <div id="toastRegion" class="toast-region" aria-live="polite"></div>
 
@@ -259,5 +304,6 @@
   <script type="module" src="js/projects/projects-controller.js"></script>
   <script type="module" src="js/sources/sources-controller.js"></script>
   <script type="module" src="js/rubrics/rubrics-controller.js"></script>
+  <script type="module" src="js/evidence/evidence-controller.js"></script>
 </body>
 </html>

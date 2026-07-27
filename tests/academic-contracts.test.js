@@ -55,6 +55,10 @@ test('los contratos académicos son cerrados, estrictos y versionados', () => {
     summary: 'Resultado', excerpt: '', locator: { page: 1, section: '', timestamp: null },
     confidence: 'reviewed'
   })), true);
+  assert.equal(validateArtifact(artifact('evidence', {
+    evidenceType: 'finding', description: 'Resultado',
+    observation: '', date: '2026-07-26', state: 'collected'
+  }, { schemaVersion: 2 })), true);
   assert.equal(validateArtifact(artifact('report', {
     reportType: 'academic', abstract: '', language: 'es'
   })), true);

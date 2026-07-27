@@ -1,5 +1,12 @@
 import { validateArtifact, validateArtifactParent } from './artifact-schemas.js';
 import {
+  deleteEvidence,
+  getEvidenceDetails,
+  getEvidenceOptions,
+  listEvidenceSummaries,
+  saveEvidenceBundle
+} from './evidence-repository.js';
+import {
   assertProjectSubject,
   normalizeProjectTitle,
   validateProject
@@ -239,6 +246,30 @@ export class AcademicRepository {
 
   async deleteRubric(rubricId) {
     return deleteRubric(this.databaseProvider, rubricId);
+  }
+
+  async getEvidenceOptions(projectId) {
+    return getEvidenceOptions(this.databaseProvider, projectId);
+  }
+
+  async listEvidenceSummaries(projectId, options) {
+    return listEvidenceSummaries(this.databaseProvider, projectId, options);
+  }
+
+  async getEvidenceDetails(evidenceId) {
+    return getEvidenceDetails(this.databaseProvider, evidenceId);
+  }
+
+  async createEvidenceBundle(bundle) {
+    return saveEvidenceBundle(this.databaseProvider, bundle);
+  }
+
+  async updateEvidenceBundle(bundle) {
+    return saveEvidenceBundle(this.databaseProvider, bundle, { existing: true });
+  }
+
+  async deleteEvidence(evidenceId) {
+    return deleteEvidence(this.databaseProvider, evidenceId);
   }
 
   async createArtifact(artifact) {
