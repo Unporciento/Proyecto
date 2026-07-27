@@ -1,15 +1,14 @@
 # AI handoff — FORJA
 
-Última etapa preparada para producción: hotfix del puente 2A, 2026-07-26.
+Última etapa preparada para producción: activación controlada 2B, 2026-07-26.
 
-## Hotfix Etapa 2A
+## Etapa 2B
 
-- Service worker `2026.07.26-3`: la copia destinada a caché se crea de inmediato,
-  antes de exponer la respuesta de red al consumidor.
-- La escritura asíncrona usa `event.waitUntil()` y no bloquea `respondWith()`.
-- Se preservan network-first, navegación offline y caché de recursos estáticos.
-- El objetivo de base continúa en v2; v3, sincronización e interfaz académica
-  permanecen inactivos.
+- `TARGET_DB_VERSION = 3`; una instalación nueva crea nueve stores.
+- Una instalación v2 conserva los cinco stores anteriores y añade únicamente
+  los cuatro stores académicos aprobados.
+- Service worker `2026.07.26-4`.
+- Sincronización e interfaz académica permanecen inactivas.
 
 ## Estado
 
@@ -18,10 +17,9 @@
 - No existe interfaz académica y no se implementaron investigación, presentaciones, IA, calendario, colaboración ni exportación documental.
 - `SYNC_ENDPOINT` está vacío: la nube no está activa.
 - Bóvedas portátiles v1 siguen compatibles.
-- IndexedDB objetivo efectivo de producción continúa en v2.
-- `ACADEMIC_DB_VERSION = 3` existe únicamente para migraciones y pruebas aisladas.
-- Una base v2 normal no crea stores académicos.
-- Verificación actual: 42 pruebas aprobadas, sintaxis válida y todos los archivos propios bajo 400 líneas.
+- IndexedDB objetivo efectivo de producción: v3.
+- `ACADEMIC_DB_VERSION = 3`.
+- Verificación actual: 44 pruebas aprobadas, sintaxis válida y todos los archivos propios bajo 400 líneas.
 
 ## Núcleo académico
 
@@ -31,7 +29,7 @@
 - Migración y puente: `js/academic/academic-migrations.js`.
 - Respaldo v2: `js/academic/backup-v2.js`; los respaldos v1 se convierten en memoria.
 - `app.js` no fue modificado.
-- No cambiar `TARGET_DB_VERSION` de 2 a 3 hasta aprobar físicamente la Etapa 2A.
+- No diseñar interfaz académica hasta validar y aprobar físicamente la Etapa 2B.
 
 ## Decisiones de seguridad
 
@@ -81,5 +79,5 @@ python3 -m http.server 4173
 - Decidir alojamiento local o CDN de PDF.js, Mammoth, Tesseract y fuentes.
 - Aprobar la prueba vertical interna antes de diseñar cualquier interfaz.
 - Medir el volumen en Safari iPhone y Chrome/Brave reales; `fake-indexeddb` no representa hardware móvil.
-- Para 2B: cambiar únicamente el objetivo efectivo a 3, actualizar caché/documentación,
-  repetir migración, respaldo, rollback y pruebas reales antes de publicar.
+- Validar físicamente v3, los nueve stores, migración, respaldo y modo offline
+  antes de autorizar cualquier interfaz académica.

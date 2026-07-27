@@ -1,4 +1,4 @@
-export const TARGET_DB_VERSION = 2;
+export const TARGET_DB_VERSION = 3;
 export const ACADEMIC_DB_VERSION = 3;
 export const ACADEMIC_STORES = Object.freeze([
   'academicProjects',

@@ -14,8 +14,8 @@ test('IndexedDB conserva operaciones relacionadas y restaura atómicamente', asy
   await db.putMaterial(document, [card]);
   await db.putProgress([{ ...card, repetitions: 1 }], [attempt]);
   const exported = await db.exportData();
-  assert.equal(exported.version, 1);
-  assert.equal(Object.hasOwn(exported, 'academicProjects'), false);
+  assert.equal(exported.version, 2);
+  assert.deepEqual(exported.academicProjects, []);
   assert.equal(exported.documents.length, 1);
   assert.equal(exported.cards[0].repetitions, 1);
   assert.equal(exported.attempts.length, 1);

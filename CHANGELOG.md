@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-26 — Etapa 2B: activación controlada de IndexedDB v3
+
+- Elevado `TARGET_DB_VERSION` de 2 a 3 para activar la migración académica aditiva.
+- Las instalaciones nuevas crean los cinco stores anteriores y los cuatro stores
+  académicos aprobados.
+- Las instalaciones v2 conservan materias, documentos, tarjetas, intentos y
+  configuración durante la migración.
+- Comprobada la reapertura sin repetir la migración.
+- Incrementado el service worker a `2026.07.26-4`.
+- Verificación completa: 44 pruebas aprobadas, 0 fallidas.
+- No se modificaron `app.js`, sincronización ni interfaz.
+
 ## 2026-07-26 — Hotfix Etapa 2A
 
 - Corregida una carrera en el `fetch` del service worker: la respuesta ahora se

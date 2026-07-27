@@ -1,6 +1,6 @@
 # Entrega y migración del núcleo académico
 
-Estado: núcleo aprobado; Etapa 2A configurada con objetivo efectivo v2  
+Estado: núcleo aprobado; Etapa 2B configurada con objetivo efectivo v3  
 Complementa [ACADEMIC_CORE_ARCHITECTURE.md](ACADEMIC_CORE_ARCHITECTURE.md).
 
 ## 1. Migración propuesta
@@ -216,7 +216,7 @@ Proyecto
               └─ cites ─────────> Fuente
 ```
 
-Resultado de `npm run verify`: 38 pruebas aprobadas, 0 fallidas.
+Resultado de `npm run verify`: 44 pruebas aprobadas, 0 fallidas.
 
 Medición de referencia con `fake-indexeddb`:
 
@@ -231,18 +231,18 @@ de Safari o Chrome en un teléfono real.
 
 ## 9. Despliegue y reversión
 
-La Etapa 2A mantiene:
+La Etapa 2B activa:
 
-- `TARGET_DB_VERSION = 2`;
-- `ACADEMIC_DB_VERSION = 3`, usado solo por migraciones y pruebas aisladas;
+- `TARGET_DB_VERSION = 3`;
+- `ACADEMIC_DB_VERSION = 3`;
 - detección de la versión instalada antes de decidir si se actualiza;
-- stores académicos ausentes en instalaciones v2 normales;
+- creación de cuatro stores académicos en instalaciones nuevas o migradas;
 - apertura compatible de una base v3 sin solicitar v2.
 
-La Etapa 2B podrá comenzar únicamente después de validar físicamente 2A. Su cambio
-principal será elevar `TARGET_DB_VERSION` a `ACADEMIC_DB_VERSION`, actualizar la
-versión del service worker y repetir todas las pruebas. La versión estable anterior
-sigue recuperable mediante `38b19a4f187e7cd079912ee784632cd3dbcba353`.
+La interfaz académica podrá comenzar únicamente después de validar físicamente 2B.
+Los puntos `421b1b984f699a570575b5598abac0a9a9753c59`,
+`ff10f7ef9526a08cdbafa207b80ca457f724e536` y
+`38b19a4f187e7cd079912ee784632cd3dbcba353` permanecen como referencias de reversión.
 
 No se implementó ni activó interfaz, sincronización, Worker, calendario, IA,
 presentaciones, colaboración o exportación documental.
