@@ -20,6 +20,7 @@
   <link rel="stylesheet" href="css/rubrics.css">
   <link rel="stylesheet" href="css/evidence.css">
   <link rel="stylesheet" href="css/reports.css">
+  <link rel="stylesheet" href="css/presentations.css">
   <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
@@ -165,6 +166,14 @@
           <div class="page-actions"><button class="primary-btn" id="newReportBtn" type="button">+ Crear informe</button></div>
         </div>
         <div id="reportContent" aria-live="polite"></div>
+      </div>
+      <div id="presentationWorkspace" class="presentation-workspace" hidden aria-labelledby="presentationWorkspaceTitle">
+        <button class="text-btn presentation-back" id="closePresentationBtn" type="button">← Volver a proyectos</button>
+        <div class="page-intro presentation-intro">
+          <div><span class="eyebrow">GUION PARA EXPONER</span><h1 id="presentationWorkspaceTitle">Presentación</h1><p id="presentationProjectContext"></p></div>
+          <div class="page-actions"><button class="primary-btn" id="newPresentationBtn" type="button">+ Crear presentación</button></div>
+        </div>
+        <div id="presentationContent" aria-live="polite"></div>
       </div>
     </section>
 
@@ -315,5 +324,6 @@
   <script type="module" src="js/rubrics/rubrics-controller.js"></script>
   <script type="module" src="js/evidence/evidence-controller.js"></script>
   <script type="module" src="js/reports/reports-controller.js"></script>
+  <script type="module" src="js/presentations/presentations-controller.js"></script>
 </body>
 </html>

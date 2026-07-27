@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-26 — Módulo 6: Presentaciones
+
+- Añadida la preparación de contenido académico por diapositivas.
+- Diapositivas ordenables con título, contenido, notas y estado.
+- Vínculos explícitos con secciones del informe, evidencias y fuentes.
+- Operaciones atómicas y bloqueo de relaciones entre proyectos.
+- Paquete JSON local y versionado para una futura integración con NEXUS Present.
+- Comprobado con 500 diapositivas.
+
 ## 2026-07-26 — Módulo 5: Informes
 
 - Añadidos informes con secciones ordenadas y estados borrador/final.

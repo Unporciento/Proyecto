@@ -30,6 +30,7 @@ import {
   transactionDone
 } from './repository-helpers.js';
 import { ReportRepository } from './report-repository.js';
+import { PresentationRepository } from './presentation-repository.js';
 import { openForjaDatabase } from '../db.js';
 
 const GRAPH_STORES = [
@@ -275,6 +276,10 @@ export class AcademicRepository {
 
   reports() {
     return new ReportRepository(this.databaseProvider);
+  }
+
+  presentations() {
+    return new PresentationRepository(this.databaseProvider);
   }
 
   async createArtifact(artifact) {

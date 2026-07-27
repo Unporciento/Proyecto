@@ -1,18 +1,18 @@
 # AI handoff — FORJA
 
-Estado preparado: Módulo 5 — Informes.
+Estado preparado: Módulo 6 — Presentaciones.
 
 ## Estado técnico
 
 - PWA estática con IndexedDB v3 y nueve stores.
-- Interfaz visible: Proyectos, Fuentes, Rúbricas, Evidencias e Informes.
+- Interfaz visible: Proyectos, Fuentes, Rúbricas, Evidencias, Informes y Presentaciones.
 - Toda operación académica pasa por `AcademicRepository`.
 - Contratos visibles esquema 2; registros internos esquema 1 siguen compatibles.
 - Respaldos v1 y v2 compatibles.
 - `SYNC_ENDPOINT = ''`; nube y Worker remoto inactivos.
 - `app.js`, Service Worker, migraciones, bóveda y autenticación no cambiaron en
   los módulos académicos visibles.
-- Suite completa actual: 81 pruebas.
+- Suite completa actual: 89 pruebas.
 
 ## Archivos académicos
 
@@ -21,23 +21,23 @@ Estado preparado: Módulo 5 — Informes.
 - Dominio y persistencia por módulo: `js/academic/*-model.js` y
   `js/academic/*-repository.js`.
 - Interfaz por módulo: `js/projects/`, `js/sources/`, `js/rubrics/`,
-  `js/evidence/`, `js/reports/`.
+  `js/evidence/`, `js/reports/`, `js/presentations/`.
 - Decisiones duraderas: `docs/ACADEMIC_CORE_ARCHITECTURE.md`.
 
 ## Verificación
 
 ```bash
-npm run verify:quick -- reports
+npm run verify:quick -- presentations
 npm run verify
 ```
 
-`verify:quick` acepta `projects`, `sources`, `rubrics`, `evidence` o `reports`.
+`verify:quick` acepta los módulos académicos visibles, incluido `presentations`.
 La verificación completa es obligatoria antes de publicar.
 
 ## Próximo paso
 
-- Publicar Informes en rama y commit propios.
-- Después continuar con Módulo 6 — Presentaciones.
+- Publicar Presentaciones en rama y commit propios.
+- Después continuar con el Módulo UX.
 - Profesor FORJA permanece bloqueado.
 
 ## Riesgos abiertos

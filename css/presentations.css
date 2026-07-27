@@ -1,0 +1,34 @@
+.presentation-back { margin-bottom: 18px; }
+.presentation-intro, .presentation-head, .slide-head { display: flex; align-items: start; justify-content: space-between; gap: 18px; }
+.presentation-panel { padding: 22px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.presentation-head h2, .slide-head h3 { margin: 0; }
+.presentation-copy, .slide-content, .slide-notes { white-space: pre-wrap; }
+.presentation-meta, .slide-meta, .slide-notes { color: var(--muted-2); font-size: .74rem; }
+.presentation-actions, .slide-controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 15px; }
+.presentation-action { min-height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: 9px; background: transparent; color: var(--muted); cursor: pointer; font-weight: 700; }
+.presentation-action:hover, .presentation-action:focus-visible { border-color: var(--accent); color: var(--text); }
+.presentation-action.danger { margin-left: auto; color: var(--danger); }
+.slide-list { display: grid; gap: 12px; margin-top: 18px; }
+.slide-card { padding: 16px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
+.slide-head { justify-content: flex-start; align-items: center; }
+.slide-number { color: var(--accent); font-size: .72rem; font-weight: 800; }
+.slide-state { margin-left: auto; padding: 6px 9px; border-radius: 999px; background: var(--surface-3); color: var(--muted); font-size: .7rem; font-weight: 800; }
+.slide-state.final { color: var(--accent); background: rgb(var(--accent-rgb) / .13); }
+.presentation-form { width: min(720px, calc(100vw - 28px)); max-height: calc(100dvh - 28px); overflow-y: auto; }
+.presentation-form label { display: grid; gap: 7px; margin-top: 14px; color: var(--muted); font-size: .78rem; }
+.presentation-form input, .presentation-form select { min-height: 44px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--surface-2); color: var(--text); }
+.presentation-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.presentation-choices { margin-top: 14px; border: 1px solid var(--line); border-radius: 12px; }
+.presentation-choices > div { display: grid; gap: 7px; max-height: 140px; overflow: auto; }
+.presentation-choice { display: flex !important; align-items: center; margin: 0 !important; }
+.presentation-choice input { min-height: auto; }
+.presentation-choice-empty { color: var(--muted-2); font-size: .75rem; }
+@media (max-width: 760px) {
+  .presentation-intro, .presentation-head { flex-direction: column; align-items: stretch; }
+  .presentation-action.danger { margin-left: 0; }
+}
+@media (max-width: 480px) {
+  .presentation-panel { padding: 17px; }
+  .presentation-form-grid { grid-template-columns: 1fr; gap: 0; }
+  .presentation-form { padding: 26px 20px; }
+}

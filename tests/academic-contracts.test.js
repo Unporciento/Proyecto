@@ -65,10 +65,16 @@ test('los contratos académicos son cerrados, estrictos y versionados', () => {
   assert.equal(validateArtifact(artifact('report_section', {
     heading: 'Resultados', body: ''
   }, { parentId: 'report_contract' })), true);
+  assert.equal(validateArtifact(artifact('presentation', {
+    objective: 'Explicar resultados', audience: 'Comisión', packageVersion: 1
+  })), true);
+  assert.equal(validateArtifact(artifact('presentation_slide', {
+    heading: 'Resultados', content: '', speakerNotes: ''
+  }, { parentId: 'presentation_contract' })), true);
 });
 
 test('los contratos rechazan tipos futuros, campos arbitrarios y versiones desconocidas', () => {
-  assert.throws(() => validateArtifact(artifact('presentation', {})), /no está habilitado/);
+  assert.throws(() => validateArtifact(artifact('future_artifact', {})), /no está habilitado/);
   assert.throws(() => validateArtifact(artifact('source', { ...sourceData, arbitrary: true })), /no reconocidos/);
   assert.throws(
     () => validateArtifact(artifact('rubric', {

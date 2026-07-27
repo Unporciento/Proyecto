@@ -2,10 +2,13 @@ export const RELATION_SCHEMA_VERSION = 1;
 
 const ALLOWED = new Map([
   ['attached_to', new Set(['document_ref:source', 'document_ref:evidence'])],
-  ['derived_from', new Set(['evidence:source', 'evidence:document_ref', 'report_section:evidence'])],
+  ['derived_from', new Set([
+    'evidence:source', 'evidence:document_ref', 'report_section:evidence',
+    'presentation_slide:report_section', 'presentation_slide:evidence'
+  ])],
   ['supports', new Set(['evidence:report_section'])],
   ['satisfies', new Set(['evidence:rubric_criterion', 'report_section:rubric_criterion'])],
-  ['cites', new Set(['report_section:source'])]
+  ['cites', new Set(['report_section:source', 'presentation_slide:source'])]
 ]);
 
 function fail(message) {
@@ -55,4 +58,3 @@ export function validateRelation(relation, fromArtifact, toArtifact) {
   }
   return true;
 }
-

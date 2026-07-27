@@ -3,6 +3,7 @@ export const SOURCE_SCHEMA_VERSION = 2;
 export const RUBRIC_SCHEMA_VERSION = 2;
 export const EVIDENCE_SCHEMA_VERSION = 2;
 export const REPORT_SCHEMA_VERSION = 2;
+export const PRESENTATION_SCHEMA_VERSION = 1;
 
 export const ARTIFACT_KINDS = Object.freeze([
   'source',
@@ -11,7 +12,9 @@ export const ARTIFACT_KINDS = Object.freeze([
   'rubric_criterion',
   'evidence',
   'report',
-  'report_section'
+  'report_section',
+  'presentation',
+  'presentation_slide'
 ]);
 
 const STATUSES = new Set(['draft', 'ready', 'final', 'archived']);
@@ -141,6 +144,20 @@ function reportSectionV2(data) {
   text(data.body, 'body', 500_000);
 }
 
+function presentation(data) {
+  exactObject(data, ['objective', 'audience', 'packageVersion'], 'presentation.data');
+  text(data.objective, 'objective', 20_000);
+  text(data.audience, 'audience', 500);
+  if (data.packageVersion !== 1) fail('packageVersion no es compatible.');
+}
+
+function presentationSlide(data) {
+  exactObject(data, ['heading', 'content', 'speakerNotes'], 'presentation_slide.data');
+  text(data.heading, 'heading', 500, { empty: false });
+  text(data.content, 'content', 100_000);
+  text(data.speakerNotes, 'speakerNotes', 100_000);
+}
+
 const DATA_VALIDATORS = {
   source(data) {
     exactObject(data, ['sourceType', 'authors', 'publicationTitle', 'publisher', 'year', 'url', 'accessedAt', 'notes'], 'source.data');
@@ -192,7 +209,9 @@ const DATA_VALIDATORS = {
     exactObject(data, ['heading', 'body'], 'report_section.data');
     text(data.heading, 'heading', 500, { empty: false });
     text(data.body, 'body', 500_000);
-  }
+  },
+  presentation,
+  presentation_slide: presentationSlide
 };
 
 export function validateArtifactData(kind, data, schemaVersion = ARTIFACT_SCHEMA_VERSION) {
@@ -256,7 +275,8 @@ export function validateArtifact(artifact) {
 export function validateArtifactParent(artifact, parent) {
   const expected = {
     rubric_criterion: 'rubric',
-    report_section: 'report'
+    report_section: 'report',
+    presentation_slide: 'presentation'
   }[artifact.kind];
   if (expected) {
     if (!parent || parent.kind !== expected) fail(`${artifact.kind} debe pertenecer a ${expected}.`);
