@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-07-26 — Optimización del proceso
+
+- Añadido `verify:quick` con sintaxis, contratos, imports/CSP, prueba focalizada y
+  límite de 400 líneas.
+- `verify` conserva la suite completa obligatoria antes de publicar.
+- Documentación e informes separados por responsabilidad para evitar repetición.
+
 ## 2026-07-26 — Módulo 3: Rúbricas
 
 - Añadida una rúbrica estructurada y consultable dentro de cada proyecto.
@@ -10,8 +17,6 @@
 - Duplicados, puntajes inválidos, pertenencias cruzadas y totales manipulados rechazados.
 - Escritura y eliminación atómicas, incluida la limpieza de relaciones huérfanas.
 - Consulta por índices `projectKind` y `parentId`; comprobada con 500 criterios.
-- No se modificaron `app.js`, Service Worker, migraciones, bóveda ni sincronización.
-- Verificación completa: 65 pruebas aprobadas, 0 fallidas.
 
 ## 2026-07-26 — Módulo 2: Fuentes
 
@@ -23,8 +28,6 @@
 - Enlaces limitados a HTTP y HTTPS y contenido visible construido con `textContent`.
 - Lista paginada por el índice compuesto `projectKind`; comprobada con 500 fuentes.
 - La interfaz usa exclusivamente `AcademicRepository`.
-- No se modificaron `app.js`, Service Worker, migraciones, bóveda ni sincronización.
-- Verificación completa: 57 pruebas aprobadas, 0 fallidas.
 
 ## 2026-07-26 — Módulo 1: Proyectos Académicos
 
@@ -36,8 +39,6 @@
 - Duplicados bloqueados por nombre normalizado dentro de una asignatura.
 - Consultas paginadas mediante el índice `updatedAt`; comprobadas con 500 proyectos.
 - La interfaz usa exclusivamente `AcademicRepository`.
-- No se modificaron `app.js`, Service Worker, migraciones, bóveda ni sincronización.
-- Verificación completa: 50 pruebas aprobadas, 0 fallidas.
 
 ## 2026-07-26 — Etapa 2B: activación controlada de IndexedDB v3
 

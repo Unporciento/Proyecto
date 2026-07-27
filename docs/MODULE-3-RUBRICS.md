@@ -1,6 +1,6 @@
 # Módulo 3 — Rúbricas
 
-Estado: implementado; publicación técnica pendiente  
+Estado: implementado y publicado técnicamente  
 Fecha: 2026-07-26
 
 ## Alcance
@@ -9,21 +9,10 @@ Cada proyecto puede tener una rúbrica manual con criterios verificables. No exi
 extracción automática, OCR, IA, predicción de nota, evaluación automática ni
 ponderación inventada.
 
-## Arquitectura
+## Frontera
 
-```text
-projects-view.js
-  └─ rubrics-controller.js
-       ├─ rubric-form.js
-       ├─ rubrics-view.js
-       └─ AcademicRepository
-            ├─ rubric-model.js
-            ├─ rubric-repository.js
-            └─ contratos versionados → IndexedDB v3
-```
-
-No se añadió store ni migración. `rubric` y `rubric_criterion` ya pertenecían al
-núcleo aprobado. La interfaz no importa `db.js` ni utiliza `indexedDB`.
+La interfaz vive en `js/rubrics/` y utiliza `AcademicRepository`. No se añadió
+store ni migración: `rubric` y `rubric_criterion` ya pertenecían al núcleo.
 
 ## Contratos
 
@@ -65,4 +54,4 @@ La rúbrica se localiza con `projectKind` y sus criterios con `parentId`. La pru
 automatizada guarda y consulta 500 criterios con umbral de un segundo en
 `fake-indexeddb`. La medición física en Safari iPhone sigue siendo necesaria.
 
-No mezclar el Módulo 4 en el commit de este módulo.
+Commit independiente del módulo: `4b8145bdb48e92b6ade07cb117a1b0bfeb09a8e1`.

@@ -51,10 +51,12 @@ No requiere compilación.
 ```bash
 python3 -m http.server 4173
 npm install
+npm run verify:quick -- evidence
 npm run verify
 ```
 
-La arquitectura mantiene cada archivo por debajo de 400 líneas para facilitar revisión y mantenimiento.
+Sustituye `evidence` por el módulo en desarrollo. `verify` ejecuta la suite completa
+y es obligatorio antes de publicar. Cada archivo debe permanecer bajo 400 líneas.
 
 ## Núcleo académico
 

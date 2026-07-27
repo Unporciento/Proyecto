@@ -9,22 +9,10 @@ Este módulo permite registrar material de apoyo dentro de un proyecto. Admite P
 Word, imagen, enlace web, libro, artículo, apunte propio y video. No implementa
 citas, APA, bibliografía, IA, OCR, análisis ni resúmenes.
 
-## Arquitectura
+## Frontera
 
-```text
-projects-view.js
-  └─ sources-controller.js
-       ├─ source-form.js
-       ├─ sources-view.js
-       └─ AcademicRepository
-            ├─ source-model.js
-            ├─ source-repository.js
-            └─ contratos versionados → IndexedDB v3
-```
-
-La interfaz no importa `db.js` ni utiliza `indexedDB`. Los archivos continúan en
-la Biblioteca y el módulo guarda un `document_ref` conectado a la fuente mediante
-`attached_to`. Así no duplica el contenido.
+La interfaz vive en `js/sources/` y utiliza `AcademicRepository`. Los archivos
+continúan en Biblioteca; `document_ref` y `attached_to` evitan duplicarlos.
 
 ## Contrato
 
@@ -69,5 +57,3 @@ queda fuera del alcance autorizado.
 - Resultados y cantidad anunciados mediante regiones vivas.
 - Una columna bajo 760 px y controles táctiles de 38–44 px.
 - El usuario puede volver al proyecto sin perder la navegación principal.
-
-El Módulo 3 fue autorizado después de la validación manual del usuario.

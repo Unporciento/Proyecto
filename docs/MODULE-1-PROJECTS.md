@@ -9,23 +9,9 @@ Este módulo hace visible únicamente la raíz del núcleo académico. Permite g
 proyectos, pero no muestra ni crea fuentes, rúbricas, criterios, evidencias, informes,
 presentaciones, profesor IA, Laboratorio o sincronización.
 
-## Arquitectura
+## Frontera
 
-```text
-index.html
-  └─ projects-controller.js
-       ├─ project-form.js
-       ├─ projects-view.js
-       └─ AcademicRepository
-            └─ contratos versionados
-                 └─ IndexedDB v3
-```
-
-La interfaz no importa `db.js` ni utiliza `indexedDB`. `AcademicRepository` sigue
-siendo la frontera obligatoria para lectura y escritura académica.
-
-`app.js` permanece sin cambios. El módulo se inicializa desde un segundo script ES
-y solo consulta proyectos cuando la vista `#proyectos` se activa.
+La interfaz vive en `js/projects/` y utiliza exclusivamente `AcademicRepository`.
 
 ## Contrato de proyecto
 
@@ -97,5 +83,3 @@ la validación física en iPhone y computador.
 Las tarjetas ya admiten identidad, estado y progreso, pero no inventan contadores
 de elementos todavía inexistentes. Los módulos siguientes deberán enlazar sus
 artefactos al `projectId` actual y conservar esta vista como puerta de entrada.
-
-El Módulo 2 fue autorizado después de la validación manual del usuario.
