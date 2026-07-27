@@ -76,6 +76,7 @@ function projectCard(project, subjectName) {
   progress.append(progressCopy, bar);
 
   const actions = node('div', 'project-card-actions');
+  actions.append(action(project, 'sources', 'Fuentes', 'project-action primary'));
   actions.append(action(project, 'edit', 'Editar'));
   if (project.status !== 'archived') actions.append(action(project, 'archive', 'Archivar'));
   actions.append(action(project, 'delete', 'Eliminar', 'project-action danger'));
@@ -120,4 +121,3 @@ export function renderProjectSummary(count, hasMore) {
     ? `${count} proyecto${count === 1 ? '' : 's'} visible${count === 1 ? '' : 's'}${hasMore ? ' · hay más resultados' : ''}`
     : 'Sin proyectos para estos filtros';
 }
-

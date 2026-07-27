@@ -22,6 +22,12 @@ El despliegue actual de Forja es una aplicación estática sin servidor. El modo
 - El repositorio comprueba asignaturas, proyectos, padres, documentos, extremos y relaciones duplicadas dentro de la misma transacción.
 - La interfaz de proyectos construye nodos DOM con `textContent`, usa estados e
   iconos cerrados y nunca escribe directamente en IndexedDB.
+- La interfaz de fuentes también usa `textContent`; los enlaces solo se muestran
+  si usan HTTP o HTTPS y se abren con aislamiento `noopener noreferrer`.
+- PDF, Word e imagen deben referenciar un documento existente de la asignatura.
+  La referencia, la fuente y su relación se escriben o revierten juntas.
+- Eliminar una fuente borra solo su artefacto y referencias académicas; el archivo
+  original de la Biblioteca se conserva.
 - Eliminar un proyecto exige confirmación y borra su grafo en una sola transacción;
   archivar únicamente cambia su estado.
 - Los respaldos v1 se convierten a v2 en memoria; el archivo original nunca se modifica.

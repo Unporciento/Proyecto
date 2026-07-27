@@ -1,4 +1,5 @@
 export const ARTIFACT_SCHEMA_VERSION = 1;
+export const SOURCE_SCHEMA_VERSION = 2;
 
 export const ARTIFACT_KINDS = Object.freeze([
   'source',
@@ -12,6 +13,9 @@ export const ARTIFACT_KINDS = Object.freeze([
 
 const STATUSES = new Set(['draft', 'ready', 'final', 'archived']);
 const SOURCE_TYPES = new Set(['book', 'article', 'website', 'manual', 'standard', 'other']);
+const SOURCE_TYPES_V2 = new Set([
+  'pdf', 'word', 'image', 'website', 'book', 'article', 'note', 'video'
+]);
 const DOCUMENT_ROLES = new Set(['source_file', 'instruction_file', 'evidence_file', 'working_file']);
 const CONFIDENCE = new Set(['unverified', 'reviewed', 'confirmed']);
 
@@ -54,6 +58,28 @@ function nullableDate(value, label) {
 function stringList(value, label) {
   if (!Array.isArray(value) || value.length > 50) fail(`${label} es incorrecto.`);
   value.forEach(item => text(item, label, 200, { empty: false }));
+}
+
+function sourceV2(data) {
+  exactObject(
+    data,
+    ['sourceType', 'description', 'author', 'date', 'url', 'notes'],
+    'source.data'
+  );
+  if (!SOURCE_TYPES_V2.has(data.sourceType)) fail('sourceType no está permitido.');
+  text(data.description, 'description', 20_000);
+  text(data.author, 'author', 300);
+  nullableDate(data.date, 'date');
+  text(data.url, 'url', 2_000);
+  text(data.notes, 'notes', 20_000);
+  if (['website', 'video'].includes(data.sourceType) && !data.url) {
+    fail('url es obligatoria para este tipo.');
+  }
+  if (data.url) {
+    let parsed;
+    try { parsed = new URL(data.url); } catch { fail('url es incorrecta.'); }
+    if (!['http:', 'https:'].includes(parsed.protocol)) fail('url usa un protocolo no permitido.');
+  }
 }
 
 const DATA_VALIDATORS = {
@@ -110,7 +136,11 @@ const DATA_VALIDATORS = {
   }
 };
 
-export function validateArtifactData(kind, data) {
+export function validateArtifactData(kind, data, schemaVersion = ARTIFACT_SCHEMA_VERSION) {
+  if (kind === 'source' && schemaVersion === SOURCE_SCHEMA_VERSION) {
+    sourceV2(data);
+    return true;
+  }
   const validator = DATA_VALIDATORS[kind];
   if (!validator) fail(`el tipo ${String(kind)} no está habilitado.`);
   validator(data);
@@ -129,11 +159,13 @@ export function validateArtifact(artifact) {
   text(artifact.title, 'title', 500, { empty: false });
   if (!STATUSES.has(artifact.status)) fail('status no está permitido.');
   if (!Number.isSafeInteger(artifact.position) || artifact.position < 0) fail('position es incorrecto.');
-  if (artifact.schemaVersion !== ARTIFACT_SCHEMA_VERSION) fail('schemaVersion no es compatible.');
+  const compatibleVersion = artifact.schemaVersion === ARTIFACT_SCHEMA_VERSION
+    || (artifact.kind === 'source' && artifact.schemaVersion === SOURCE_SCHEMA_VERSION);
+  if (!compatibleVersion) fail('schemaVersion no es compatible.');
   nullableDate(artifact.createdAt, 'createdAt');
   nullableDate(artifact.updatedAt, 'updatedAt');
   if (artifact.createdAt === null || artifact.updatedAt === null) fail('las fechas son obligatorias.');
-  validateArtifactData(artifact.kind, artifact.data);
+  validateArtifactData(artifact.kind, artifact.data, artifact.schemaVersion);
   return true;
 }
 

@@ -26,11 +26,19 @@ const sourceData = {
   sourceType: 'article', authors: ['Ada'], publicationTitle: 'Base',
   publisher: '', year: 2026, url: '', accessedAt: null, notes: ''
 };
+const sourceDataV2 = {
+  sourceType: 'article', description: 'Base', author: 'Ada',
+  date: '2026-07-26', url: 'https://example.com', notes: ''
+};
 
 test('los contratos académicos son cerrados, estrictos y versionados', () => {
   assert.equal(validateProject(project()), true);
   assert.equal(assertProjectSubject(project(), { id: 'subject_contract' }), true);
   assert.equal(validateArtifact(artifact('source', sourceData)), true);
+  assert.equal(
+    validateArtifact(artifact('source', sourceDataV2, { schemaVersion: 2 })),
+    true
+  );
   assert.equal(validateArtifact(artifact('rubric', {
     description: '', totalPoints: 100, scaleLabel: 'puntos'
   })), true);
@@ -52,7 +60,12 @@ test('los contratos académicos son cerrados, estrictos y versionados', () => {
 test('los contratos rechazan tipos futuros, campos arbitrarios y versiones desconocidas', () => {
   assert.throws(() => validateArtifact(artifact('presentation', {})), /no está habilitado/);
   assert.throws(() => validateArtifact(artifact('source', { ...sourceData, arbitrary: true })), /no reconocidos/);
-  assert.throws(() => validateArtifact(artifact('source', sourceData, { schemaVersion: 2 })), /no es compatible/);
+  assert.throws(
+    () => validateArtifact(artifact('rubric', {
+      description: '', totalPoints: 100, scaleLabel: 'puntos'
+    }, { schemaVersion: 2 })),
+    /no es compatible/
+  );
   assert.throws(() => validateProject(project({ extra: true })), /no reconocidos/);
   assert.throws(() => assertProjectSubject(project(), null), /asignatura no existe/);
 });

@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-26 — Módulo 2: Fuentes
+
+- Añadida la gestión de fuentes dentro de cada proyecto académico.
+- Tipos cerrados: PDF, Word, imagen, enlace web, libro, artículo, apunte y video.
+- Contrato de fuente esquema 2, compatible con fuentes internas esquema 1.
+- Los archivos se referencian desde la Biblioteca sin duplicarlos ni eliminarlos.
+- Creación, edición y eliminación actualizan artefactos y relaciones de forma atómica.
+- Enlaces limitados a HTTP y HTTPS y contenido visible construido con `textContent`.
+- Lista paginada por el índice compuesto `projectKind`; comprobada con 500 fuentes.
+- La interfaz usa exclusivamente `AcademicRepository`.
+- No se modificaron `app.js`, Service Worker, migraciones, bóveda ni sincronización.
+- Verificación completa: 57 pruebas aprobadas, 0 fallidas.
+
 ## 2026-07-26 — Módulo 1: Proyectos Académicos
 
 - Añadida la sección visible `Proyectos`, integrada con la navegación y diseño de FORJA.

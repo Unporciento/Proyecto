@@ -5,6 +5,18 @@ import {
   validateProject
 } from './project-model.js';
 import { relationKey, validateRelation } from './relation-model.js';
+import {
+  deleteSource,
+  getSourceDetails,
+  listSourceDocuments,
+  listSources,
+  saveSourceBundle
+} from './source-repository.js';
+import {
+  requestResult,
+  rowsByIndex,
+  transactionDone
+} from './repository-helpers.js';
 import { openForjaDatabase } from '../db.js';
 
 const GRAPH_STORES = [
@@ -20,21 +32,6 @@ const PROJECT_DELETE_STORES = [
   'artifactRelations',
   'artifactRevisions'
 ];
-
-function requestResult(request) {
-  return new Promise((resolve, reject) => {
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-function transactionDone(transaction) {
-  return new Promise((resolve, reject) => {
-    transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error);
-    transaction.onabort = () => reject(transaction.error || new Error('La operación académica fue cancelada.'));
-  });
-}
 
 function fail(message) {
   throw new TypeError(`Integridad académica: ${message}`);
@@ -60,10 +57,6 @@ function validateGraphShape(project, artifacts, relations) {
     relationKeys.add(key);
   }
   return artifactMap;
-}
-
-async function rowsByIndex(store, index, value) {
-  return requestResult(store.index(index).getAll(value));
 }
 
 async function assertUniqueProject(store, project) {
@@ -201,6 +194,30 @@ export class AcademicRepository {
       throw error;
     }
     await done;
+  }
+
+  async listSources(projectId, options) {
+    return listSources(this.databaseProvider, projectId, options);
+  }
+
+  async listSourceDocuments(projectId) {
+    return listSourceDocuments(this.databaseProvider, projectId);
+  }
+
+  async getSourceDetails(sourceId) {
+    return getSourceDetails(this.databaseProvider, sourceId);
+  }
+
+  async createSourceBundle(bundle) {
+    return saveSourceBundle(this.databaseProvider, bundle);
+  }
+
+  async updateSourceBundle(bundle) {
+    return saveSourceBundle(this.databaseProvider, bundle, { existing: true });
+  }
+
+  async deleteSource(sourceId) {
+    return deleteSource(this.databaseProvider, sourceId);
   }
 
   async createArtifact(artifact) {

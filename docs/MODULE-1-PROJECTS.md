@@ -1,6 +1,6 @@
 # Módulo 1 — Proyectos Académicos
 
-Estado: implementado; pendiente de validación manual en producción  
+Estado: implementado y aprobado tras validación manual en PC  
 Fecha: 2026-07-26
 
 ## Alcance
@@ -98,4 +98,4 @@ Las tarjetas ya admiten identidad, estado y progreso, pero no inventan contadore
 de elementos todavía inexistentes. Los módulos siguientes deberán enlazar sus
 artefactos al `projectId` actual y conservar esta vista como puerta de entrada.
 
-No comenzar el Módulo 2 hasta aprobar manualmente este módulo en PC e iPhone.
+El Módulo 2 fue autorizado después de la validación manual del usuario.

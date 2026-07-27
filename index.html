@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/app.css">
   <link rel="stylesheet" href="css/projects.css">
+  <link rel="stylesheet" href="css/sources.css">
   <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
@@ -80,25 +81,46 @@
     </section>
 
     <section class="view" data-view-panel="proyectos" aria-labelledby="projectsTitle">
-      <div class="page-intro projects-intro">
-        <div>
-          <span class="eyebrow">TRABAJOS UNIVERSITARIOS</span>
-          <h1 id="projectsTitle">Proyectos académicos</h1>
-          <p>Organiza cada trabajo desde el inicio hasta la entrega, sin separar su contexto de la asignatura.</p>
+      <div id="projectsOverview">
+        <div class="page-intro projects-intro">
+          <div>
+            <span class="eyebrow">TRABAJOS UNIVERSITARIOS</span>
+            <h1 id="projectsTitle">Proyectos académicos</h1>
+            <p>Organiza cada trabajo desde el inicio hasta la entrega, sin separar su contexto de la asignatura.</p>
+          </div>
+          <div class="page-actions">
+            <button class="primary-btn" id="newProjectBtn" type="button">+ Nuevo proyecto</button>
+          </div>
         </div>
-        <div class="page-actions">
-          <button class="primary-btn" id="newProjectBtn" type="button">+ Nuevo proyecto</button>
+        <div class="project-tools" aria-label="Filtros de proyectos">
+          <label>Asignatura<select id="projectSubjectFilter"><option value="">Todas</option></select></label>
+          <label>Estado<select id="projectStatusFilter"><option value="">Todos</option><option value="active">Activo</option><option value="submitted">Entregado</option><option value="graded">Calificado</option><option value="archived">Archivado</option></select></label>
         </div>
+        <div id="projectSummary" class="project-summary" aria-live="polite"></div>
+        <div id="projectGrid" class="project-grid" aria-live="polite">
+          <div class="empty-state"><span>▦</span><h3>Aún no tienes proyectos</h3><p>Crea el primero para mantener unido todo su ciclo académico.</p></div>
+        </div>
+        <div class="project-more"><button class="secondary-btn" id="moreProjectsBtn" type="button" hidden>Mostrar más</button></div>
       </div>
-      <div class="project-tools" aria-label="Filtros de proyectos">
-        <label>Asignatura<select id="projectSubjectFilter"><option value="">Todas</option></select></label>
-        <label>Estado<select id="projectStatusFilter"><option value="">Todos</option><option value="active">Activo</option><option value="submitted">Entregado</option><option value="graded">Calificado</option><option value="archived">Archivado</option></select></label>
+      <div id="sourceWorkspace" class="source-workspace" hidden aria-labelledby="sourceWorkspaceTitle">
+        <button class="text-btn source-back" id="closeSourcesBtn" type="button">← Volver a proyectos</button>
+        <div class="page-intro source-intro">
+          <div>
+            <span class="eyebrow">MATERIAL DE APOYO</span>
+            <h1 id="sourceWorkspaceTitle">Fuentes</h1>
+            <p id="sourceProjectContext"></p>
+          </div>
+          <div class="page-actions">
+            <button class="primary-btn" id="newSourceBtn" type="button">+ Añadir fuente</button>
+          </div>
+        </div>
+        <div class="source-tools">
+          <label>Tipo<select id="sourceTypeFilter"><option value="">Todos</option><option value="pdf">PDF</option><option value="word">Documento Word</option><option value="image">Imagen</option><option value="website">Enlace web</option><option value="book">Libro</option><option value="article">Artículo</option><option value="note">Apunte propio</option><option value="video">Video</option></select></label>
+        </div>
+        <div id="sourceSummary" class="source-summary" aria-live="polite"></div>
+        <div id="sourceGrid" class="source-grid" aria-live="polite"></div>
+        <div class="source-more"><button class="secondary-btn" id="moreSourcesBtn" type="button" hidden>Mostrar más</button></div>
       </div>
-      <div id="projectSummary" class="project-summary" aria-live="polite"></div>
-      <div id="projectGrid" class="project-grid" aria-live="polite">
-        <div class="empty-state"><span>▦</span><h3>Aún no tienes proyectos</h3><p>Crea el primero para mantener unido todo su ciclo académico.</p></div>
-      </div>
-      <div class="project-more"><button class="secondary-btn" id="moreProjectsBtn" type="button" hidden>Mostrar más</button></div>
     </section>
 
     <section class="view" data-view-panel="biblioteca">
@@ -158,10 +180,34 @@
       </div>
     </form>
   </dialog>
+  <dialog id="sourceDialog">
+    <form id="sourceForm" class="modal-card source-form">
+      <button class="modal-close" type="button" data-source-cancel aria-label="Cerrar">×</button>
+      <span class="eyebrow">FUENTE ACADÉMICA</span>
+      <h2 id="sourceDialogTitle">Añadir fuente</h2>
+      <div class="source-form-grid">
+        <label class="wide">Título<input id="sourceTitle" maxlength="500" autocomplete="off" required></label>
+        <label>Tipo<select id="sourceType" required><option value="pdf">PDF</option><option value="word">Documento Word</option><option value="image">Imagen</option><option value="website">Enlace web</option><option value="book">Libro</option><option value="article">Artículo</option><option value="note">Apunte propio</option><option value="video">Video</option></select></label>
+        <label>Autor, opcional<input id="sourceAuthor" maxlength="300" autocomplete="off"></label>
+        <label>Fecha, opcional<input id="sourceDate" type="date"></label>
+        <label>Documento de la Biblioteca<select id="sourceDocument"><option value="">Sin documento asociado</option></select></label>
+        <label class="wide">Enlace, si aplica<input id="sourceUrl" type="url" maxlength="2000" inputmode="url" placeholder="https://…"></label>
+        <label class="wide">Descripción<textarea id="sourceDescription" maxlength="20000" rows="3"></textarea></label>
+        <label class="wide">Notas<textarea id="sourceNotes" maxlength="20000" rows="4"></textarea></label>
+      </div>
+      <p class="source-form-hint" id="sourceFormHint">PDF, Word e imagen requieren un documento existente en la Biblioteca.</p>
+      <p class="form-error" id="sourceFormError" role="alert" hidden></p>
+      <div class="modal-actions">
+        <button class="secondary-btn" type="button" data-source-cancel>Cancelar</button>
+        <button class="primary-btn" id="saveSourceBtn" type="submit">Guardar fuente</button>
+      </div>
+    </form>
+  </dialog>
   <dialog id="accountDialog"><form method="dialog" class="modal-card account-modal"><button class="modal-close" value="cancel">×</button><span class="eyebrow">BÓVEDA FORJA</span><h2>Tu progreso, recuperable</h2><p id="syncStatus">Comprobando disponibilidad…</p><label>Contraseña privada<input id="syncPassword" type="password" minlength="10" maxlength="128" autocomplete="new-password" placeholder="Mínimo 10 caracteres"></label><details open><summary>Crear una cuenta nueva</summary><label>Repetir contraseña<input id="syncPasswordRepeat" type="password" minlength="10" maxlength="128" autocomplete="new-password"></label><button class="primary-btn" type="button" id="createAccountBtn">Crear código y proteger progreso</button><div class="recovery-box" id="recoveryBox" hidden><small>Tu código de recuperación</small><strong id="recoveryCode"></strong><p>Guárdalo fuera del teléfono. Sin el código y la contraseña nadie puede recuperar la bóveda.</p><button class="secondary-btn" type="button" id="copyRecoveryBtn">Copiar código</button></div></details><details><summary>Entrar o recuperar en otro dispositivo</summary><label>Código personal<input id="syncCode" maxlength="24" autocomplete="off" autocapitalize="characters" placeholder="XXXXX-XXXXX-XXXXX-XXXXX"></label><label>Bóveda cifrada, si usas modo portátil<input id="vaultInput" type="file" accept="application/json,.json"></label><button class="primary-btn" type="button" id="unlockAccountBtn">Desbloquear y restaurar</button></details><div class="modal-actions"><span></span><button class="secondary-btn" type="button" id="syncNowBtn" disabled>Guardar progreso ahora</button></div></form></dialog>
   <div id="toastRegion" class="toast-region" aria-live="polite"></div>
 
   <script type="module" src="js/app.js"></script>
   <script type="module" src="js/projects/projects-controller.js"></script>
+  <script type="module" src="js/sources/sources-controller.js"></script>
 </body>
 </html>
