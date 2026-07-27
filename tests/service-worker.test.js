@@ -60,7 +60,10 @@ test('el service worker instala el shell versionado sin query strings repetidos'
   assert.ok(added.includes('./js/academic/backup-v2.js'));
   assert.ok(added.every(path => !path.includes('?v=')));
   assert.match(source, /forja-shell-\$\{RELEASE_VERSION\}/);
-  assert.match(source, /RELEASE_VERSION = '2026\.07\.26-4'/);
+  assert.ok(added.includes('./404.html'));
+  assert.ok(added.includes('./offline.html'));
+  assert.ok(added.includes('./js/ux/ux-controller.js'));
+  assert.match(source, /RELEASE_VERSION = '2026\.07\.26-5'/);
 });
 
 test('clona la respuesta antes de que el original pueda consumirse', async () => {

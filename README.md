@@ -31,6 +31,8 @@ Forja es una aplicación web local para convertir materiales de estudio en sesio
 - Exporta y restaura respaldos JSON con validación previa y reemplazo atómico.
 - Crea una identidad mediante código de recuperación y contraseña, y genera bóvedas portátiles cifradas con AES-256-GCM.
 - Se instala como PWA y mantiene disponible la interfaz sin conexión.
+- Incluye identidad PWA, versión visible, estados offline, página 404, pantalla
+  de carga breve y experiencia adaptable con movimiento reducido.
 - Ajusta efectos y procesamiento según el dispositivo; pausa temporizadores y tareas evitables al quedar en segundo plano.
 
 ## Método de aprendizaje
@@ -57,11 +59,11 @@ No requiere compilación.
 ```bash
 python3 -m http.server 4173
 npm install
-npm run verify:quick -- presentations
+npm run verify:quick -- ux
 npm run verify
 ```
 
-Sustituye `presentations` por el módulo en desarrollo. `verify` ejecuta la suite completa
+Sustituye `ux` por el módulo en desarrollo. `verify` ejecuta la suite completa
 y es obligatorio antes de publicar. Cada archivo debe permanecer bajo 400 líneas.
 
 ## Núcleo académico
@@ -78,4 +80,5 @@ La arquitectura general y los módulos están documentados en
 `docs/ACADEMIC_CORE_ARCHITECTURE.md`, `docs/ACADEMIC_CORE_DELIVERY.md` y
 `docs/MODULE-1-PROJECTS.md`, `docs/MODULE-2-SOURCES.md` y
 `docs/MODULE-3-RUBRICS.md`, `docs/MODULE-4-EVIDENCE.md` y
-`docs/MODULE-5-REPORTS.md` y `docs/MODULE-6-PRESENTATIONS.md`.
+`docs/MODULE-5-REPORTS.md`, `docs/MODULE-6-PRESENTATIONS.md` y
+`docs/MODULE-UX.md`.

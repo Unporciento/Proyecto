@@ -1,6 +1,6 @@
 # AI handoff — FORJA
 
-Estado preparado: Módulo 6 — Presentaciones.
+Estado preparado: Módulo UX — Identidad y experiencia.
 
 ## Estado técnico
 
@@ -12,7 +12,8 @@ Estado preparado: Módulo 6 — Presentaciones.
 - `SYNC_ENDPOINT = ''`; nube y Worker remoto inactivos.
 - `app.js`, Service Worker, migraciones, bóveda y autenticación no cambiaron en
   los módulos académicos visibles.
-- Suite completa actual: 89 pruebas.
+- Producto visible: `2.0.0`; Service Worker: `2026.07.26-5`.
+- Suite completa actual: 94 pruebas.
 
 ## Archivos académicos
 
@@ -22,22 +23,23 @@ Estado preparado: Módulo 6 — Presentaciones.
   `js/academic/*-repository.js`.
 - Interfaz por módulo: `js/projects/`, `js/sources/`, `js/rubrics/`,
   `js/evidence/`, `js/reports/`, `js/presentations/`.
+- Experiencia global: `js/ux/`, `css/ux.css`, `404.html`, `offline.html`.
 - Decisiones duraderas: `docs/ACADEMIC_CORE_ARCHITECTURE.md`.
 
 ## Verificación
 
 ```bash
-npm run verify:quick -- presentations
+npm run verify:quick -- ux
 npm run verify
 ```
 
-`verify:quick` acepta los módulos académicos visibles, incluido `presentations`.
+`verify:quick` acepta los módulos académicos y `ux`.
 La verificación completa es obligatoria antes de publicar.
 
 ## Próximo paso
 
-- Publicar Presentaciones en rama y commit propios.
-- Después continuar con el Módulo UX.
+- Publicar UX en rama y commit propios.
+- Después continuar con el Módulo Laboratorio.
 - Profesor FORJA permanece bloqueado.
 
 ## Riesgos abiertos

@@ -1,7 +1,7 @@
 {
-  "name": "Forja · Estudio que sí se queda",
-  "short_name": "Forja",
-  "description": "Convierte tus materiales en recuperación activa, repetición espaciada y simulacros.",
+  "name": "FORJA · Plataforma académica",
+  "short_name": "FORJA",
+  "description": "Mantén unidos estudio, proyectos y trazabilidad académica.",
   "lang": "es-CL",
   "start_url": "./",
   "display": "standalone",

@@ -1,0 +1,20 @@
+.app-splash { position: fixed; inset: 0; z-index: 200; display: grid; place-content: center; justify-items: center; gap: 14px; background: var(--bg); transition: opacity .3s var(--ease), visibility .3s; animation: splash-safety .3s 2s forwards; }
+.app-splash.leaving { opacity: 0; visibility: hidden; pointer-events: none; }
+.splash-mark { display: grid; place-content: center; width: 74px; height: 74px; border-radius: 22px; background: var(--accent); color: var(--accent-contrast); font: 800 2rem "Manrope", sans-serif; box-shadow: 0 0 0 12px rgb(var(--accent-rgb) / .08); }
+.app-splash p { margin: 0; font-size: .78rem; }
+.connection-banner { position: fixed; z-index: 30; left: calc(var(--sidebar) + 18px); right: 18px; top: calc(var(--topbar) + 8px); padding: 9px 14px; border: 1px solid rgb(var(--accent-rgb) / .25); border-radius: 10px; background: var(--surface-2); color: var(--text); text-align: center; font-size: .76rem; box-shadow: var(--shadow); }
+.product-footer { margin-left: var(--sidebar); padding: 8px 32px max(24px, env(safe-area-inset-bottom)); color: var(--muted-2); text-align: center; font-size: .72rem; }
+.product-footer p { margin: 0; }
+.product-footer strong { color: var(--muted); }
+.product-version { margin-left: 8px; padding: 3px 7px; border: 1px solid var(--line); border-radius: 999px; }
+.project-card, .source-card, .criterion-card, .evidence-card, .report-section-card, .slide-card { transition: transform .18s var(--ease), border-color .18s var(--ease); }
+.project-card:hover, .source-card:hover, .criterion-card:hover, .evidence-card:hover, .report-section-card:hover, .slide-card:hover { transform: translateY(-2px); border-color: var(--line-strong); }
+@keyframes splash-safety { to { opacity: 0; visibility: hidden; pointer-events: none; } }
+@media (max-width: 760px) {
+  .connection-banner { left: 14px; right: 14px; top: calc(var(--topbar) + 6px); }
+  .product-footer { margin-left: 0; padding-inline: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-splash { animation-delay: .15s; }
+  .project-card, .source-card, .criterion-card, .evidence-card, .report-section-card, .slide-card { transform: none !important; }
+}

@@ -4,6 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
   <meta name="theme-color" content="#0d1512">
+  <meta name="application-name" content="FORJA">
+  <meta name="apple-mobile-web-app-title" content="FORJA">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta property="og:title" content="FORJA · Tu plataforma académica">
+  <meta property="og:description" content="Estudio, proyectos y trazabilidad académica en un solo lugar.">
   <!-- Sustituir forja-sync.invalid por el origen HTTPS exacto del Worker al activarlo. -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; worker-src 'self' blob: https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com data:; connect-src 'self' https://cdn.jsdelivr.net https://forja-sync.invalid; img-src 'self' data: blob:; object-src 'none'; base-uri 'none'; form-action 'self'">
   <meta name="description" content="Forja convierte tus apuntes y archivos en sesiones de estudio con recuperación activa, repetición espaciada y práctica tipo examen.">
@@ -21,10 +26,13 @@
   <link rel="stylesheet" href="css/evidence.css">
   <link rel="stylesheet" href="css/reports.css">
   <link rel="stylesheet" href="css/presentations.css">
+  <link rel="stylesheet" href="css/ux.css">
   <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
   <a class="skip-link" href="#main">Saltar al contenido</a>
+  <div class="app-splash" id="appSplash" role="status" aria-label="Cargando FORJA"><span class="splash-mark">F</span><p>Preparando tu espacio…</p></div>
+  <div class="connection-banner" id="connectionBanner" role="status" hidden>Sin conexión · trabajarás con lo guardado en este dispositivo.</div>
   <div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
 
   <aside class="sidebar" id="sidebar" aria-label="Menú lateral">
@@ -203,6 +211,7 @@
       <article class="panel evidence-note"><span>i</span><div><h3>Por qué funciona este sistema</h3><p>La práctica de recuperación y el estudio distribuido son dos de las técnicas con respaldo más consistente. Forja también intercala temas y exige explicar errores, para entrenar discriminación y comprensión.</p></div></article>
     </section>
   </main>
+  <footer class="product-footer"><p><strong>FORJA</strong> · © <span id="copyrightYear"></span> · Tu trabajo académico permanece unido. <span class="product-version" id="productVersion"></span></p></footer>
 
   <dialog id="settingsDialog"><form method="dialog" class="modal-card"><button class="modal-close" value="cancel" aria-label="Cerrar">×</button><span class="eyebrow">AJUSTES</span><h2>Tu plan y apariencia</h2><fieldset class="appearance-settings"><legend>Personalización</legend><label>Tema<select id="themeModeSetting"><option value="system">Automático</option><option value="dark">Oscuro</option><option value="light">Claro</option></select></label><label>Paleta<select id="paletteSetting"><option value="forja">Forja · verde</option><option value="ocean">Océano · azul</option><option value="amethyst">Amatista · violeta</option><option value="coral">Coral</option><option value="solar">Solar · ámbar</option><option value="rose">Rosa</option><option value="custom">Color personalizado</option></select></label><label id="customAccentRow" hidden>Tu color<input id="customAccentSetting" type="color" value="#b9ef73"></label><div class="palette-preview" id="palettePreview"><span>Vista previa</span><button type="button">Acción principal</button></div></fieldset><label>Uso de energía<select id="energyModeSetting"><option value="auto">Automático recomendado</option><option value="saver">Ahorro máximo</option><option value="standard">Visual completo</option></select><small id="energyStatus">Automático reduce efectos en teléfonos, equipos modestos o batería baja.</small></label><details class="name-story"><summary>¿Por qué se llama Forja?</summary><p>Porque aprender de verdad se parece a forjar: recordar, fallar, corregir y repetir vuelve el conocimiento más resistente.</p></details><label>Fecha del próximo examen<input id="examDateSetting" type="date"></label><label>Meta diaria<input id="dailyGoalSetting" type="number" min="5" max="180" step="5" value="25"><span>minutos</span></label><label>Hora preferida<input id="studyTimeSetting" type="time" value="19:00"></label><label class="check-row"><input id="soundSetting" type="checkbox" checked><span>Lectura en voz alta cuando yo la active</span></label><button class="secondary-btn" type="button" id="accountBtn">Cuenta y bóveda segura</button><button class="secondary-btn" type="button" id="calendarBtn">Añadir plan a mi calendario</button><div class="modal-actions"><button class="danger-text" type="button" id="clearDataBtn">Borrar datos locales</button><button class="primary-btn" value="save">Guardar cambios</button></div></form></dialog>
   <dialog id="focusDialog"><form method="dialog" class="focus-modal"><button class="modal-close" value="cancel">×</button><span class="eyebrow">BLOQUE DE ENFOQUE</span><strong id="focusBig">25:00</strong><p id="focusState">Una tarea. Sin cambiar de pestaña.</p><div><button type="button" class="secondary-btn" id="focusReset">Reiniciar</button><button type="button" class="primary-btn" id="focusToggle">Comenzar</button></div></form></dialog>
@@ -325,5 +334,6 @@
   <script type="module" src="js/evidence/evidence-controller.js"></script>
   <script type="module" src="js/reports/reports-controller.js"></script>
   <script type="module" src="js/presentations/presentations-controller.js"></script>
+  <script type="module" src="js/ux/ux-controller.js"></script>
 </body>
 </html>

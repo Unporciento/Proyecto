@@ -6,7 +6,8 @@ const MODULE_TESTS = Object.freeze({
   rubrics: 'tests/rubrics.test.js',
   evidence: 'tests/evidence.test.js',
   reports: 'tests/reports.test.js',
-  presentations: 'tests/presentations.test.js'
+  presentations: 'tests/presentations.test.js',
+  ux: 'tests/ux.test.js'
 });
 
 function run(command, args) {

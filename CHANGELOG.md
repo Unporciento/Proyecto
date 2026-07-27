@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-26 — Módulo UX
+
+- Identidad FORJA y versión `2.0.0` visibles.
+- Footer con año automático, metadatos PWA y favicon consolidados.
+- Pantalla de carga breve, estado offline y errores globales seguros.
+- Añadidas páginas 404 y offline sin dependencias externas.
+- Microinteracciones respetan movimiento reducido y ahorro de energía.
+- Service Worker `2026.07.26-5` precarga los recursos de recuperación.
+
 ## 2026-07-26 — Módulo 6: Presentaciones
 
 - Añadida la preparación de contenido académico por diapositivas.
