@@ -54,6 +54,7 @@ test('genera un calendario válido y con alarma', () => {
 
 test('la navegación solo acepta vistas conocidas y detecta el gesto de cierre', () => {
   assert.equal(resolveView('biblioteca'), 'biblioteca');
+  assert.equal(resolveView('proyectos'), 'proyectos');
   assert.equal(resolveView('biblioteca\"]'), null);
   assert.ok(isDismissSwipe({ startX: 280, startY: 100, endX: 120, endY: 115, durationMs: 300 }));
   assert.ok(!isDismissSwipe({ startX: 120, startY: 100, endX: 280, endY: 110, durationMs: 300 }));

@@ -17,11 +17,19 @@ export function showView(name) {
   if (!safeName) return false;
   document.querySelectorAll('.view').forEach(panel => panel.classList.toggle('active', panel.dataset.viewPanel === safeName));
   document.querySelectorAll('.nav-item[data-view]').forEach(button => button.classList.toggle('active', button.dataset.view === safeName));
-  const titles = { inicio: 'Tu centro de estudio', biblioteca: 'Biblioteca', estudiar: 'Sesión inteligente', examen: 'Simulacro', progreso: 'Progreso verificable' };
+  const titles = {
+    inicio: 'Tu centro de estudio',
+    proyectos: 'Proyectos académicos',
+    biblioteca: 'Biblioteca',
+    estudiar: 'Sesión inteligente',
+    examen: 'Simulacro',
+    progreso: 'Progreso verificable'
+  };
   $('#viewTitle').textContent = titles[safeName];
   closeDrawer({ restoreFocus: false, focusMain: true });
   history.replaceState(null, '', `#${safeName}`);
   window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.dispatchEvent(new CustomEvent('forja:viewchange', { detail: { view: safeName } }));
   return true;
 }
 

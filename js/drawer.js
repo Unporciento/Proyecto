@@ -1,5 +1,7 @@
 const MOBILE_QUERY = '(max-width: 760px)';
-const VIEWS = new Set(['inicio', 'biblioteca', 'estudiar', 'examen', 'progreso']);
+const VIEWS = new Set([
+  'inicio', 'proyectos', 'biblioteca', 'estudiar', 'examen', 'progreso'
+]);
 let api;
 
 export function resolveView(value) {

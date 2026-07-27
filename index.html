@@ -15,6 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/tokens.css">
   <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/projects.css">
   <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
@@ -29,6 +30,7 @@
     </a>
     <nav aria-label="Navegación principal">
       <button class="nav-item active" data-view="inicio"><span>⌂</span>Inicio</button>
+      <button class="nav-item" data-view="proyectos"><span>▦</span>Proyectos</button>
       <button class="nav-item" data-view="biblioteca"><span>▤</span>Biblioteca</button>
       <button class="nav-item" data-view="estudiar"><span>◈</span>Estudiar</button>
       <button class="nav-item" data-view="examen"><span>✓</span>Simulacro</button>
@@ -77,6 +79,28 @@
       </div>
     </section>
 
+    <section class="view" data-view-panel="proyectos" aria-labelledby="projectsTitle">
+      <div class="page-intro projects-intro">
+        <div>
+          <span class="eyebrow">TRABAJOS UNIVERSITARIOS</span>
+          <h1 id="projectsTitle">Proyectos académicos</h1>
+          <p>Organiza cada trabajo desde el inicio hasta la entrega, sin separar su contexto de la asignatura.</p>
+        </div>
+        <div class="page-actions">
+          <button class="primary-btn" id="newProjectBtn" type="button">+ Nuevo proyecto</button>
+        </div>
+      </div>
+      <div class="project-tools" aria-label="Filtros de proyectos">
+        <label>Asignatura<select id="projectSubjectFilter"><option value="">Todas</option></select></label>
+        <label>Estado<select id="projectStatusFilter"><option value="">Todos</option><option value="active">Activo</option><option value="submitted">Entregado</option><option value="graded">Calificado</option><option value="archived">Archivado</option></select></label>
+      </div>
+      <div id="projectSummary" class="project-summary" aria-live="polite"></div>
+      <div id="projectGrid" class="project-grid" aria-live="polite">
+        <div class="empty-state"><span>▦</span><h3>Aún no tienes proyectos</h3><p>Crea el primero para mantener unido todo su ciclo académico.</p></div>
+      </div>
+      <div class="project-more"><button class="secondary-btn" id="moreProjectsBtn" type="button" hidden>Mostrar más</button></div>
+    </section>
+
     <section class="view" data-view-panel="biblioteca">
       <div class="page-intro"><div><span class="eyebrow">TU FUENTE DE VERDAD</span><h1>Biblioteca de estudio</h1><p>Todo se procesa y guarda en este dispositivo. Tus archivos no se suben a ningún servidor.</p></div><div class="page-actions"><button class="secondary-btn" id="pasteMaterialBtn">Pegar apuntes</button><button class="primary-btn" id="addMaterialBtn">+ Añadir archivo</button></div></div>
       <div class="drop-zone" id="dropZone" tabindex="0" role="button"><div class="drop-icon">⇧</div><h2>Arrastra aquí tus apuntes</h2><p>PDF, Word, Markdown, texto e imágenes · varios archivos a la vez</p><button class="secondary-btn">Elegir archivos</button><input id="fileInput" type="file" multiple accept=".pdf,.docx,.txt,.md,.markdown,.png,.jpg,.jpeg,.webp" hidden><small>Las imágenes usan reconocimiento de texto local; puede tardar en iPhone.</small></div>
@@ -109,9 +133,35 @@
   <dialog id="subjectDialog"><form method="dialog" class="modal-card"><button class="modal-close" value="cancel">×</button><span class="eyebrow">NUEVA CARPETA</span><h2>Crear una materia</h2><label>Nombre<input id="subjectName" maxlength="60" autocomplete="off" placeholder="Ej.: Mecánica automotriz" required></label><div class="modal-actions"><span></span><button class="primary-btn" value="save">Crear materia</button></div></form></dialog>
   <dialog id="profileDialog"><form method="dialog" class="modal-card"><button class="modal-close" value="cancel">×</button><span class="eyebrow">PERFIL LOCAL</span><h2>Tu espacio de estudio</h2><div class="profile-row"><div class="avatar-preview" id="avatarPreview">YO</div><label class="secondary-btn" style="display:grid;place-content:center;cursor:pointer">Elegir foto<input id="avatarInput" type="file" accept="image/jpeg,image/png,image/webp" hidden></label></div><label>Tu nombre<input id="profileName" maxlength="60" autocomplete="name" placeholder="¿Cómo te llamamos?"></label><p>Este perfil y la foto se guardan solo en este navegador; no se envían a internet.</p><div class="modal-actions"><button class="danger-text" type="button" id="removeAvatarBtn">Quitar foto</button><button class="primary-btn" value="save">Guardar perfil</button></div></form></dialog>
   <dialog id="pasteDialog"><form method="dialog" class="modal-card"><button class="modal-close" value="cancel">×</button><span class="eyebrow">ENTRADA RÁPIDA</span><h2>Pegar apuntes</h2><p>Copia aquí una clase, resumen o transcripción. Forja creará preguntas sin subir el texto.</p><label>Título<input id="pasteTitle" maxlength="100" autocomplete="off" placeholder="Ej.: Sistema de frenos" required></label><label>Contenido<textarea id="pasteText" minlength="80" maxlength="500000" rows="10" placeholder="Pega al menos unas cuantas ideas completas…" required></textarea></label><div class="modal-actions"><span></span><button class="primary-btn" value="save">Crear preguntas</button></div></form></dialog>
+  <dialog id="projectDialog">
+    <form id="projectForm" class="modal-card project-form">
+      <button class="modal-close" type="button" data-project-cancel aria-label="Cerrar">×</button>
+      <span class="eyebrow">PROYECTO ACADÉMICO</span>
+      <h2 id="projectDialogTitle">Crear proyecto</h2>
+      <div class="project-form-grid">
+        <label class="wide">Nombre<input id="projectName" maxlength="160" autocomplete="off" required></label>
+        <label>Asignatura<select id="projectSubject" required></select></label>
+        <label>Profesor, opcional<input id="projectProfessor" maxlength="120" autocomplete="off"></label>
+        <label>Semestre<input id="projectSemester" maxlength="60" placeholder="Ej.: 2.º semestre 2026" required></label>
+        <label>Estado<select id="projectStatus" required><option value="active">Activo</option><option value="submitted">Entregado</option><option value="graded">Calificado</option><option value="archived">Archivado</option></select></label>
+        <label>Fecha de inicio<input id="projectStartDate" type="date" required></label>
+        <label>Fecha de entrega<input id="projectDueDate" type="date" required></label>
+        <label>Progreso manual<input id="projectProgress" type="number" min="0" max="100" step="1" value="0" required></label>
+        <label>Color<input id="projectColor" type="color" value="#b9ef73" required></label>
+        <label>Icono<select id="projectIcon" required><option value="book">Libro</option><option value="wrench">Mecánica</option><option value="flask">Ciencia</option><option value="calculator">Cálculo</option><option value="health">Salud</option><option value="code">Programación</option><option value="briefcase">Gestión</option><option value="star">General</option></select></label>
+        <label class="wide">Descripción<textarea id="projectDescription" maxlength="20000" rows="4"></textarea></label>
+      </div>
+      <p class="form-error" id="projectFormError" role="alert" hidden></p>
+      <div class="modal-actions">
+        <button class="secondary-btn" type="button" data-project-cancel>Cancelar</button>
+        <button class="primary-btn" id="saveProjectBtn" type="submit">Guardar proyecto</button>
+      </div>
+    </form>
+  </dialog>
   <dialog id="accountDialog"><form method="dialog" class="modal-card account-modal"><button class="modal-close" value="cancel">×</button><span class="eyebrow">BÓVEDA FORJA</span><h2>Tu progreso, recuperable</h2><p id="syncStatus">Comprobando disponibilidad…</p><label>Contraseña privada<input id="syncPassword" type="password" minlength="10" maxlength="128" autocomplete="new-password" placeholder="Mínimo 10 caracteres"></label><details open><summary>Crear una cuenta nueva</summary><label>Repetir contraseña<input id="syncPasswordRepeat" type="password" minlength="10" maxlength="128" autocomplete="new-password"></label><button class="primary-btn" type="button" id="createAccountBtn">Crear código y proteger progreso</button><div class="recovery-box" id="recoveryBox" hidden><small>Tu código de recuperación</small><strong id="recoveryCode"></strong><p>Guárdalo fuera del teléfono. Sin el código y la contraseña nadie puede recuperar la bóveda.</p><button class="secondary-btn" type="button" id="copyRecoveryBtn">Copiar código</button></div></details><details><summary>Entrar o recuperar en otro dispositivo</summary><label>Código personal<input id="syncCode" maxlength="24" autocomplete="off" autocapitalize="characters" placeholder="XXXXX-XXXXX-XXXXX-XXXXX"></label><label>Bóveda cifrada, si usas modo portátil<input id="vaultInput" type="file" accept="application/json,.json"></label><button class="primary-btn" type="button" id="unlockAccountBtn">Desbloquear y restaurar</button></details><div class="modal-actions"><span></span><button class="secondary-btn" type="button" id="syncNowBtn" disabled>Guardar progreso ahora</button></div></form></dialog>
   <div id="toastRegion" class="toast-region" aria-live="polite"></div>
 
   <script type="module" src="js/app.js"></script>
+  <script type="module" src="js/projects/projects-controller.js"></script>
 </body>
 </html>

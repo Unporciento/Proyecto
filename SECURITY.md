@@ -20,6 +20,10 @@ El despliegue actual de Forja es una aplicación estática sin servidor. El modo
 - La restauración reemplaza todas las colecciones en una única transacción: o se completa entera o no modifica nada.
 - Los contratos académicos rechazan tipos, versiones y campos no reconocidos antes de escribir.
 - El repositorio comprueba asignaturas, proyectos, padres, documentos, extremos y relaciones duplicadas dentro de la misma transacción.
+- La interfaz de proyectos construye nodos DOM con `textContent`, usa estados e
+  iconos cerrados y nunca escribe directamente en IndexedDB.
+- Eliminar un proyecto exige confirmación y borra su grafo en una sola transacción;
+  archivar únicamente cambia su estado.
 - Los respaldos v1 se convierten a v2 en memoria; el archivo original nunca se modifica.
 - En 2B el objetivo efectivo es v3; la migración conserva los stores anteriores
   y crea únicamente los cuatro stores académicos aprobados.

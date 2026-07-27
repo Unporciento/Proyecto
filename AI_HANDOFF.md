@@ -1,25 +1,26 @@
 # AI handoff — FORJA
 
-Última etapa preparada para producción: activación controlada 2B, 2026-07-26.
+Último módulo preparado para producción: Módulo 1 — Proyectos Académicos, 2026-07-26.
 
-## Etapa 2B
+## Módulo 1
 
-- `TARGET_DB_VERSION = 3`; una instalación nueva crea nueve stores.
-- Una instalación v2 conserva los cinco stores anteriores y añade únicamente
-  los cuatro stores académicos aprobados.
-- Service worker `2026.07.26-4`.
-- Sincronización e interfaz académica permanecen inactivas.
+- La sección visible `Proyectos` permite crear, editar, archivar y eliminar.
+- El contrato visible usa `PROJECT_SCHEMA_VERSION = 2` y valida fechas, estado,
+  color, icono, progreso y duplicados por asignatura.
+- La interfaz vive en `js/projects/` y usa exclusivamente `AcademicRepository`.
+- Fuentes, rúbricas, evidencias, informes y demás módulos siguen sin interfaz.
 
 ## Estado
 
 - FORJA sigue siendo una PWA estática centrada en estudio.
-- El primer flujo académico está implementado solo como dominio, repositorio y pruebas.
-- No existe interfaz académica y no se implementaron investigación, presentaciones, IA, calendario, colaboración ni exportación documental.
+- Solo Proyectos Académicos tiene interfaz visible.
+- No se implementaron interfaces de fuentes, rúbricas, evidencias, informes,
+  presentaciones, profesor IA, laboratorio, colaboración ni exportación documental.
 - `SYNC_ENDPOINT` está vacío: la nube no está activa.
 - Bóvedas portátiles v1 siguen compatibles.
 - IndexedDB objetivo efectivo de producción: v3.
 - `ACADEMIC_DB_VERSION = 3`.
-- Verificación actual: 44 pruebas aprobadas, sintaxis válida y todos los archivos propios bajo 400 líneas.
+- Verificación actual: 50 pruebas aprobadas, sintaxis válida y todos los archivos propios bajo 400 líneas.
 
 ## Núcleo académico
 
@@ -29,7 +30,7 @@
 - Migración y puente: `js/academic/academic-migrations.js`.
 - Respaldo v2: `js/academic/backup-v2.js`; los respaldos v1 se convierten en memoria.
 - `app.js` no fue modificado.
-- No diseñar interfaz académica hasta validar y aprobar físicamente la Etapa 2B.
+- No comenzar el Módulo 2 hasta validar y aprobar físicamente Proyectos.
 
 ## Decisiones de seguridad
 
@@ -77,7 +78,6 @@ python3 -m http.server 4173
 - Validación visual/manual en Brave o Chrome de computador y Safari iPhone.
 - Interfaz de resolución de conflictos entre dispositivos.
 - Decidir alojamiento local o CDN de PDF.js, Mammoth, Tesseract y fuentes.
-- Aprobar la prueba vertical interna antes de diseñar cualquier interfaz.
 - Medir el volumen en Safari iPhone y Chrome/Brave reales; `fake-indexeddb` no representa hardware móvil.
-- Validar físicamente v3, los nueve stores, migración, respaldo y modo offline
-  antes de autorizar cualquier interfaz académica.
+- El Laboratorio es obligatorio en una fase futura: diagnóstico pasivo, informe
+  copiable, salud calculada, historial local y reparaciones solo autorizadas.

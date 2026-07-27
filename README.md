@@ -7,6 +7,7 @@ Forja es una aplicación web local para convertir materiales de estudio en sesio
 - Importa PDF, DOCX, TXT, Markdown e imágenes con OCR.
 - Permite pegar apuntes directamente desde el teléfono.
 - Organiza materiales persistentes por materias.
+- Crea, edita, archiva y elimina proyectos académicos vinculados a una asignatura.
 - Genera preguntas trazables al documento: definiciones, listas, fórmulas, cálculos, procedimientos, comparación, causa–efecto y diagnóstico.
 - Programa repasos adaptativos según dificultad y errores.
 - Calcula rachas por día local, conserva el récord y desbloquea seis recompensas permanentes.
@@ -51,15 +52,16 @@ npm run verify
 
 La arquitectura mantiene cada archivo por debajo de 400 líneas para facilitar revisión y mantenimiento.
 
-## Núcleo académico interno
+## Núcleo académico
 
-La Fase 2 incorpora, todavía sin interfaz, un flujo único de proyecto → fuente →
-rúbrica y criterio → evidencia → informe y sección. Los documentos continúan
-almacenados una sola vez en la biblioteca y el proyecto guarda referencias y
-relaciones semánticas. La interfaz futura deberá usar el repositorio académico;
-no accederá directamente a IndexedDB.
+IndexedDB v3 contiene el flujo proyecto → fuente → rúbrica y criterio → evidencia
+→ informe y sección. Los documentos permanecen una sola vez en la biblioteca y
+los componentes académicos se conectan mediante relaciones semánticas.
 
-La versión puente de producción conserva IndexedDB v2: acepta y exporta respaldos
-v1 y no crea todavía stores académicos. El respaldo v2 y la migración v3 se prueban
-en bases aisladas, pero permanecerán inactivos hasta la Etapa 2B. La arquitectura y el plan de entrega están documentados en
-`docs/ACADEMIC_CORE_ARCHITECTURE.md` y `docs/ACADEMIC_CORE_DELIVERY.md`.
+El Módulo 1 hace visible únicamente la gestión de proyectos. Fuentes, rúbricas,
+evidencias e informes continúan internos y sin interfaz. Toda operación visible
+pasa por `AcademicRepository`; la interfaz nunca accede directamente a IndexedDB.
+
+La arquitectura general y el módulo están documentados en
+`docs/ACADEMIC_CORE_ARCHITECTURE.md`, `docs/ACADEMIC_CORE_DELIVERY.md` y
+`docs/MODULE-1-PROJECTS.md`.

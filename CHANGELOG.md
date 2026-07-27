@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-26 — Módulo 1: Proyectos Académicos
+
+- Añadida la sección visible `Proyectos`, integrada con la navegación y diseño de FORJA.
+- Gestión completa: crear, editar, archivar y eliminar con confirmación.
+- Contrato de proyecto esquema 2 con profesor, semestre, fechas, color, icono y progreso.
+- Compatibilidad conservada con registros académicos esquema 1.
+- Estados cerrados: activo, entregado, calificado y archivado.
+- Duplicados bloqueados por nombre normalizado dentro de una asignatura.
+- Consultas paginadas mediante el índice `updatedAt`; comprobadas con 500 proyectos.
+- La interfaz usa exclusivamente `AcademicRepository`.
+- No se modificaron `app.js`, Service Worker, migraciones, bóveda ni sincronización.
+- Verificación completa: 50 pruebas aprobadas, 0 fallidas.
+
 ## 2026-07-26 — Etapa 2B: activación controlada de IndexedDB v3
 
 - Elevado `TARGET_DB_VERSION` de 2 a 3 para activar la migración académica aditiva.
