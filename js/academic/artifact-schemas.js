@@ -2,6 +2,7 @@ export const ARTIFACT_SCHEMA_VERSION = 1;
 export const SOURCE_SCHEMA_VERSION = 2;
 export const RUBRIC_SCHEMA_VERSION = 2;
 export const EVIDENCE_SCHEMA_VERSION = 2;
+export const REPORT_SCHEMA_VERSION = 2;
 
 export const ARTIFACT_KINDS = Object.freeze([
   'source',
@@ -128,6 +129,18 @@ function evidenceV2(data) {
   if (!EVIDENCE_STATUSES.has(data.state)) fail('state no está permitido.');
 }
 
+function reportV2(data) {
+  exactObject(data, ['abstract', 'language'], 'report.data');
+  text(data.abstract, 'abstract', 50_000);
+  text(data.language, 'language', 20, { empty: false });
+}
+
+function reportSectionV2(data) {
+  exactObject(data, ['heading', 'body'], 'report_section.data');
+  text(data.heading, 'heading', 500, { empty: false });
+  text(data.body, 'body', 500_000);
+}
+
 const DATA_VALIDATORS = {
   source(data) {
     exactObject(data, ['sourceType', 'authors', 'publicationTitle', 'publisher', 'year', 'url', 'accessedAt', 'notes'], 'source.data');
@@ -199,6 +212,14 @@ export function validateArtifactData(kind, data, schemaVersion = ARTIFACT_SCHEMA
     evidenceV2(data);
     return true;
   }
+  if (schemaVersion === REPORT_SCHEMA_VERSION && kind === 'report') {
+    reportV2(data);
+    return true;
+  }
+  if (schemaVersion === REPORT_SCHEMA_VERSION && kind === 'report_section') {
+    reportSectionV2(data);
+    return true;
+  }
   const validator = DATA_VALIDATORS[kind];
   if (!validator) fail(`el tipo ${String(kind)} no está habilitado.`);
   validator(data);
@@ -221,7 +242,9 @@ export function validateArtifact(artifact) {
     || (artifact.kind === 'source' && artifact.schemaVersion === SOURCE_SCHEMA_VERSION)
     || (['rubric', 'rubric_criterion'].includes(artifact.kind)
       && artifact.schemaVersion === RUBRIC_SCHEMA_VERSION)
-    || (artifact.kind === 'evidence' && artifact.schemaVersion === EVIDENCE_SCHEMA_VERSION);
+    || (artifact.kind === 'evidence' && artifact.schemaVersion === EVIDENCE_SCHEMA_VERSION)
+    || (['report', 'report_section'].includes(artifact.kind)
+      && artifact.schemaVersion === REPORT_SCHEMA_VERSION);
   if (!compatibleVersion) fail('schemaVersion no es compatible.');
   nullableDate(artifact.createdAt, 'createdAt');
   nullableDate(artifact.updatedAt, 'updatedAt');

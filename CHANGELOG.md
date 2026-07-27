@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-26 — Módulo 5: Informes
+
+- Añadidos informes con secciones ordenadas y estados borrador/final.
+- Secciones conectadas con evidencias y fuentes del mismo proyecto.
+- Cobertura de criterios derivada de la trazabilidad existente.
+- Autoguardado atómico sin crear historial por cada pulsación.
+- Hitos únicamente al marcar el informe como final.
+- Eliminación conserva fuentes, evidencias, criterios y documentos.
+- Comprobado con 500 secciones.
+
 ## 2026-07-26 — Optimización del proceso
 
 - Añadido `verify:quick` con sintaxis, contratos, imports/CSP, prueba focalizada y

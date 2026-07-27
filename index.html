@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="css/sources.css">
   <link rel="stylesheet" href="css/rubrics.css">
   <link rel="stylesheet" href="css/evidence.css">
+  <link rel="stylesheet" href="css/reports.css">
   <link rel="stylesheet" href="css/responsive.css">
 </head>
 <body>
@@ -156,6 +157,14 @@
         <div id="evidenceSummary" class="evidence-summary" aria-live="polite"></div>
         <div id="evidenceGrid" class="evidence-grid" aria-live="polite"></div>
         <div class="evidence-more"><button class="secondary-btn" id="moreEvidenceBtn" type="button" hidden>Mostrar más</button></div>
+      </div>
+      <div id="reportWorkspace" class="report-workspace" hidden aria-labelledby="reportWorkspaceTitle">
+        <button class="text-btn report-back" id="closeReportBtn" type="button">← Volver a proyectos</button>
+        <div class="page-intro report-intro">
+          <div><span class="eyebrow">REDACCIÓN CON TRAZABILIDAD</span><h1 id="reportWorkspaceTitle">Informe</h1><p id="reportProjectContext"></p></div>
+          <div class="page-actions"><button class="primary-btn" id="newReportBtn" type="button">+ Crear informe</button></div>
+        </div>
+        <div id="reportContent" aria-live="polite"></div>
       </div>
     </section>
 
@@ -305,5 +314,6 @@
   <script type="module" src="js/sources/sources-controller.js"></script>
   <script type="module" src="js/rubrics/rubrics-controller.js"></script>
   <script type="module" src="js/evidence/evidence-controller.js"></script>
+  <script type="module" src="js/reports/reports-controller.js"></script>
 </body>
 </html>

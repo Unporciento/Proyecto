@@ -29,6 +29,7 @@ import {
   rowsByIndex,
   transactionDone
 } from './repository-helpers.js';
+import { ReportRepository } from './report-repository.js';
 import { openForjaDatabase } from '../db.js';
 
 const GRAPH_STORES = [
@@ -270,6 +271,10 @@ export class AcademicRepository {
 
   async deleteEvidence(evidenceId) {
     return deleteEvidence(this.databaseProvider, evidenceId);
+  }
+
+  reports() {
+    return new ReportRepository(this.databaseProvider);
   }
 
   async createArtifact(artifact) {

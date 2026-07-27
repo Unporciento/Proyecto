@@ -79,6 +79,7 @@ function projectCard(project, subjectName) {
   actions.append(action(project, 'sources', 'Fuentes', 'project-action primary'));
   actions.append(action(project, 'rubric', 'Rúbrica', 'project-action primary'));
   actions.append(action(project, 'evidence', 'Evidencias', 'project-action primary'));
+  actions.append(action(project, 'report', 'Informe', 'project-action primary'));
   actions.append(action(project, 'edit', 'Editar'));
   if (project.status !== 'archived') actions.append(action(project, 'archive', 'Archivar'));
   actions.append(action(project, 'delete', 'Eliminar', 'project-action danger'));

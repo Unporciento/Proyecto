@@ -14,6 +14,8 @@ Forja es una aplicación web local para convertir materiales de estudio en sesio
   y estados verificables.
 - Registra evidencias y muestra qué fuentes las sustentan y qué criterios intentan
   satisfacer, sin duplicar archivos.
+- Construye informes por secciones ordenadas, con autoguardado, fuentes,
+  evidencias, cobertura de rúbrica e hitos al finalizar.
 - Genera preguntas trazables al documento: definiciones, listas, fórmulas, cálculos, procedimientos, comparación, causa–efecto y diagnóstico.
 - Programa repasos adaptativos según dificultad y errores.
 - Calcula rachas por día local, conserva el récord y desbloquea seis recompensas permanentes.
@@ -53,11 +55,11 @@ No requiere compilación.
 ```bash
 python3 -m http.server 4173
 npm install
-npm run verify:quick -- evidence
+npm run verify:quick -- reports
 npm run verify
 ```
 
-Sustituye `evidence` por el módulo en desarrollo. `verify` ejecuta la suite completa
+Sustituye `reports` por el módulo en desarrollo. `verify` ejecuta la suite completa
 y es obligatorio antes de publicar. Cada archivo debe permanecer bajo 400 líneas.
 
 ## Núcleo académico
@@ -66,12 +68,12 @@ IndexedDB v3 contiene el flujo proyecto → fuente → rúbrica y criterio → e
 → informe y sección. Los documentos permanecen una sola vez en la biblioteca y
 los componentes académicos se conectan mediante relaciones semánticas.
 
-Los módulos visibles permiten gestionar proyectos, fuentes, rúbricas y evidencias
-académicas. El módulo de Informes continúa interno y sin interfaz. Toda operación
-visible pasa por `AcademicRepository`; la interfaz nunca accede directamente a
-IndexedDB.
+Los módulos visibles permiten gestionar proyectos, fuentes, rúbricas, evidencias
+e informes académicos. Toda operación visible pasa por `AcademicRepository`; la
+interfaz nunca accede directamente a IndexedDB.
 
 La arquitectura general y los módulos están documentados en
 `docs/ACADEMIC_CORE_ARCHITECTURE.md`, `docs/ACADEMIC_CORE_DELIVERY.md` y
 `docs/MODULE-1-PROJECTS.md`, `docs/MODULE-2-SOURCES.md` y
-`docs/MODULE-3-RUBRICS.md` y `docs/MODULE-4-EVIDENCE.md`.
+`docs/MODULE-3-RUBRICS.md`, `docs/MODULE-4-EVIDENCE.md` y
+`docs/MODULE-5-REPORTS.md`.
