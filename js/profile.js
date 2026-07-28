@@ -53,5 +53,12 @@ export function paintProfile(settings) {
   const fallback = initials(name);
   paintAvatarPreview(button, settings.avatar, fallback);
   paintAvatarPreview(preview, settings.avatar, fallback, 'Vista previa de la foto de perfil');
+  const fallbackNode = button.firstElementChild || document.createElement('span');
+  if (!button.firstElementChild) {
+    fallbackNode.textContent = fallback;
+    button.replaceChildren(fallbackNode);
+  }
+  fallbackNode.setAttribute('aria-hidden', 'true');
+  button.setAttribute('aria-label', `Abrir perfil local de ${name}`);
   button.title = `Perfil local de ${name}`;
 }

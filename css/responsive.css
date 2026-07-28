@@ -1,3 +1,6 @@
+dialog .modal-card,
+dialog .focus-modal { max-height: calc(100dvh - 28px); overflow-y: auto; }
+
 @media (max-width: 1050px) {
   .hero-grid, .home-lower { grid-template-columns: 1fr; }
   .due-card { min-height: 230px; flex-direction: row; gap: 28px; text-align: left; }

@@ -17,6 +17,22 @@ function channels(hex) {
   return [0, 2, 4].map(index => Number.parseInt(safe.slice(index, index + 2), 16));
 }
 
+function relativeLuminance(hex) {
+  const values = channels(hex).map(value => {
+    const channel = value / 255;
+    return channel <= .04045 ? channel / 12.92 : ((channel + .055) / 1.055) ** 2.4;
+  });
+  return .2126 * values[0] + .7152 * values[1] + .0722 * values[2];
+}
+
+export function accessibleLightAccent(hex) {
+  let values = channels(hex);
+  while (1.05 / (relativeLuminance(`#${values.map(value => value.toString(16).padStart(2, '0')).join('')}`) + .05) < 4.5) {
+    values = values.map(value => Math.floor(value * .88));
+  }
+  return `#${values.map(value => value.toString(16).padStart(2, '0')).join('')}`;
+}
+
 export function contrastText(hex) {
   const [r, g, b] = channels(hex).map(value => {
     const channel = value / 255;
@@ -34,10 +50,14 @@ export function applyTheme(settings = {}, root = document.documentElement) {
   const allowedModes = new Set(['dark', 'light']);
   if (allowedModes.has(settings.themeMode)) root.dataset.theme = settings.themeMode;
   else delete root.dataset.theme;
-  const accent = resolveAccent(settings);
+  const systemLight = root.ownerDocument?.defaultView?.matchMedia?.('(prefers-color-scheme: light)').matches;
+  const light = settings.themeMode === 'light' || (settings.themeMode !== 'dark' && systemLight);
+  const baseAccent = resolveAccent(settings);
+  const accent = light ? accessibleLightAccent(baseAccent) : baseAccent;
+  const accent2 = light ? accessibleLightAccent(mixWithWhite(baseAccent)) : mixWithWhite(baseAccent);
   const [r, g, b] = channels(accent);
   root.style.setProperty('--accent', accent);
-  root.style.setProperty('--accent-2', mixWithWhite(accent));
+  root.style.setProperty('--accent-2', accent2);
   root.style.setProperty('--accent-rgb', `${r} ${g} ${b}`);
   root.style.setProperty('--accent-contrast', contrastText(accent));
   root.style.colorScheme = settings.themeMode === 'light' ? 'light' : settings.themeMode === 'dark' ? 'dark' : 'light dark';

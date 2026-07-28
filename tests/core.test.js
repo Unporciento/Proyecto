@@ -5,7 +5,7 @@ import { isDue, masteryScore, schedule } from '../js/scheduler.js';
 import { buildCalendar, examCountdown } from '../js/planner.js';
 import { validateBackup } from '../js/backup.js';
 import { isDismissSwipe, resolveView } from '../js/drawer.js';
-import { contrastText, normalizeHex, resolveAccent } from '../js/theme.js';
+import { accessibleLightAccent, contrastText, normalizeHex, PALETTES, resolveAccent } from '../js/theme.js';
 import { isSafeAvatar } from '../js/profile.js';
 import { localDayKey, newlyUnlocked, streakStats } from '../js/streak.js';
 import { resolveEnergyMode } from '../js/energy.js';
@@ -14,6 +14,16 @@ import { accountIdentity, accountSecret, decryptVault, encryptVault, generateAcc
 const doc = {
   id: 'doc_test', name: 'Guía de prueba',
   text: `La presión hidráulica es la fuerza ejercida por unidad de superficie. El sistema hidráulico incluye una bomba, válvulas, actuadores y un depósito. La válvula de alivio limita la presión máxima para proteger los componentes del circuito. El mantenimiento preventivo reduce fallas inesperadas y permite detectar contaminación antes de que provoque desgaste acelerado.`
+};
+
+const contrast = (foreground, background) => {
+  const luminance = hex => {
+    const values = hex.match(/[a-f\d]{2}/gi).map(value => Number.parseInt(value, 16) / 255).map(value =>
+      value <= .04045 ? value / 12.92 : ((value + .055) / 1.055) ** 2.4);
+    return .2126 * values[0] + .7152 * values[1] + .0722 * values[2];
+  };
+  const values = [luminance(foreground), luminance(background)].sort((a, b) => b - a);
+  return (values[0] + .05) / (values[1] + .05);
 };
 
 test('limpia Markdown sin perder el contenido', () => {
@@ -65,6 +75,9 @@ test('las paletas rechazan valores arbitrarios y conservan contraste', () => {
   assert.equal(resolveAccent({ palette: 'custom', customAccent: '#123abc' }), '#123abc');
   assert.equal(contrastText('#f3c65f'), '#102016');
   assert.equal(contrastText('#123abc'), '#ffffff');
+  for (const accent of Object.values(PALETTES)) {
+    assert.ok(contrast(accessibleLightAccent(accent), '#ffffff') >= 4.5);
+  }
 });
 
 test('la foto local solo acepta un data URI JPEG acotado', () => {
