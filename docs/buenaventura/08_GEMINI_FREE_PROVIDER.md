@@ -2,10 +2,9 @@
 
 ## Estado y activación
 
-Esta integración implementa el límite técnico del Módulo de cierre 4, pero no
-activa producción. El frontend conserva `UnavailableProvider` mientras
-`BUENAVENTURA_PROXY_URL` esté vacío. La activación exige aprobación final,
-despliegue del Worker gratuito y ajuste explícito de CSP.
+Esta integración queda preparada para activación final, sin publicar todavía la
+rama ni GitHub Pages. El frontend usa el Worker gratuito aprobado y conserva
+`UnavailableProvider` cuando Gemini o Cloudflare no están disponibles.
 
 El único modelo permitido es `gemini-3.5-flash-lite`. El proyecto `Forja` debe
 permanecer en `Usage tier: Free`, sin cuenta de facturación ni tarjeta. No hay

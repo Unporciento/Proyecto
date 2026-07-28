@@ -3,8 +3,11 @@
   "main": "src/index.js",
   "compatibility_date": "2026-07-28",
   "workers_dev": true,
+  "secrets": {
+    "required": ["GEMINI_API_KEY"]
+  },
   "vars": {
     "GEMINI_MODEL": "gemini-3.5-flash-lite",
-    "ALLOWED_ORIGINS": "http://localhost:8000"
+    "ALLOWED_ORIGINS": "https://unporciento.github.io"
   }
 }

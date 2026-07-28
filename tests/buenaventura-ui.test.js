@@ -25,7 +25,10 @@ test('el envío externo exige divulgación y consentimiento nuevo por solicitud'
   assert.match(shell, /Google Gemini Free Tier/);
   assert.match(shell, /buenaventuraDeidentified/);
   assert.match(shell, /buenaventuraAdult/);
-  assert.match(config, /BUENAVENTURA_PROXY_URL = ''/);
+  assert.match(
+    config,
+    /https:\/\/forja-buenaventura-free\.informesinap937\.workers\.dev\/v1\/buenaventura\/recommend/
+  );
   assert.match(controller, /function resetExternalConsent/);
   assert.match(controller, /finally \{[\s\S]*resetExternalConsent/);
 });

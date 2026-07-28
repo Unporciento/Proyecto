@@ -1,4 +1,4 @@
-const RELEASE_VERSION = '2026.07.28-7';
+const RELEASE_VERSION = '2026.07.28-8';
 const CACHE = `forja-shell-${RELEASE_VERSION}`;
 const SHELL = [
   './', './index.html', './404.html', './offline.html',

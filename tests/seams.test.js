@@ -93,7 +93,7 @@ test('producto y datos permanecen mientras el Service Worker avanza', async () =
     read('js/academic/backup-v2.js')
   ]);
   assert.match(ux, /FORJA_VERSION = '2\.0\.0'/);
-  assert.match(worker, /RELEASE_VERSION = '2026\.07\.28-7'/);
+  assert.match(worker, /RELEASE_VERSION = '2026\.07\.28-8'/);
   assert.match(migrations, /TARGET_DB_VERSION = 3/);
   assert.match(backup, /BACKUP_SCHEMA_VERSION = 2/);
 });

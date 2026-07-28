@@ -45,7 +45,7 @@ nueva versión del Worker con el secreto cifrado.
 Alternativa en el panel: **Workers & Pages → forja-buenaventura-free → Settings
 → Variables and Secrets → Add → Secret**. Nombre: `GEMINI_API_KEY`.
 
-## 4. Prueba sintética
+## 4. Prueba sintética desde el origen de producción
 
 Sustituya `<URL_WORKER>` por la URL base entregada por Wrangler:
 
@@ -84,7 +84,7 @@ $body = @{
 Invoke-RestMethod `
   -Method Post `
   -Uri '<URL_WORKER>/v1/buenaventura/recommend' `
-  -Headers @{ Origin = 'http://localhost:8000' } `
+  -Headers @{ Origin = 'https://unporciento.github.io' } `
   -ContentType 'application/json' `
   -Body $body
 ```
@@ -92,21 +92,18 @@ Invoke-RestMethod `
 La respuesta debe tener `schemaVersion: buenaventura-proxy-response-v1`,
 `status: ok`, texto de observaciones/recomendaciones y referencias F1-F3.
 
-## 5. Preparar FORJA sin activar producción
+## 5. Configuración preparada para activación
 
-No cambie todavía estos archivos. Después de la aprobación final:
+El Worker acepta únicamente `https://unporciento.github.io`. FORJA apunta a:
 
-1. Cambie `ALLOWED_ORIGINS` a `https://unporciento.github.io` y redespliegue.
-2. Copie la URL completa, incluida la ruta:
-   `https://...workers.dev/v1/buenaventura/recommend`.
-3. Asígnela a `BUENAVENTURA_PROXY_URL` en
-   `js/buenaventura/buenaventura-config.js`.
-4. Añada solo el origen `https://...workers.dev` a `connect-src` en la CSP de
-   `index.html`.
-5. Ejecute `verify:quick`, `npm run verify` y solicite aprobación para publicar.
+```text
+https://forja-buenaventura-free.informesinap937.workers.dev/v1/buenaventura/recommend
+```
 
-Mientras `BUENAVENTURA_PROXY_URL` esté vacío, FORJA usa `UnavailableProvider`.
-Al agotarse Gemini o Workers Free no existe fallback pagado.
+La CSP admite únicamente el origen base del Worker para esta integración.
+Si Gemini o Cloudflare no responden, el adaptador devuelve
+`provider_unavailable` y FORJA conserva sus funciones locales mediante
+`UnavailableProvider`; no existe fallback pagado.
 
 ## 6. Confirmar nivel gratuito
 

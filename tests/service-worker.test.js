@@ -69,7 +69,7 @@ test('el service worker instala el shell versionado sin query strings repetidos'
   assert.ok(added.includes('./css/buenaventura.css'));
   assert.ok(added.includes('./js/buenaventura/providers/gemini-proxy-provider.js'));
   assert.ok(added.includes('./js/buenaventura/providers/unavailable-provider.js'));
-  assert.match(source, /RELEASE_VERSION = '2026\.07\.28-7'/);
+  assert.match(source, /RELEASE_VERSION = '2026\.07\.28-8'/);
 });
 
 test('clona la respuesta antes de que el original pueda consumirse', async () => {

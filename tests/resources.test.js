@@ -33,11 +33,15 @@ test('los imports locales existen y no usan versiones manuales repetidas', async
   }
 });
 
-test('la CSP prepara un único origen de sincronización sin comodines', async () => {
+test('la CSP limita sincronización y Buenaventura a sus orígenes explícitos', async () => {
   const html = await readFile(resolve(projectRoot, 'index.html'), 'utf8');
   const policy = html.match(/Content-Security-Policy" content="([^"]+)"/)?.[1] || '';
   const connect = policy.match(/connect-src ([^;]+)/)?.[1] || '';
   assert.match(connect, /https:\/\/forja-sync\.invalid/);
+  assert.match(
+    connect,
+    /https:\/\/forja-buenaventura-free\.informesinap937\.workers\.dev/
+  );
   assert.doesNotMatch(connect, /\*/);
   assert.match(policy, /object-src 'none'/);
   assert.match(policy, /base-uri 'none'/);

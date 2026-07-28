@@ -8,12 +8,17 @@ test('el Worker queda en workers.dev y no declara servicios con facturación', a
   const config = await read('../buenaventura-proxy/wrangler.jsonc');
   assert.match(config, /"workers_dev": true/);
   assert.match(config, /"GEMINI_MODEL": "gemini-3\.5-flash-lite"/);
+  assert.match(config, /"ALLOWED_ORIGINS": "https:\/\/unporciento\.github\.io"/);
+  assert.match(config, /"required": \["GEMINI_API_KEY"\]/);
   assert.doesNotMatch(config, /"routes?"|"d1_databases"|"kv_namespaces"|"r2_buckets"/);
   assert.doesNotMatch(config, /durable_objects|queues|hyperdrive|paid/i);
-  assert.doesNotMatch(config, /GEMINI_API_KEY/);
+  assert.doesNotMatch(config, /GEMINI_API_KEY"\s*:/);
 });
 
-test('FORJA mantiene vacío el endpoint hasta la aprobación de activación', async () => {
+test('FORJA apunta al único endpoint de Buenaventura aprobado', async () => {
   const config = await read('../js/buenaventura/buenaventura-config.js');
-  assert.match(config, /BUENAVENTURA_PROXY_URL = ''/);
+  assert.match(
+    config,
+    /https:\/\/forja-buenaventura-free\.informesinap937\.workers\.dev\/v1\/buenaventura\/recommend/
+  );
 });
