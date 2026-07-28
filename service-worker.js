@@ -1,4 +1,4 @@
-const RELEASE_VERSION = '2026.07.26-5';
+const RELEASE_VERSION = '2026.07.26-6';
 const CACHE = `forja-shell-${RELEASE_VERSION}`;
 const SHELL = [
   './', './index.html', './404.html', './offline.html',
@@ -6,12 +6,13 @@ const SHELL = [
   './css/tokens.css', './css/app.css', './css/responsive.css', './css/ux.css',
   './js/account.js', './js/account-restore.js', './js/app.js', './js/backup.js', './js/config.js',
   './js/db.js', './js/drawer.js', './js/energy.js',
-  './js/focus.js', './js/generator.js', './js/parsers.js', './js/planner.js',
+  './js/exam.js', './js/calibration.js', './js/focus.js', './js/generator.js', './js/parsers.js', './js/planner.js',
   './js/profile.js', './js/scheduler.js', './js/sessions.js', './js/streak.js',
   './js/sync-client.js', './js/sync-config.js', './js/theme.js', './js/ui.js', './js/vault.js',
   './js/academic/academic-migrations.js', './js/academic/academic-repository.js',
   './js/academic/artifact-schemas.js', './js/academic/backup-v2.js', './js/academic/project-model.js',
-  './js/academic/relation-model.js', './js/ux/ux-controller.js'
+  './js/academic/relation-model.js', './js/evidence/evidence-labels.js',
+  './js/ux/ux-controller.js'
 ];
 
 self.addEventListener('install', event => {

@@ -1,3 +1,4 @@
+import { calibrationSummary } from './calibration.js';
 import { closeDrawer, resolveView, setupDrawer } from './drawer.js';
 import { isDue, nextLabel, summarize } from './scheduler.js';
 import { REWARDS } from './streak.js';
@@ -130,13 +131,9 @@ export function renderProgress(documents, cards, attempts, streak) {
   $('#globalMastery').textContent = `${stats.mastery}%`;
   $('#globalBar').style.width = `${stats.mastery}%`;
   renderStreak(streak);
-  const confident = attempts.filter(attempt => attempt.confidence >= 4);
-  const blind = confident.filter(attempt => attempt.rating < 3);
-  if (confident.length) {
-    const rate = Math.round(blind.length / confident.length * 100);
-    $('#calibrationTitle').textContent = rate < 20 ? 'Confianza bien calibrada' : `${rate}% de puntos ciegos`;
-    $('#calibrationCopy').textContent = rate < 20 ? 'Cuando dices “lo sé”, normalmente puedes demostrarlo.' : 'En estas respuestas sentías seguridad, pero el recuerdo falló. Priorízalas.';
-  }
+  const calibration = calibrationSummary(attempts);
+  $('#calibrationTitle').textContent = calibration.title;
+  $('#calibrationCopy').textContent = calibration.copy;
   const target = $('#topicProgress');
   if (!documents.length) return;
   target.className = 'topic-progress';

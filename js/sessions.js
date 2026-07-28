@@ -1,4 +1,5 @@
 import { uid } from './db.js';
+import { EXAM_CONFIDENCE_LEVELS } from './exam.js';
 import { buildChoices, scoreTypedAnswer } from './generator.js';
 import { nextLabel } from './scheduler.js';
 
@@ -79,16 +80,38 @@ export class ExamSession {
   render() {
     const card = this.cards[this.index];
     const choices = buildChoices(card, this.cards);
+    const cardStartedAt = Date.now();
     this.target.innerHTML = `<div class="session-head"><span>Simulacro · ${this.index + 1}/${this.cards.length}</span><strong id="examTimer">${this.timeLabel()}</strong></div><div class="bar"><i style="width:${this.index / this.cards.length * 100}%"></i></div>
-      <article class="question-card" style="margin-top:18px"><span class="source-tag">${escapeHtml(card.sourceName)}</span><h2>${escapeHtml(card.question)}</h2><div>${choices.map((answer, i) => `<button class="exam-option" data-option="${i}">${escapeHtml(answer)}</button>`).join('')}</div><button class="primary-btn" id="examNext" disabled>${this.index + 1 === this.cards.length ? 'Finalizar' : 'Siguiente'}</button></article>`;
+      <article class="question-card" style="margin-top:18px"><span class="source-tag">${escapeHtml(card.sourceName)}</span><h2>${escapeHtml(card.question)}</h2><div>${choices.map((answer, i) => `<button type="button" class="exam-option" data-option="${i}">${escapeHtml(answer)}</button>`).join('')}</div>
+        <fieldset class="confidence-row"><legend>Antes de avanzar: ¿qué tan seguro está? 1 es nada; 5 es totalmente.</legend><div class="confidence-options">${EXAM_CONFIDENCE_LEVELS.map(level => `<button type="button" data-exam-confidence="${level}" aria-label="Confianza ${level} de 5" aria-pressed="false">${level}</button>`).join('')}</div></fieldset>
+        <button type="button" class="primary-btn" id="examNext" disabled>${this.index + 1 === this.cards.length ? 'Finalizar' : 'Siguiente'}</button></article>`;
     let selected = null;
+    let confidence = null;
+    const updateNext = () => {
+      this.target.querySelector('#examNext').disabled = !selected || confidence === null;
+    };
     this.target.querySelectorAll('.exam-option').forEach(button => button.addEventListener('click', () => {
       selected = choices[Number(button.dataset.option)];
       this.target.querySelectorAll('.exam-option').forEach(item => item.classList.toggle('selected', item === button));
-      this.target.querySelector('#examNext').disabled = false;
+      updateNext();
+    }));
+    this.target.querySelectorAll('[data-exam-confidence]').forEach(button => button.addEventListener('click', () => {
+      confidence = Number(button.dataset.examConfidence);
+      this.target.querySelectorAll('[data-exam-confidence]').forEach(item => {
+        const active = item === button;
+        item.classList.toggle('active', active);
+        item.setAttribute('aria-pressed', String(active));
+      });
+      updateNext();
     }));
     this.target.querySelector('#examNext').addEventListener('click', () => {
-      this.answers.push({ card, selected, correct: selected === card.answer });
+      this.answers.push({
+        card,
+        selected,
+        correct: selected === card.answer,
+        confidence,
+        durationMs: Date.now() - cardStartedAt
+      });
       this.index += 1;
       if (this.index >= this.cards.length) this.finish(); else this.render();
     });

@@ -7,7 +7,8 @@ const MODULE_TESTS = Object.freeze({
   evidence: 'tests/evidence.test.js',
   reports: 'tests/reports.test.js',
   presentations: 'tests/presentations.test.js',
-  ux: 'tests/ux.test.js'
+  ux: 'tests/ux.test.js',
+  closure1: 'tests/seams.test.js'
 });
 
 function run(command, args) {

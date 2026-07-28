@@ -1,5 +1,16 @@
 # Changelog
 
+## Sin publicar — Módulo de cierre 1
+
+- Simulacro registra confianza y duración reales por respuesta.
+- Calibración detecta puntos ciegos también desde intentos de Simulacro.
+- Diez preguntas quedan como valor predeterminado explícito.
+- Etiquetas de evidencias centralizadas sin migrar identificadores.
+- Añadida una guía accesible del flujo académico completo.
+- Documentada una estrategia de versiones sin renumerar producto ni datos.
+- Service Worker `2026.07.26-6` precarga los nuevos contratos de Simulacro,
+  Calibración y etiquetas para conservar el arranque offline.
+
 ## 2026-07-26 — Módulo UX
 
 - Identidad FORJA y versión `2.0.0` visibles.

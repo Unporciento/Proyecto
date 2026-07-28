@@ -4,6 +4,7 @@ import { MAX_BACKUP_BYTES } from './config.js';
 import * as db from './db.js';
 import { closeDrawer } from './drawer.js';
 import { applyEnergyMode, monitorEnergy } from './energy.js';
+import { createExamAttempt } from './exam.js';
 import { setupFocusTimer } from './focus.js';
 import { generateCards } from './generator.js';
 import { parseFile } from './parsers.js';
@@ -180,10 +181,9 @@ function startExam() {
   $('#examSetup').hidden = true; $('#examSession').hidden = false;
   new ExamSession($('#examSession'), cards, Number($('#examMinutes').value), {
     onFinish: async answers => {
-      const attempts = answers.map(item => ({
-        id: db.uid('attempt'), cardId: item.card.id, docId: item.card.docId,
-        createdAt: new Date().toISOString(), rating: item.correct ? 3 : 1,
-        confidence: 0, durationMs: 0, mode: 'exam'
+      const attempts = answers.map(item => createExamAttempt(item, {
+        id: db.uid('attempt'),
+        createdAt: new Date().toISOString()
       }));
       const updates = answers.map(item => schedule(item.card, item.correct ? 3 : 1));
       await db.putProgress(updates, attempts);

@@ -6,6 +6,7 @@ import {
   fillEvidenceOptions,
   syncEvidenceRequirements
 } from './evidence-form.js';
+import { fillEvidenceLabels } from './evidence-labels.js';
 import { renderEvidence, renderEvidenceSummary } from './evidence-view.js';
 
 const $ = selector => document.querySelector(selector);
@@ -168,6 +169,12 @@ async function handleAction(event) {
 }
 
 function setup() {
+  fillEvidenceLabels({
+    type: $('#evidenceType'),
+    state: $('#evidenceState'),
+    typeFilter: $('#evidenceTypeFilter'),
+    stateFilter: $('#evidenceStateFilter')
+  });
   $('#projectGrid').addEventListener('click', event => {
     const button = event.target.closest('[data-project-action="evidence"]');
     if (button) openWorkspace(button.dataset.projectId, button);

@@ -82,3 +82,7 @@ La arquitectura general y los módulos están documentados en
 `docs/MODULE-3-RUBRICS.md`, `docs/MODULE-4-EVIDENCE.md` y
 `docs/MODULE-5-REPORTS.md`, `docs/MODULE-6-PRESENTATIONS.md` y
 `docs/MODULE-UX.md`.
+
+La separación entre edición pública, aplicación, IndexedDB, Service Worker y
+respaldos está propuesta —sin cambios de numeración todavía— en
+`docs/VERSIONING.md`.

@@ -1,6 +1,6 @@
 # AI handoff — FORJA
 
-Estado preparado: Módulo UX — Identidad y experiencia.
+Estado preparado: Módulo de cierre 1 — Correcciones de costuras.
 
 ## Estado técnico
 
@@ -12,8 +12,12 @@ Estado preparado: Módulo UX — Identidad y experiencia.
 - `SYNC_ENDPOINT = ''`; nube y Worker remoto inactivos.
 - `app.js`, Service Worker, migraciones, bóveda y autenticación no cambiaron en
   los módulos académicos visibles.
-- Producto visible: `2.0.0`; Service Worker: `2026.07.26-5`.
-- Suite completa actual: 94 pruebas.
+- Producto visible: `2.0.0`; IndexedDB: `3`; Service Worker:
+  `2026.07.26-6`; respaldo: `2`. Solo avanzó el Service Worker para precargar
+  los nuevos módulos del cierre.
+- Simulacro conserva confianza real y Calibración consume el mismo dato.
+- Etiquetas de evidencia centralizadas sin cambiar identificadores persistidos.
+- Suite completa actual: 101 pruebas.
 
 ## Archivos académicos
 
@@ -29,18 +33,18 @@ Estado preparado: Módulo UX — Identidad y experiencia.
 ## Verificación
 
 ```bash
-npm run verify:quick -- ux
+npm run verify:quick -- closure1
 npm run verify
 ```
 
-`verify:quick` acepta los módulos académicos y `ux`.
+`verify:quick` acepta los módulos académicos, `ux` y `closure1`.
 La verificación completa es obligatoria antes de publicar.
 
 ## Próximo paso
 
-- Publicar UX en rama y commit propios.
-- Después continuar con el Módulo Laboratorio.
-- Profesor FORJA permanece bloqueado.
+- Validar manualmente el Módulo de cierre 1 en PC e iPhone.
+- No publicar ni iniciar Buenaventura hasta recibir aprobación.
+- Laboratorio permanece aplazado y su WIP está fuera de la rama activa.
 
 ## Riesgos abiertos
 
@@ -48,3 +52,4 @@ La verificación completa es obligatoria antes de publicar.
 - Los recursos nuevos quedan disponibles offline después de una primera carga
   completa con conexión, porque el Service Worker no se modificó.
 - Evaluar alojamiento propio de dependencias CDN en un hito de seguridad.
+- La estrategia de `docs/VERSIONING.md` está propuesta, no aplicada.

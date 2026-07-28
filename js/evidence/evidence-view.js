@@ -1,19 +1,4 @@
-const TYPES = Object.freeze({
-  text: 'Texto u observación',
-  document: 'Documento',
-  photo: 'Fotografía',
-  technical_result: 'Resultado técnico',
-  procedure: 'Procedimiento',
-  finding: 'Hallazgo',
-  calculation: 'Cálculo',
-  table_record: 'Tabla o registro'
-});
-const STATES = Object.freeze({
-  collected: 'Recopilada',
-  review: 'Por revisar',
-  approved: 'Aprobada',
-  discarded: 'Descartada'
-});
+import { evidenceStateLabel, evidenceTypeLabel } from './evidence-labels.js';
 
 function node(tag, className, text) {
   const element = document.createElement(tag);
@@ -50,8 +35,8 @@ function evidenceCard(summary, lookups) {
   const card = node('article', 'evidence-card');
   const head = node('div', 'evidence-card-head');
   head.append(
-    node('span', 'evidence-kind', TYPES[data.evidenceType] || TYPES.text),
-    node('span', `evidence-state ${data.state}`, STATES[data.state] || 'Por revisar')
+    node('span', 'evidence-kind', evidenceTypeLabel(data.evidenceType)),
+    node('span', `evidence-state ${data.state}`, evidenceStateLabel(data.state))
   );
   const trace = node('div', 'evidence-trace');
   const source = node('div');

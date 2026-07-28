@@ -104,6 +104,19 @@
             <button class="primary-btn" id="newProjectBtn" type="button">+ Nuevo proyecto</button>
           </div>
         </div>
+        <section class="academic-flow" aria-labelledby="academicFlowTitle">
+          <div>
+            <span class="eyebrow">RUTA DEL PROYECTO</span>
+            <h2 id="academicFlowTitle">Del material al informe, sin perder el contexto</h2>
+          </div>
+          <ol>
+            <li><strong>Biblioteca</strong><small>Guarde el material original.</small></li>
+            <li><strong>Fuente</strong><small>Vincúlelo con este proyecto.</small></li>
+            <li><strong>Rúbrica y criterio</strong><small>Defina qué debe demostrar.</small></li>
+            <li><strong>Evidencia</strong><small>Registre cómo lo demuestra.</small></li>
+            <li><strong>Informe</strong><small>Redacte usando la trazabilidad.</small></li>
+          </ol>
+        </section>
         <div class="project-tools" aria-label="Filtros de proyectos">
           <label>Asignatura<select id="projectSubjectFilter"><option value="">Todas</option></select></label>
           <label>Estado<select id="projectStatusFilter"><option value="">Todos</option><option value="active">Activo</option><option value="submitted">Entregado</option><option value="graded">Calificado</option><option value="archived">Archivado</option></select></label>
@@ -160,8 +173,8 @@
           </div>
         </div>
         <div class="evidence-tools" aria-label="Filtros de evidencias">
-          <label>Tipo<select id="evidenceTypeFilter"><option value="">Todos</option><option value="text">Texto u observación</option><option value="document">Documento</option><option value="photo">Fotografía</option><option value="technical_result">Resultado técnico</option><option value="procedure">Procedimiento</option><option value="finding">Hallazgo</option><option value="calculation">Cálculo</option><option value="table_record">Tabla o registro</option></select></label>
-          <label>Estado<select id="evidenceStateFilter"><option value="">Todos</option><option value="collected">Recopilada</option><option value="review">Por revisar</option><option value="approved">Aprobada</option><option value="discarded">Descartada</option></select></label>
+          <label>Tipo<select id="evidenceTypeFilter"></select></label>
+          <label>Estado<select id="evidenceStateFilter"></select></label>
         </div>
         <div id="evidenceSummary" class="evidence-summary" aria-live="polite"></div>
         <div id="evidenceGrid" class="evidence-grid" aria-live="polite"></div>
@@ -199,7 +212,7 @@
     </section>
 
     <section class="view" data-view-panel="examen">
-      <div id="examSetup" class="exam-setup"><div><span class="eyebrow">PRÁCTICA EN CONDICIONES REALES</span><h1>Simulacro de examen</h1><p>Sin pistas ni corrección inmediata. Al terminar verás qué falló, por qué y qué debes repasar.</p></div><div class="setup-card"><label>Número de preguntas<select id="examCount"><option>10</option><option>20</option><option>30</option></select></label><label>Tiempo<select id="examMinutes"><option value="10">10 minutos</option><option value="20" selected>20 minutos</option><option value="30">30 minutos</option></select></label><label class="check-row"><input id="examMix" type="checkbox" checked><span>Mezclar temas y formatos</span></label><button class="primary-btn" id="startExamBtn">Crear simulacro</button></div></div>
+      <div id="examSetup" class="exam-setup"><div><span class="eyebrow">PRÁCTICA EN CONDICIONES REALES</span><h1>Simulacro de examen</h1><p>Sin pistas ni corrección inmediata. Al terminar verás qué falló, por qué y qué debes repasar.</p></div><div class="setup-card"><label>Número de preguntas<select id="examCount"><option value="10" selected>10</option><option value="20">20</option><option value="30">30</option></select></label><label>Tiempo<select id="examMinutes"><option value="10">10 minutos</option><option value="20" selected>20 minutos</option><option value="30">30 minutos</option></select></label><label class="check-row"><input id="examMix" type="checkbox" checked><span>Mezclar temas y formatos</span></label><button class="primary-btn" id="startExamBtn">Crear simulacro</button></div></div>
       <div id="examSession" hidden></div>
     </section>
 
@@ -307,8 +320,8 @@
       <h2 id="evidenceDialogTitle">Añadir evidencia</h2>
       <div class="evidence-form-grid">
         <label class="wide">Título<input id="evidenceTitle" maxlength="500" autocomplete="off" required></label>
-        <label>Tipo<select id="evidenceType" required><option value="text">Texto u observación</option><option value="document">Documento</option><option value="photo">Fotografía existente</option><option value="technical_result">Resultado técnico</option><option value="procedure">Procedimiento realizado</option><option value="finding">Hallazgo</option><option value="calculation">Cálculo</option><option value="table_record">Tabla o registro</option></select></label>
-        <label>Estado<select id="evidenceState" required><option value="collected">Recopilada</option><option value="review">Por revisar</option><option value="approved">Aprobada</option><option value="discarded">Descartada</option></select></label>
+        <label>Tipo<select id="evidenceType" required></select></label>
+        <label>Estado<select id="evidenceState" required></select></label>
         <label>Fecha<input id="evidenceDate" type="date"></label>
         <label>Documento de la Biblioteca<select id="evidenceDocument"><option value="">Sin documento asociado</option></select></label>
         <label class="wide">Qué demuestra<textarea id="evidenceDescription" maxlength="20000" rows="4" required></textarea></label>
