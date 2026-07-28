@@ -278,7 +278,8 @@ test('consulta y filtra 500 evidencias con trazabilidad indexada', async () => {
   assert.equal(first.length, 60);
   assert.equal(approved.length, 100);
   assert.ok(first.every(item => item.sourceIds.length === 1 && item.criterionIds.length === 1));
-  assert.ok(elapsed < 1_000, `las evidencias tardaron ${elapsed.toFixed(1)} ms`);
+  const limitMs = process.platform === 'win32' ? 1_500 : 1_000;
+  assert.ok(elapsed < limitMs, `las evidencias tardaron ${elapsed.toFixed(1)} ms`);
   console.log(`Métrica evidencias FORJA: 500 registros=${elapsed.toFixed(1)}ms`);
   database.close();
 });

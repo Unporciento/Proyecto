@@ -1,0 +1,38 @@
+.buenaventura-workspace { max-width: 1180px; margin: 0 auto; }
+.buenaventura-back { margin-bottom: 18px; }
+.buenaventura-intro { display: flex; align-items: end; justify-content: space-between; gap: 18px; }
+.buenaventura-layout { display: grid; grid-template-columns: minmax(300px, .85fr) minmax(360px, 1.15fr); gap: 18px; align-items: start; }
+.buenaventura-form { display: grid; gap: 18px; }
+.buenaventura-form > label { display: grid; gap: 8px; color: var(--muted); font-size: .8rem; }
+.buenaventura-form select { width: 100%; }
+.buenaventura-form fieldset { min-width: 0; margin: 0; padding: 0; border: 0; }
+.buenaventura-form legend { color: var(--text); font-weight: 800; }
+.buenaventura-form fieldset > p { margin: 7px 0 14px; font-size: .78rem; }
+.buenaventura-options { display: grid; gap: 12px; max-height: 430px; overflow-y: auto; padding-right: 4px; }
+.buenaventura-option-group { padding: 13px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
+.buenaventura-option-group h3 { margin: 0 0 9px; font-size: .82rem; }
+.buenaventura-option { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: start; padding: 9px 0; cursor: pointer; }
+.buenaventura-option + .buenaventura-option { border-top: 1px solid var(--line); }
+.buenaventura-option strong, .buenaventura-option small { display: block; }
+.buenaventura-option small { margin-top: 3px; color: var(--muted-2); }
+.buenaventura-option input:disabled + span { opacity: .45; }
+.buenaventura-empty { margin: 0; font-size: .76rem; }
+.buenaventura-review { display: grid; gap: 18px; }
+.buenaventura-panel-head { display: flex; justify-content: space-between; gap: 18px; align-items: baseline; }
+.buenaventura-panel-head h2 { margin: 0; }
+.buenaventura-panel-head strong { color: var(--accent); font-size: .75rem; }
+.buenaventura-preview { display: grid; gap: 12px; margin-top: 16px; }
+.buenaventura-preview > p { margin: 0; }
+.buenaventura-fragment { padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface-2); }
+.buenaventura-fragment-head { display: flex; justify-content: space-between; gap: 14px; }
+.buenaventura-fragment-head small, .buenaventura-provenance { color: var(--muted-2); }
+.buenaventura-fragment p { max-height: 180px; margin: 10px 0; overflow-y: auto; white-space: pre-wrap; font-size: .82rem; }
+.buenaventura-answer h2 { margin-top: 0; }
+.buenaventura-answer > p { font-size: .8rem; }
+.buenaventura-response-text { color: var(--text); white-space: pre-wrap; }
+.buenaventura-answer ul { padding-left: 20px; color: var(--muted); font-size: .78rem; }
+.buenaventura-form .form-error { margin: 0; color: var(--danger); }
+@media (max-width: 860px) {
+  .buenaventura-layout { grid-template-columns: 1fr; }
+  .buenaventura-options { max-height: none; }
+}

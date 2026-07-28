@@ -1,5 +1,18 @@
 # Changelog
 
+## Sin publicar — Módulo de cierre 3
+
+- Implementado el MVP de Profesor Buenaventura con permisos exclusivos
+  `OBSERVE` y `RECOMMEND`.
+- Añadida selección explícita de hasta cuatro fragmentos de Biblioteca,
+  Rúbricas, Evidencias e Informes dentro de un único proyecto.
+- `compare` admite contexto mixto del mismo proyecto, con vista previa,
+  procedencia y presupuesto máximo de 8.000 caracteres.
+- Incorporados contratos versionados, adaptadores de solo lectura, proveedor
+  desacoplado y `UnavailableProvider` como valor predeterminado.
+- El estado es efímero y no existen escrituras académicas, memoria, historial,
+  Tura, Laboratorio ni sincronización remota.
+
 ## Sin publicar — Módulo de cierre 2
 
 - Documentada la arquitectura canónica de Buenaventura: personalidad, límites

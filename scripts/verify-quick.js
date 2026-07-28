@@ -8,7 +8,8 @@ const MODULE_TESTS = Object.freeze({
   reports: 'tests/reports.test.js',
   presentations: 'tests/presentations.test.js',
   ux: 'tests/ux.test.js',
-  closure1: 'tests/seams.test.js'
+  closure1: 'tests/seams.test.js',
+  closure3: 'tests/buenaventura-contracts.test.js'
 });
 
 function run(command, args) {
@@ -30,13 +31,14 @@ if (!moduleTest) {
   process.exit(2);
 }
 
-const npm = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const npmCli = process.env.npm_execpath;
+if (!npmCli) process.exit(2);
 console.log(`Verificación rápida focalizada: ${requested}`);
-run(npm, ['run', 'check']);
+run(process.execPath, [npmCli, 'run', 'check']);
 run(process.execPath, [
   '--test',
   'tests/academic-contracts.test.js',
   'tests/resources.test.js',
   moduleTest
 ]);
-run(npm, ['run', 'limits']);
+run(process.execPath, [npmCli, 'run', 'limits']);

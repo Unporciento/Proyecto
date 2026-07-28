@@ -1,6 +1,6 @@
 # AI handoff — FORJA
 
-Estado preparado: Módulo de cierre 2 — Arquitectura canónica de Buenaventura.
+Estado preparado: Módulo de cierre 3 — Profesor Buenaventura MVP.
 
 ## Estado técnico
 
@@ -17,7 +17,7 @@ Estado preparado: Módulo de cierre 2 — Arquitectura canónica de Buenaventura
   los nuevos módulos del cierre.
 - Simulacro conserva confianza real y Calibración consume el mismo dato.
 - Etiquetas de evidencia centralizadas sin cambiar identificadores persistidos.
-- Suite completa actual: 101 pruebas.
+- Suite completa actual: 115 pruebas.
 
 ## Archivos académicos
 
@@ -34,25 +34,30 @@ Estado preparado: Módulo de cierre 2 — Arquitectura canónica de Buenaventura
 
 ```bash
 npm run verify:quick -- closure1
+npm run verify:quick -- closure3
 npm run verify
 ```
 
-`verify:quick` acepta los módulos académicos, `ux` y `closure1`.
+`verify:quick` acepta los módulos académicos, `ux`, `closure1` y `closure3`.
 La verificación completa es obligatoria antes de publicar.
 
 ## Buenaventura
 
 - La fuente canónica es `docs/buenaventura/00_CANON.md`; sus documentos anexos
   separan voz, pedagogía, memoria, permisos, seguridad y pruebas.
-- No existe implementación funcional: sin interfaz, proveedor, chat, memoria,
-  adaptadores ejecutables ni escrituras académicas.
-- El diseño futuro solo permite `OBSERVE` y `RECOMMEND`, con contexto mínimo y
-  adaptadores de solo lectura para Biblioteca, Rúbricas, Evidencias e Informes.
+- El MVP ofrece interfaz efímera, selección explícita, vista previa y contratos
+  versionados para `OBSERVE` y `RECOMMEND`.
+- `compare` combina fragmentos de distintos módulos únicamente dentro del mismo
+  proyecto; cada fragmento conserva módulo, `projectId` y procedencia.
+- Los adaptadores usan transacciones de solo lectura para Biblioteca, Rúbricas,
+  Evidencias e Informes. El orquestador no recibe `AcademicRepository`.
+- `UnavailableProvider` es el proveedor predeterminado. No hay proveedor
+  comercial, endpoint, credenciales, memoria, historial ni escritura académica.
 
 ## Próximo paso
 
-- Esperar validación del Módulo de cierre 2 antes de cualquier implementación de
-  Buenaventura. No iniciar el Módulo de cierre 3.
+- Esperar revisión y aprobación del Módulo de cierre 3. No iniciar un módulo de
+  cierre posterior ni elegir proveedor sin aprobación.
 - Laboratorio permanece aplazado y su WIP está fuera de la rama activa.
 
 ## Riesgos abiertos
