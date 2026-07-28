@@ -11,7 +11,7 @@ juntos ni utilizarse como sustitutos.
 | Edición pública | Objetivo `FORJA 1.0` | Nombre del hito funcional completo |
 | Aplicación | `2.0.0` | Cambios visibles y compatibilidad del frontend |
 | IndexedDB | `3` | Estructura física de la base local |
-| Service Worker | `2026.07.28-10` | Renovación del shell y de su caché |
+| Service Worker | `2026.07.28-11` | Renovación del shell y de su caché |
 | Respaldo | `2` | Contrato JSON exportable y restaurable |
 
 ## Estrategia propuesta

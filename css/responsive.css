@@ -8,6 +8,10 @@ dialog .focus-modal { max-height: calc(100dvh - 28px); overflow-y: auto; }
   .document-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
+@media (min-width: 761px) and (max-width: 820px) {
+  .metric-grid { grid-template-columns: 1fr; }
+}
+
 @media (max-width: 760px) {
   :root { --topbar: 68px; }
   .sidebar { width: min(84vw, 330px); height: 100dvh; padding-top: max(28px, env(safe-area-inset-top)); padding-bottom: max(20px, env(safe-area-inset-bottom)); overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; transform: translateX(-102%); transition: transform .28s var(--ease); box-shadow: 30px 0 60px rgba(0,0,0,.35); }

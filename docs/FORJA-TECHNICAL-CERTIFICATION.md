@@ -14,7 +14,7 @@ la evidencia detallada, pero no deben utilizarse como estado operativo actual.
 - FORJA es local-first. IndexedDB es la autoridad de datos del navegador.
 - La interfaz académica escribe únicamente mediante `AcademicRepository`.
 - IndexedDB permanece en versión 3 y el respaldo en versión 2.
-- El Service Worker es `2026.07.28-10`.
+- El Service Worker es `2026.07.28-11`.
 - La sincronización automática continúa desactivada.
 - Buenaventura solo puede `OBSERVE` y `RECOMMEND`; nunca escribe datos.
 - El contexto externo es explícito, desidentificado y de un solo proyecto.
@@ -52,7 +52,7 @@ flowchart TD
     REL --> SETTINGS[settings]
     SETTINGS --> DB
 
-    SW[Service Worker -10] --> SHELL[Shell local: 94 recursos]
+    SW[Service Worker -11] --> SHELL[Shell local: 97 recursos]
     SHELL --> HTML
 ```
 
@@ -120,10 +120,10 @@ solicita una versión inferior a la instalada.
 
 ## 4. PWA, offline y actualización
 
-- El shell `forja-shell-2026.07.28-10` contiene 94 recursos locales.
+- El shell `forja-shell-2026.07.28-11` contiene 97 recursos locales.
 - `cache.addAll` falla de forma cerrada ante una ruta inexistente.
 - Navegación offline cae a `index.html`; recursos estáticos usan caché.
-- La actualización desde `2026.07.28-9` elimina la caché anterior y conserva la
+- La actualización desde `2026.07.28-10` elimina la caché anterior y conserva la
   nueva sin acceder a IndexedDB.
 - Worker, Gemini, datos académicos y datos de usuario no se precargan.
 - El manifiesto usa `display: standalone`.
@@ -226,7 +226,7 @@ reintentos automáticos en segundo plano.
 
 - 77 módulos conectados y shell completo.
 - IndexedDB v3, respaldo v2 y restauración atómica aprobados.
-- Service Worker -10 instala, actualiza y navega offline.
+- Service Worker -11 instala, actualiza y navega offline.
 - Lighthouse de accesibilidad: 100 en escritorio y móvil.
 - Suite completa y límites de archivos aprobados en 6C.
 
@@ -265,7 +265,7 @@ pendiente.
 - [x] Flujo académico y aislamiento entre proyectos.
 - [x] Respaldo v1/v2, corrupción y restauración atómica.
 - [x] Migración v2 → v3 y reapertura compatible.
-- [x] PWA, instalación nueva, actualización -9 → -10 y offline determinista.
+- [x] PWA, instalación nueva, actualización -10 → -11 y offline determinista.
 - [x] Lighthouse 100 y nombres/contraste accesibles.
 - [x] Presupuestos y volúmenes medidos.
 - [x] Cero temporizadores huérfanos y cero llamadas Gemini de fondo.

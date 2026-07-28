@@ -13,8 +13,8 @@ test('la fuente final enlaza el estado técnico vigente', async () => {
   assert.match(readme, /FORJA-TECHNICAL-CERTIFICATION\.md/);
   assert.match(certification, /IndexedDB permanece en versión 3/);
   assert.match(certification, /respaldo en versión 2/);
-  assert.match(certification, /Service Worker es `2026\.07\.28-10`/);
-  assert.match(versioning, /\| Service Worker \| `2026\.07\.28-10` \|/);
+  assert.match(certification, /Service Worker es `2026\.07\.28-11`/);
+  assert.match(versioning, /\| Service Worker \| `2026\.07\.28-11` \|/);
 });
 
 test('la certificación conserva proveedor gratuito, límites y degradación', async () => {

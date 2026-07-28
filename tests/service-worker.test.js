@@ -69,7 +69,10 @@ test('el service worker instala el shell versionado sin query strings repetidos'
   assert.ok(added.includes('./css/buenaventura.css'));
   assert.ok(added.includes('./js/buenaventura/providers/gemini-proxy-provider.js'));
   assert.ok(added.includes('./js/buenaventura/providers/unavailable-provider.js'));
-  assert.match(source, /RELEASE_VERSION = '2026\.07\.28-10'/);
+  assert.ok(added.includes('./assets/icon-192.png'));
+  assert.ok(added.includes('./assets/icon-512.png'));
+  assert.ok(added.includes('./assets/apple-touch-icon.png'));
+  assert.match(source, /RELEASE_VERSION = '2026\.07\.28-11'/);
 });
 
 test('clona la respuesta antes de que el original pueda consumirse', async () => {
@@ -217,13 +220,13 @@ test('una instalación nueva resuelve todo el shell sin red', async () => {
   }
 });
 
-test('actualizar desde -9 elimina solo caché anterior y no toca IndexedDB', async () => {
+test('actualizar desde -10 elimina solo caché anterior y no toca IndexedDB', async () => {
   const deleted = [];
   let claimed = false;
   const { listeners, source, context } = await loadWorker({
     cachesImpl: {
       open: async () => ({ addAll: async () => {}, put: async () => {} }),
-      keys: async () => ['forja-shell-2026.07.28-9', 'forja-shell-2026.07.28-10'],
+      keys: async () => ['forja-shell-2026.07.28-10', 'forja-shell-2026.07.28-11'],
       delete: async key => { deleted.push(key); return true; },
       match: async () => null
     }
@@ -234,5 +237,5 @@ test('actualizar desde -9 elimina solo caché anterior y no toca IndexedDB', asy
   listeners.activate(activateEvent);
   await activateEvent.work;
   assert.equal(claimed, true);
-  assert.deepEqual(deleted, ['forja-shell-2026.07.28-9']);
+  assert.deepEqual(deleted, ['forja-shell-2026.07.28-10']);
 });

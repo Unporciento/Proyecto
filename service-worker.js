@@ -1,8 +1,9 @@
-const RELEASE_VERSION = '2026.07.28-10';
+const RELEASE_VERSION = '2026.07.28-11';
 const CACHE = `forja-shell-${RELEASE_VERSION}`;
 const SHELL = [
   './', './index.html', './404.html', './offline.html',
-  './manifest.webmanifest', './assets/icon.svg',
+  './manifest.webmanifest', './assets/icon.svg', './assets/icon-192.png',
+  './assets/icon-512.png', './assets/apple-touch-icon.png',
   './css/tokens.css', './css/app.css', './css/buenaventura.css', './css/responsive.css', './css/ux.css',
   './css/projects.css', './css/sources.css', './css/rubrics.css', './css/evidence.css',
   './css/reports.css', './css/presentations.css',

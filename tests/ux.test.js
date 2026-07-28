@@ -3,6 +3,12 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
+const readBytes = path => readFile(new URL(`../${path}`, import.meta.url));
+
+function pngDimensions(bytes) {
+  assert.equal(bytes.subarray(1, 4).toString('ascii'), 'PNG');
+  return [bytes.readUInt32BE(16), bytes.readUInt32BE(20)];
+}
 
 test('la identidad incluye metadatos, favicon, versión y año automático', async () => {
   const [html, controller] = await Promise.all([
@@ -10,8 +16,9 @@ test('la identidad incluye metadatos, favicon, versión y año automático', asy
     read('js/ux/ux-controller.js')
   ]);
   assert.match(html, /rel="icon" href="assets\/icon\.svg"/);
+  assert.match(html, /rel="apple-touch-icon" sizes="180x180" href="assets\/apple-touch-icon\.png"/);
   assert.match(html, /application-name" content="FORJA"/);
-  assert.match(html, /id="copyrightYear"/);
+  assert.match(html, /© <span id="copyrightYear"><\/span> FORJA\. Todos los derechos reservados\./);
   assert.match(html, /id="productVersion"/);
   assert.match(controller, /new Date\(\)\.getFullYear\(\)/);
   assert.match(controller, /FORJA_VERSION = '2\.0\.0'/);
@@ -52,6 +59,23 @@ test('las microinteracciones respetan ahorro y movimiento reducido', async () =>
   assert.match(ux, /prefers-reduced-motion/);
   assert.match(tokens, /data-energy="saver"/);
   assert.doesNotMatch(ux, /animation:\s*infinite/);
+});
+
+test('el manifest y los iconos PWA usan dimensiones definitivas', async () => {
+  const [manifestText, icon192, icon512, apple] = await Promise.all([
+    read('manifest.webmanifest'),
+    readBytes('assets/icon-192.png'),
+    readBytes('assets/icon-512.png'),
+    readBytes('assets/apple-touch-icon.png')
+  ]);
+  const manifest = JSON.parse(manifestText);
+  assert.deepEqual(pngDimensions(icon192), [192, 192]);
+  assert.deepEqual(pngDimensions(icon512), [512, 512]);
+  assert.deepEqual(pngDimensions(apple), [180, 180]);
+  assert.ok(manifest.icons.some(icon =>
+    icon.src === 'assets/icon-192.png' && icon.sizes === '192x192' && icon.type === 'image/png'));
+  assert.ok(manifest.icons.some(icon =>
+    icon.src === 'assets/icon-512.png' && icon.sizes === '512x512' && icon.type === 'image/png'));
 });
 
 const channel = value => {
@@ -100,4 +124,12 @@ test('los diálogos y Buenaventura resisten teclado virtual, orientación y text
   ]);
   assert.match(responsive, /dialog \.modal-card,\s*dialog \.focus-modal\s*\{[^}]*max-height:\s*calc\(100dvh - 28px\);[^}]*overflow-y:\s*auto;/s);
   assert.match(buenaventura, /\.buenaventura-intro h1\s*\{[^}]*overflow-wrap:\s*anywhere;/s);
+});
+
+test('la franja exclusiva de tablet evita que metric-grid desborde', async () => {
+  const responsive = await read('css/responsive.css');
+  assert.match(
+    responsive,
+    /@media \(min-width: 761px\) and \(max-width: 820px\)\s*\{[^}]*\.metric-grid\s*\{[^}]*grid-template-columns:\s*1fr;/s
+  );
 });
