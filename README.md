@@ -48,14 +48,26 @@ Fuentes principales:
 
 ## Privacidad
 
-El despliegue actual no tiene backend, registro remoto ni analítica. El texto extraído, la foto de perfil y el progreso permanecen en el navegador. PDF.js, Mammoth y Tesseract se descargan desde versiones fijadas de jsDelivr solo cuando el formato los necesita; los archivos no se envían allí.
+FORJA no tiene analítica ni sincronización remota activa. El texto extraído, la
+foto de perfil, los proyectos y el progreso permanecen en el navegador. PDF.js,
+Mammoth y Tesseract se descargan desde versiones fijadas de jsDelivr solo cuando
+el formato los necesita; los archivos no se envían allí.
 
 La bóveda de cuenta ya funciona entre dispositivos mediante archivo cifrado. `sync-worker/` contiene el backend de conocimiento cero para activar sincronización automática: hasta que su URL se configure, la aplicación indica claramente “modo portátil” y no simula una nube inexistente.
 
-La arquitectura canónica de Profesor Buenaventura está en
-[`docs/buenaventura/00_CANON.md`](docs/buenaventura/00_CANON.md). Su MVP permite
-seleccionar contexto explícito de un proyecto para observar y recomendar sin
-modificar datos. No configura proveedor externo ni conserva memoria o historial.
+La arquitectura canónica de Buenaventura está en
+[`docs/buenaventura/00_CANON.md`](docs/buenaventura/00_CANON.md). Permite
+seleccionar hasta cuatro fragmentos explícitos de un solo proyecto para observar
+y recomendar sin modificar datos. Cada solicitud externa exige consentimiento,
+mayoría de edad y desidentificación. El proveedor usa exclusivamente Gemini
+Free Tier mediante un Worker stateless de Cloudflare Free; la clave permanece
+como secreto del servidor. Si la cuota o el proveedor fallan, FORJA continúa
+localmente con `UnavailableProvider`. No existe fallback pagado, historial ni
+memoria conversacional.
+
+La evolución opt-in Profesor Buenaventura → Buenaventura → Profesor Tura → Tura
+es global, cualitativa y local. Mantiene siempre el trato de usted, los permisos
+`OBSERVE` y `RECOMMEND`, y cero escrituras académicas.
 
 ## Desarrollo
 
@@ -91,3 +103,7 @@ La arquitectura general y los módulos están documentados en
 La separación entre edición pública, aplicación, IndexedDB, Service Worker y
 respaldos está propuesta —sin cambios de numeración todavía— en
 `docs/VERSIONING.md`.
+
+La arquitectura consolidada, evidencia de cierre, riesgos y procedimiento de
+certificación están en
+[`docs/FORJA-TECHNICAL-CERTIFICATION.md`](docs/FORJA-TECHNICAL-CERTIFICATION.md).
