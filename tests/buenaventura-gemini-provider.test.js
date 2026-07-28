@@ -73,6 +73,45 @@ test('envía al proxy solo aliases, tarea, contexto mínimo y consentimiento', a
   }]);
 });
 
+test('invoca fetch sin contexto nativo indebido y sin reintentos', async () => {
+  let calls = 0;
+  let outbound;
+  function nativeLikeFetch(_url, options) {
+    calls += 1;
+    assert.equal(this, undefined);
+    outbound = JSON.parse(options.body);
+    return Promise.resolve(new Response(JSON.stringify({
+      schemaVersion: 'buenaventura-proxy-response-v1',
+      status: 'ok',
+      text: 'Observaciones: F1 es verificable. Recomendaciones: conservar F1.',
+      references: ['F1']
+    })));
+  }
+  const provider = new GeminiProxyProvider({
+    endpoint: 'https://proxy.example/v1/buenaventura/recommend',
+    fetchImpl: nativeLikeFetch
+  });
+  const value = request();
+  value.consent = { externalProvider: true, deidentified: true, adultUse: true };
+
+  await provider.recommend(value);
+
+  assert.equal(calls, 1);
+  assert.deepEqual(outbound, {
+    schemaVersion: 'buenaventura-proxy-request-v1',
+    task: 'compare',
+    identityStage: 'professor_buenaventura',
+    activeEvaluation: false,
+    consent: { externalProvider: true, deidentified: true, adultUse: true },
+    fragments: [{
+      alias: 'F1',
+      module: 'rubric',
+      kind: 'rubric_criterion',
+      excerpt: 'Contenido verificable'
+    }]
+  });
+});
+
 test('rechaza referencias del proxy que no pertenecen a la selección', async () => {
   const provider = new GeminiProxyProvider({
     endpoint: 'https://proxy.example/v1/buenaventura/recommend',

@@ -58,7 +58,7 @@ export class GeminiProxyProvider extends BuenaventuraProvider {
       throw new TypeError('El proxy de Buenaventura no está configurado.');
     }
     this.endpoint = url.href;
-    this.fetchImpl = fetchImpl;
+    this.fetchImpl = (...args) => fetchImpl(...args);
   }
 
   async recommend(request, { signal } = {}) {
