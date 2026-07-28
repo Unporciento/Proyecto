@@ -44,10 +44,19 @@ function localResponse(request, payload) {
 export class GeminiProxyProvider extends BuenaventuraProvider {
   constructor({ endpoint, fetchImpl = globalThis.fetch } = {}) {
     super({ external: true });
-    if (!endpoint || typeof fetchImpl !== 'function') {
+    let url;
+    try {
+      url = new URL(endpoint);
+    } catch {
       throw new TypeError('El proxy de Buenaventura no está configurado.');
     }
-    this.endpoint = endpoint;
+    if (url.protocol !== 'https:' || url.username || url.password
+      || url.search || url.hash
+      || url.pathname !== '/v1/buenaventura/recommend'
+      || typeof fetchImpl !== 'function') {
+      throw new TypeError('El proxy de Buenaventura no está configurado.');
+    }
+    this.endpoint = url.href;
     this.fetchImpl = fetchImpl;
   }
 

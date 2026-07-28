@@ -10,7 +10,11 @@ const MODULE_TESTS = Object.freeze({
   ux: 'tests/ux.test.js',
   closure1: 'tests/seams.test.js',
   closure3: 'tests/buenaventura-contracts.test.js',
-  closure4: 'tests/buenaventura-proxy.test.js'
+  closure4: [
+    'tests/buenaventura-cloudflare-config.test.js',
+    'tests/buenaventura-gemini-provider.test.js',
+    'tests/buenaventura-proxy.test.js'
+  ]
 });
 
 function run(command, args) {
@@ -40,6 +44,6 @@ run(process.execPath, [
   '--test',
   'tests/academic-contracts.test.js',
   'tests/resources.test.js',
-  moduleTest
+  ...(Array.isArray(moduleTest) ? moduleTest : [moduleTest])
 ]);
 run(process.execPath, [npmCli, 'run', 'limits']);

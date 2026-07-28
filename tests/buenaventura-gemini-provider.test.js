@@ -38,7 +38,7 @@ test('sin endpoint conserva UnavailableProvider como respaldo', () => {
 test('envía al proxy solo aliases, tarea, contexto mínimo y consentimiento', async () => {
   let outbound;
   const provider = new GeminiProxyProvider({
-    endpoint: 'https://proxy.example/recommend',
+    endpoint: 'https://proxy.example/v1/buenaventura/recommend',
     fetchImpl: async (_url, options) => {
       outbound = { ...options, body: JSON.parse(options.body) };
       return new Response(JSON.stringify({
@@ -73,7 +73,7 @@ test('envía al proxy solo aliases, tarea, contexto mínimo y consentimiento', a
 
 test('rechaza referencias del proxy que no pertenecen a la selección', async () => {
   const provider = new GeminiProxyProvider({
-    endpoint: 'https://proxy.example/recommend',
+    endpoint: 'https://proxy.example/v1/buenaventura/recommend',
     fetchImpl: async () => new Response(JSON.stringify({
       schemaVersion: 'buenaventura-proxy-response-v1',
       status: 'ok',
@@ -82,4 +82,13 @@ test('rechaza referencias del proxy que no pertenecen a la selección', async ()
     }))
   });
   await assert.rejects(() => provider.recommend(request()), /Referencia externa/);
+});
+
+test('solo admite una URL HTTPS exacta sin credenciales ni parámetros', () => {
+  assert.throws(() => new GeminiProxyProvider({
+    endpoint: 'http://proxy.example/v1/buenaventura/recommend'
+  }), /no está configurado/);
+  assert.throws(() => new GeminiProxyProvider({
+    endpoint: 'https://proxy.example/v1/buenaventura/recommend?key=secreto'
+  }), /no está configurado/);
 });

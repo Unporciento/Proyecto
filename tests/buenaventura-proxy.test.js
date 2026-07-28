@@ -25,7 +25,7 @@ function payload() {
 }
 
 function post(value = payload(), requestOrigin = origin) {
-  return new Request('https://proxy.example/recommend', {
+  return new Request('https://proxy.example/v1/buenaventura/recommend', {
     method: 'POST',
     headers: { origin: requestOrigin, 'content-type': 'application/json' },
     body: JSON.stringify(value)
@@ -38,7 +38,7 @@ test('bloquea orígenes ajenos antes de llamar al proveedor', async () => {
 });
 
 test('preflight limita CORS al origen y a POST', async () => {
-  const request = new Request('https://proxy.example/recommend', {
+  const request = new Request('https://proxy.example/v1/buenaventura/recommend', {
     method: 'OPTIONS',
     headers: { origin }
   });
@@ -46,6 +46,15 @@ test('preflight limita CORS al origen y a POST', async () => {
   assert.equal(response.status, 204);
   assert.equal(response.headers.get('access-control-allow-origin'), origin);
   assert.equal(response.headers.get('access-control-allow-methods'), 'POST, OPTIONS');
+});
+
+test('solo expone la ruta dedicada de Buenaventura', async () => {
+  const request = new Request('https://proxy.example/otra-ruta', {
+    method: 'POST',
+    headers: { origin, 'content-type': 'application/json' },
+    body: JSON.stringify(payload())
+  });
+  assert.equal((await worker.fetch(request, env)).status, 404);
 });
 
 test('exige consentimiento, desidentificación y uso adulto', async () => {

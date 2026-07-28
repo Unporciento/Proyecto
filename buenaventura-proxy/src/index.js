@@ -116,6 +116,9 @@ export default {
   async fetch(request, env) {
     const origin = allowedOrigin(request, env);
     if (!origin) return json({ error: 'origin_not_allowed' }, 403);
+    if (new URL(request.url).pathname !== '/v1/buenaventura/recommend') {
+      return json({ error: 'not_found' }, 404, origin);
+    }
     if (request.method === 'OPTIONS') {
       const response = json({}, 204, origin);
       response.headers.set('access-control-allow-methods', 'POST, OPTIONS');
