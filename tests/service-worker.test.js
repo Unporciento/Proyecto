@@ -23,7 +23,7 @@ async function loadWorker({ fetchImpl, cachesImpl } = {}) {
     }
   };
   vm.runInNewContext(source, context);
-  return { listeners, source };
+  return { listeners, source, context };
 }
 
 function dispatchFetch(listener, request) {
@@ -69,7 +69,7 @@ test('el service worker instala el shell versionado sin query strings repetidos'
   assert.ok(added.includes('./css/buenaventura.css'));
   assert.ok(added.includes('./js/buenaventura/providers/gemini-proxy-provider.js'));
   assert.ok(added.includes('./js/buenaventura/providers/unavailable-provider.js'));
-  assert.match(source, /RELEASE_VERSION = '2026\.07\.28-9'/);
+  assert.match(source, /RELEASE_VERSION = '2026\.07\.28-10'/);
 });
 
 test('clona la respuesta antes de que el original pueda consumirse', async () => {
@@ -172,4 +172,67 @@ test('usa un recurso estático guardado cuando la red falla', async () => {
 
   assert.equal(await (await pending.responsePromise).text(), 'cached css');
   await pending.lifecyclePromise;
+});
+
+test('una instalación nueva resuelve todo el shell sin red', async () => {
+  const stored = new Map();
+  const pathFor = value => {
+    if (typeof value === 'string') return value;
+    const path = new URL(value.url).pathname.replace(/^\/Proyecto\/?/, '');
+    return path ? `./${path}` : './';
+  };
+  const cachesImpl = {
+    open: async () => ({
+      addAll: async paths => {
+        for (const path of paths) {
+          const local = path === './' ? '../index.html' : `../${path.slice(2)}`;
+          const body = await readFile(new URL(local, import.meta.url));
+          stored.set(path, new Response(body));
+        }
+      },
+      put: async (request, response) => stored.set(pathFor(request), response)
+    }),
+    keys: async () => [],
+    delete: async () => true,
+    match: async value => stored.get(pathFor(value))?.clone() || null
+  };
+  const { listeners } = await loadWorker({
+    fetchImpl: async () => { throw new Error('offline'); },
+    cachesImpl
+  });
+  const installEvent = { waitUntil(promise) { installEvent.work = promise; } };
+  listeners.install(installEvent);
+  await installEvent.work;
+
+  assert.ok(stored.size > 80);
+  for (const path of stored.keys()) {
+    const requestPath = path === './' ? '' : path.slice(2);
+    const pending = dispatchFetch(listeners.fetch, {
+      method: 'GET',
+      mode: path === './' ? 'navigate' : 'cors',
+      url: `https://unporciento.github.io/Proyecto/${requestPath}`
+    });
+    assert.equal((await pending.responsePromise).status, 200, path);
+    await pending.lifecyclePromise;
+  }
+});
+
+test('actualizar desde -9 elimina solo caché anterior y no toca IndexedDB', async () => {
+  const deleted = [];
+  let claimed = false;
+  const { listeners, source, context } = await loadWorker({
+    cachesImpl: {
+      open: async () => ({ addAll: async () => {}, put: async () => {} }),
+      keys: async () => ['forja-shell-2026.07.28-9', 'forja-shell-2026.07.28-10'],
+      delete: async key => { deleted.push(key); return true; },
+      match: async () => null
+    }
+  });
+  const activateEvent = { waitUntil(promise) { activateEvent.work = promise; } };
+  context.self.clients.claim = async () => { claimed = true; };
+  assert.doesNotMatch(source, /indexedDB|deleteDatabase|objectStore/);
+  listeners.activate(activateEvent);
+  await activateEvent.work;
+  assert.equal(claimed, true);
+  assert.deepEqual(deleted, ['forja-shell-2026.07.28-9']);
 });

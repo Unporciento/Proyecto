@@ -11,7 +11,7 @@ import { parseFile } from './parsers.js';
 import { downloadCalendar, examCountdown } from './planner.js';
 import { paintAvatarPreview, paintProfile, prepareAvatar } from './profile.js';
 import { buildSession, schedule } from './scheduler.js';
-import { ExamSession, StudySession } from './sessions.js';
+import { startExamSession, StudySession } from './sessions.js';
 import { newlyUnlocked, streakStats } from './streak.js';
 import { applyTheme, normalizeHex } from './theme.js';
 import { clearBusy, renderDashboard, renderDocuments, renderProgress, renderSubjects, setBusy, setupNavigation, showView, toast, updateBusy } from './ui.js';
@@ -179,7 +179,7 @@ function startExam() {
   const count = Math.min(Number($('#examCount').value), state.cards.length);
   const cards = buildSession(state.cards, count).sort(() => Math.random() - .5);
   $('#examSetup').hidden = true; $('#examSession').hidden = false;
-  new ExamSession($('#examSession'), cards, Number($('#examMinutes').value), {
+  startExamSession($('#examSession'), cards, Number($('#examMinutes').value), {
     onFinish: async answers => {
       const attempts = answers.map(item => createExamAttempt(item, {
         id: db.uid('attempt'),

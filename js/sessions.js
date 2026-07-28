@@ -67,12 +67,34 @@ export class StudySession {
 }
 
 export class ExamSession {
-  constructor(target, cards, minutes, { onFinish }) {
-    this.target = target; this.cards = cards; this.minutes = minutes; this.onFinish = onFinish;
-    this.index = 0; this.answers = []; this.remaining = minutes * 60;
+  constructor(target, cards, minutes, { onFinish, onDispose = () => {} }) {
+    this.target = target; this.cards = cards; this.minutes = minutes; this.onFinish = onFinish; this.onDispose = onDispose;
+    this.index = 0; this.answers = []; this.remaining = minutes * 60; this.timer = null; this.disposed = false;
+    this.onViewChange = event => { if (event.detail?.view !== 'examen') this.dispose(); };
   }
 
-  start() { this.timer = setInterval(() => this.tick(), 1000); this.render(); }
+  start() {
+    this.stopTimer();
+    this.disposed = false;
+    globalThis.window?.removeEventListener?.('forja:viewchange', this.onViewChange);
+    globalThis.window?.addEventListener?.('forja:viewchange', this.onViewChange);
+    this.timer = setInterval(() => this.tick(), 1000);
+    this.render();
+  }
+
+  stopTimer() {
+    if (this.timer === null) return;
+    clearInterval(this.timer);
+    this.timer = null;
+  }
+
+  dispose() {
+    if (this.disposed) return;
+    this.disposed = true;
+    this.stopTimer();
+    globalThis.window?.removeEventListener?.('forja:viewchange', this.onViewChange);
+    this.onDispose();
+  }
 
   tick() { this.remaining -= 1; const label = this.target.querySelector('#examTimer'); if (label) label.textContent = this.timeLabel(); if (this.remaining <= 0) this.finish(); }
   timeLabel() { return `${String(Math.floor(this.remaining / 60)).padStart(2,'0')}:${String(this.remaining % 60).padStart(2,'0')}`; }
@@ -118,12 +140,30 @@ export class ExamSession {
   }
 
   finish() {
-    clearInterval(this.timer);
+    this.stopTimer();
     const correct = this.answers.filter(item => item.correct).length;
     const score = Math.round(correct / this.cards.length * 100);
     const errors = this.answers.filter(item => !item.correct);
     this.target.innerHTML = `<article class="question-card"><span class="eyebrow">RESULTADO</span><h1>${score}%</h1><p>${correct} de ${this.cards.length} respuestas correctas.</p><div class="bar"><i style="width:${score}%"></i></div>
       <h2 style="margin-top:28px">Errores para convertir en aprendizaje</h2>${errors.length ? errors.map(item => `<div class="answer-reveal"><strong>${escapeHtml(item.card.question)}</strong><p>${escapeHtml(item.card.answer)}</p></div>`).join('') : '<p>Excelente: repite otro día para comprobar que se mantiene.</p>'}<button class="primary-btn" id="closeExam" style="margin-top:20px">Guardar resultado</button></article>`;
-    this.target.querySelector('#closeExam').addEventListener('click', () => this.onFinish(this.answers, score));
+    this.target.querySelector('#closeExam').addEventListener('click', () => {
+      this.dispose();
+      this.onFinish(this.answers, score);
+    });
   }
+}
+
+let activeExamSession = null;
+
+export function startExamSession(target, cards, minutes, options) {
+  activeExamSession?.dispose();
+  const session = new ExamSession(target, cards, minutes, {
+    ...options,
+    onDispose: () => {
+      if (activeExamSession === session) activeExamSession = null;
+    }
+  });
+  activeExamSession = session;
+  session.start();
+  return session;
 }
