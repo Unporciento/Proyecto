@@ -1,6 +1,6 @@
 # AI handoff — FORJA
 
-Estado preparado: Módulo de cierre 1 — Correcciones de costuras.
+Estado preparado: Módulo de cierre 2 — Arquitectura canónica de Buenaventura.
 
 ## Estado técnico
 
@@ -40,10 +40,19 @@ npm run verify
 `verify:quick` acepta los módulos académicos, `ux` y `closure1`.
 La verificación completa es obligatoria antes de publicar.
 
+## Buenaventura
+
+- La fuente canónica es `docs/buenaventura/00_CANON.md`; sus documentos anexos
+  separan voz, pedagogía, memoria, permisos, seguridad y pruebas.
+- No existe implementación funcional: sin interfaz, proveedor, chat, memoria,
+  adaptadores ejecutables ni escrituras académicas.
+- El diseño futuro solo permite `OBSERVE` y `RECOMMEND`, con contexto mínimo y
+  adaptadores de solo lectura para Biblioteca, Rúbricas, Evidencias e Informes.
+
 ## Próximo paso
 
-- Validar manualmente el Módulo de cierre 1 en PC e iPhone.
-- No publicar ni iniciar Buenaventura hasta recibir aprobación.
+- Esperar validación del Módulo de cierre 2 antes de cualquier implementación de
+  Buenaventura. No iniciar el Módulo de cierre 3.
 - Laboratorio permanece aplazado y su WIP está fuera de la rama activa.
 
 ## Riesgos abiertos

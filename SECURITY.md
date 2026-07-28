@@ -19,6 +19,7 @@ El despliegue actual de Forja es una aplicación estática sin servidor. El modo
 - La bóveda cifrada y el Worker admiten 16 MB para absorber el crecimiento causado por cifrado y Base64 de cualquier respaldo local aceptado.
 - La restauración reemplaza todas las colecciones en una única transacción: o se completa entera o no modifica nada.
 - Los contratos académicos rechazan tipos, versiones y campos no reconocidos antes de escribir.
+
 - El repositorio comprueba asignaturas, proyectos, padres, documentos, extremos y relaciones duplicadas dentro de la misma transacción.
 - La interfaz de proyectos construye nodos DOM con `textContent`, usa estados e
   iconos cerrados y nunca escribe directamente en IndexedDB.
@@ -40,6 +41,14 @@ El despliegue actual de Forja es una aplicación estática sin servidor. El modo
 - Navegación por hash restringida a una lista cerrada de vistas; el menú móvil bloquea el fondo y ofrece cinco vías de cierre.
 - Las rachas se derivan de intentos reales almacenados, no de un contador editable en la interfaz.
 - Borrado local requiere confirmación.
+
+## Futuro Buenaventura
+
+Buenaventura no está implementado ni recibe datos en esta versión. Su contrato
+canónico exige contexto mínimo, consentimiento previo, adaptadores de solo
+lectura y ninguna escritura académica en el MVP. La fuente de autoridad es
+[`docs/buenaventura/00_CANON.md`](docs/buenaventura/00_CANON.md); las reglas de
+privacidad y sanitización viven únicamente en su documento especializado.
 
 ## Límites honestos
 

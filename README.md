@@ -52,6 +52,10 @@ El despliegue actual no tiene backend, registro remoto ni analítica. El texto e
 
 La bóveda de cuenta ya funciona entre dispositivos mediante archivo cifrado. `sync-worker/` contiene el backend de conocimiento cero para activar sincronización automática: hasta que su URL se configure, la aplicación indica claramente “modo portátil” y no simula una nube inexistente.
 
+La arquitectura canónica de la futura asistencia académica Buenaventura está en
+[`docs/buenaventura/00_CANON.md`](docs/buenaventura/00_CANON.md). No está
+implementada: FORJA no ofrece aún chat, proveedor externo ni memoria de profesor.
+
 ## Desarrollo
 
 No requiere compilación.

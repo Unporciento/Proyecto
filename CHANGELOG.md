@@ -1,5 +1,13 @@
 # Changelog
 
+## Sin publicar — Módulo de cierre 2
+
+- Documentada la arquitectura canónica de Buenaventura: personalidad, límites
+  pedagógicos, contexto mínimo, privacidad, adaptadores de solo lectura y matriz
+  de comportamiento.
+- La asistencia permanece inactiva: no se añadió interfaz, proveedor, memoria ni
+  escritura académica.
+
 ## Sin publicar — Módulo de cierre 1
 
 - Simulacro registra confianza y duración reales por respuesta.
