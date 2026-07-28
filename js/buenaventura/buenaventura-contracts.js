@@ -102,9 +102,11 @@ export function validateRequest(request) {
     || typeof request.constraints.offline !== 'boolean') {
     fail('constraints contiene valores incorrectos.');
   }
-  exact(request.consent, ['externalProvider'], 'consent');
-  if (typeof request.consent.externalProvider !== 'boolean') {
-    fail('consent.externalProvider es incorrecto.');
+  exact(request.consent, ['externalProvider', 'deidentified', 'adultUse'], 'consent');
+  if (typeof request.consent.externalProvider !== 'boolean'
+    || typeof request.consent.deidentified !== 'boolean'
+    || typeof request.consent.adultUse !== 'boolean') {
+    fail('consent contiene valores incorrectos.');
   }
   return true;
 }

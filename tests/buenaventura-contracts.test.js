@@ -32,7 +32,7 @@ function request(fragments = [fragment('criterion_one')]) {
     },
     fragments,
     constraints: { activeEvaluation: false, offline: false },
-    consent: { externalProvider: false }
+    consent: { externalProvider: false, deidentified: false, adultUse: false }
   };
 }
 

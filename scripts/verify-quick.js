@@ -9,7 +9,8 @@ const MODULE_TESTS = Object.freeze({
   presentations: 'tests/presentations.test.js',
   ux: 'tests/ux.test.js',
   closure1: 'tests/seams.test.js',
-  closure3: 'tests/buenaventura-contracts.test.js'
+  closure3: 'tests/buenaventura-contracts.test.js',
+  closure4: 'tests/buenaventura-proxy.test.js'
 });
 
 function run(command, args) {

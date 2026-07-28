@@ -29,7 +29,7 @@ function request(fragments = [fragment('criterion_one')]) {
     },
     fragments,
     constraints: { activeEvaluation: false, offline: false },
-    consent: { externalProvider: false }
+    consent: { externalProvider: false, deidentified: false, adultUse: false }
   };
 }
 
@@ -70,6 +70,8 @@ test('un proveedor externo no recibe contexto sin consentimiento específico', a
   assert.equal(provider.calls, 0);
   const allowed = request([fragment('criterion_one')]);
   allowed.consent.externalProvider = true;
+  allowed.consent.deidentified = true;
+  allowed.consent.adultUse = true;
   assert.equal((await orchestrator.recommend(allowed)).status, 'ok');
   assert.equal(provider.calls, 1);
 });

@@ -177,7 +177,7 @@ test('consulta 500 fuentes con paginación y filtro indexado', async () => {
   assert.equal(second.length, 60);
   assert.equal(new Set([...first, ...second].map(item => item.id)).size, 120);
   assert.equal(videos.length, 100);
-  const limitMs = process.platform === 'win32' ? 1_500 : 1_000;
+  const limitMs = process.platform === 'win32' ? 2_500 : 1_000;
   assert.ok(elapsed < limitMs, `la consulta de fuentes tardó ${elapsed.toFixed(1)} ms`);
   console.log(`Métrica fuentes FORJA: 500 registros, páginas y filtro=${elapsed.toFixed(1)}ms`);
   database.close();

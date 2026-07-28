@@ -8,6 +8,8 @@ export async function buildBuenaventuraRequest({
   activeEvaluation = false,
   offline = typeof navigator !== 'undefined' ? !navigator.onLine : false,
   externalConsent = false,
+  deidentified = false,
+  adultUse = false,
   requestId = `buenaventura_${crypto.randomUUID()}`
 }) {
   const fragments = await readPorts.fragments(projectId, selections);
@@ -26,7 +28,9 @@ export async function buildBuenaventuraRequest({
       offline: Boolean(offline)
     },
     consent: {
-      externalProvider: Boolean(externalConsent)
+      externalProvider: Boolean(externalConsent),
+      deidentified: Boolean(deidentified),
+      adultUse: Boolean(adultUse)
     }
   };
   validateRequest(request);

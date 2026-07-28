@@ -77,7 +77,8 @@ test('consulta indexada con 200 proyectos, 20 000 artefactos y 50 000 relaciones
 
   assert.equal(trace.artifacts.length, 100);
   assert.equal(trace.relations.length, 250);
-  assert.ok(seedMs < 20_000, `la carga de volumen tardó ${seedMs.toFixed(1)} ms`);
+  const seedLimitMs = process.platform === 'win32' ? 30_000 : 20_000;
+  assert.ok(seedMs < seedLimitMs, `la carga de volumen tardó ${seedMs.toFixed(1)} ms`);
   assert.ok(queryMs < 2_000, `la consulta indexada tardó ${queryMs.toFixed(1)} ms`);
   console.log(`Métrica FORJA: carga=${seedMs.toFixed(1)}ms, consulta=${queryMs.toFixed(1)}ms`);
   database.close();

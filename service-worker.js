@@ -1,9 +1,9 @@
-const RELEASE_VERSION = '2026.07.26-6';
+const RELEASE_VERSION = '2026.07.28-7';
 const CACHE = `forja-shell-${RELEASE_VERSION}`;
 const SHELL = [
   './', './index.html', './404.html', './offline.html',
   './manifest.webmanifest', './assets/icon.svg',
-  './css/tokens.css', './css/app.css', './css/responsive.css', './css/ux.css',
+  './css/tokens.css', './css/app.css', './css/buenaventura.css', './css/responsive.css', './css/ux.css',
   './js/account.js', './js/account-restore.js', './js/app.js', './js/backup.js', './js/config.js',
   './js/db.js', './js/drawer.js', './js/energy.js',
   './js/exam.js', './js/calibration.js', './js/focus.js', './js/generator.js', './js/parsers.js', './js/planner.js',
@@ -12,6 +12,15 @@ const SHELL = [
   './js/academic/academic-migrations.js', './js/academic/academic-repository.js',
   './js/academic/artifact-schemas.js', './js/academic/backup-v2.js', './js/academic/project-model.js',
   './js/academic/relation-model.js', './js/evidence/evidence-labels.js',
+  './js/buenaventura/buenaventura-config.js', './js/buenaventura/buenaventura-context.js',
+  './js/buenaventura/buenaventura-contracts.js', './js/buenaventura/buenaventura-controller.js',
+  './js/buenaventura/buenaventura-orchestrator.js', './js/buenaventura/buenaventura-policy.js',
+  './js/buenaventura/buenaventura-read-ports.js', './js/buenaventura/buenaventura-shell.js',
+  './js/buenaventura/buenaventura-view.js',
+  './js/buenaventura/providers/gemini-proxy-provider.js',
+  './js/buenaventura/providers/provider-factory.js',
+  './js/buenaventura/providers/provider-port.js',
+  './js/buenaventura/providers/unavailable-provider.js',
   './js/ux/ux-controller.js'
 ];
 

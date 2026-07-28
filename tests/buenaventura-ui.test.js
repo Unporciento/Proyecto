@@ -16,11 +16,26 @@ test('la interfaz usa CSS dedicado y expone Profesor Buenaventura por proyecto',
   assert.match(css, /\.buenaventura-workspace/);
 });
 
+test('el envío externo exige divulgación y consentimiento nuevo por solicitud', async () => {
+  const [shell, config, controller] = await Promise.all([
+    read('../js/buenaventura/buenaventura-shell.js'),
+    read('../js/buenaventura/buenaventura-config.js'),
+    read('../js/buenaventura/buenaventura-controller.js')
+  ]);
+  assert.match(shell, /Google Gemini Free Tier/);
+  assert.match(shell, /buenaventuraDeidentified/);
+  assert.match(shell, /buenaventuraAdult/);
+  assert.match(config, /BUENAVENTURA_PROXY_URL = ''/);
+  assert.match(controller, /function resetExternalConsent/);
+  assert.match(controller, /finally \{[\s\S]*resetExternalConsent/);
+});
+
 test('el módulo no importa repositorios de escritura ni APIs de persistencia', async () => {
   const files = [
     'buenaventura-context.js', 'buenaventura-contracts.js',
     'buenaventura-controller.js', 'buenaventura-orchestrator.js',
-    'buenaventura-policy.js', 'buenaventura-read-ports.js'
+    'buenaventura-policy.js', 'buenaventura-read-ports.js',
+    'providers/gemini-proxy-provider.js', 'providers/provider-factory.js'
   ];
   for (const file of files) {
     const source = await read(`../js/buenaventura/${file}`);

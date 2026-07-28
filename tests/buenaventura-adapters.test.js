@@ -66,9 +66,15 @@ test('el constructor genera contexto mixto efímero sin un module global', async
       { module: 'evidence', id: 'project_one_evidence' }
     ],
     offline: false,
+    externalConsent: true,
+    deidentified: true,
+    adultUse: true,
     requestId: 'request_mixed'
   });
   assert.equal('module' in value, false);
   assert.deepEqual(value.fragments.map(item => item.module), ['rubric', 'evidence']);
+  assert.deepEqual(value.consent, {
+    externalProvider: true, deidentified: true, adultUse: true
+  });
   fixture.database.close();
 });

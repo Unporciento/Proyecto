@@ -3,10 +3,13 @@ import { BuenaventuraOrchestrator } from './buenaventura-orchestrator.js';
 import { BuenaventuraReadPorts } from './buenaventura-read-ports.js';
 import { ensureBuenaventuraShell } from './buenaventura-shell.js';
 import { renderContextOptions, renderPreview, renderResponse } from './buenaventura-view.js';
+import { createBuenaventuraProvider } from './providers/provider-factory.js';
 
 const $ = selector => document.querySelector(selector);
 const readPorts = new BuenaventuraReadPorts();
-const orchestrator = new BuenaventuraOrchestrator();
+const orchestrator = new BuenaventuraOrchestrator({
+  provider: createBuenaventuraProvider()
+});
 const state = {
   projectId: null, options: [], fragments: [],
   returnFocus: null, abortController: null
@@ -29,7 +32,14 @@ function setBusy(busy) {
   $('#buenaventuraForm').setAttribute('aria-busy', String(busy));
 }
 
+function resetExternalConsent() {
+  $('#buenaventuraConsent').checked = false;
+  $('#buenaventuraDeidentified').checked = false;
+  $('#buenaventuraAdult').checked = false;
+}
+
 async function updatePreview() {
+  resetExternalConsent();
   const values = selections();
   $('#buenaventuraOptions').querySelectorAll('input:not(:checked)').forEach(input => {
     input.disabled = values.length >= 4;
@@ -63,6 +73,8 @@ async function open(projectId, trigger) {
     $('#buenaventuraWorkspace').hidden = false;
     $('#viewTitle').textContent = 'Profesor Buenaventura';
     $('#buenaventuraConsentRow').hidden = !orchestrator.provider.external;
+    $('#buenaventuraDeidentifiedRow').hidden = !orchestrator.provider.external;
+    $('#buenaventuraAdultRow').hidden = !orchestrator.provider.external;
     $('#buenaventuraTask').focus({ preventScroll: true });
     await updatePreview();
   } catch (error) {
@@ -104,14 +116,19 @@ async function submit(event) {
       selections: values,
       activeEvaluation: $('#buenaventuraEvaluation').checked,
       offline: !navigator.onLine,
-      externalConsent: $('#buenaventuraConsent').checked
+      externalConsent: $('#buenaventuraConsent').checked,
+      deidentified: $('#buenaventuraDeidentified').checked,
+      adultUse: $('#buenaventuraAdult').checked
     });
-    $('#buenaventuraStatus').textContent = 'Consulta procesada sin modificar sus datos.';
     const response = await orchestrator.recommend(request, { signal: state.abortController.signal });
+    $('#buenaventuraStatus').textContent = response.status === 'ok'
+      ? 'Consulta procesada sin modificar sus datos.'
+      : 'El proveedor no está disponible. FORJA continúa funcionando localmente.';
     renderResponse($('#buenaventuraResponse'), response);
   } catch (error) {
     if (error.name !== 'AbortError') setError(error.message);
   } finally {
+    resetExternalConsent();
     setBusy(false);
   }
 }
@@ -122,6 +139,8 @@ $('#projectGrid').addEventListener('click', event => {
 });
 $('#closeBuenaventuraBtn').addEventListener('click', () => close());
 $('#buenaventuraOptions').addEventListener('change', updatePreview);
+$('#buenaventuraTask').addEventListener('change', resetExternalConsent);
+$('#buenaventuraEvaluation').addEventListener('change', resetExternalConsent);
 $('#buenaventuraForm').addEventListener('submit', submit);
 window.addEventListener('forja:viewchange', event => {
   if (event.detail.view !== 'proyectos') close({ restoreFocus: false });

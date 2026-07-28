@@ -37,7 +37,15 @@ export function ensureBuenaventuraShell() {
         </label>
         <label class="check-row" id="buenaventuraConsentRow" hidden>
           <input id="buenaventuraConsent" type="checkbox">
-          <span>Autorizo enviar únicamente esta vista previa al proveedor externo.</span>
+          <span>Autorizo enviar esta vista previa a Google Gemini Free Tier. Google puede usarla y su respuesta para mejorar sus productos.</span>
+        </label>
+        <label class="check-row" id="buenaventuraDeidentifiedRow" hidden>
+          <input id="buenaventuraDeidentified" type="checkbox">
+          <span>Confirmo que retiré nombres y cualquier dato personal, sensible o confidencial.</span>
+        </label>
+        <label class="check-row" id="buenaventuraAdultRow" hidden>
+          <input id="buenaventuraAdult" type="checkbox">
+          <span>Confirmo que soy mayor de 18 años y uso esta función con fines profesionales.</span>
         </label>
         <p id="buenaventuraFormError" class="form-error" role="alert" hidden></p>
         <button class="primary-btn" id="askBuenaventuraBtn" type="submit">Consultar con este contexto</button>

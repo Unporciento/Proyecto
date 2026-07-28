@@ -12,7 +12,11 @@ export class BuenaventuraOrchestrator {
 
   async recommend(request, { signal } = {}) {
     validateRequest(request);
-    if (this.provider.external && request.consent.externalProvider !== true) {
+    if (this.provider.external && (
+      request.consent.externalProvider !== true
+      || request.consent.deidentified !== true
+      || request.consent.adultUse !== true
+    )) {
       return technicalResponse(request.requestId, 'policy_blocked');
     }
     if (request.constraints.offline && this.provider.external) {
