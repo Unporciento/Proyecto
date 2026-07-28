@@ -9,6 +9,7 @@ function request() {
     schemaVersion: 'buenaventura-request-v1',
     requestId: 'request_one',
     task: 'compare',
+    identityStage: 'professor_buenaventura',
     permissions: ['OBSERVE', 'RECOMMEND'],
     scope: { projectId: 'project_one', selectionIds: ['rubric:criterion_one'] },
     fragments: [{
@@ -56,8 +57,9 @@ test('envía al proxy solo aliases, tarea, contexto mínimo y consentimiento', a
   assert.equal(outbound.credentials, 'omit');
   assert.equal(outbound.cache, 'no-store');
   assert.deepEqual(Object.keys(outbound.body).sort(), [
-    'activeEvaluation', 'consent', 'fragments', 'schemaVersion', 'task'
+    'activeEvaluation', 'consent', 'fragments', 'identityStage', 'schemaVersion', 'task'
   ]);
+  assert.equal(outbound.body.identityStage, 'professor_buenaventura');
   assert.deepEqual(outbound.body.fragments[0], {
     alias: 'F1',
     module: 'rubric',

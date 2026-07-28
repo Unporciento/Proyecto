@@ -15,6 +15,23 @@ export function ensureBuenaventuraShell() {
         <p id="buenaventuraProjectContext"></p>
       </div>
     </div>
+    <section class="panel buenaventura-relationship" aria-labelledby="buenaventuraRelationshipTitle">
+      <h2 id="buenaventuraRelationshipTitle">Nombre del profesor</h2>
+      <p id="buenaventuraIdentitySummary">Profesor Buenaventura mantiene una voz formal y explicativa.</p>
+      <label class="check-row">
+        <input id="buenaventuraEvolutionEnabled" type="checkbox">
+        <span>Permitir una evolución gradual del nombre y algunos matices de expresión.</span>
+      </label>
+      <p class="buenaventura-relationship-copy">
+        Esta opción no modifica permisos ni aumenta el acceso a datos.
+        No crea memoria de conversaciones y no afecta notas, progreso ni funciones académicas.
+        Puede desactivarla o eliminarla en cualquier momento.
+      </p>
+      <button class="text-btn" id="clearBuenaventuraEvolution" type="button">
+        Eliminar estado de evolución
+      </button>
+      <p id="buenaventuraTransitionNotice" role="status" hidden></p>
+    </section>
     <div class="buenaventura-layout">
       <form id="buenaventuraForm" class="panel buenaventura-form">
         <label>Tarea
@@ -34,6 +51,17 @@ export function ensureBuenaventuraShell() {
         <label class="check-row">
           <input id="buenaventuraEvaluation" type="checkbox">
           <span>FORJA confirma que existe una evaluación activa</span>
+        </label>
+        <label id="buenaventuraAutonomyRow" hidden>Acción realizada antes de consultar
+          <select id="buenaventuraAutonomyFamily">
+            <option value="">No registrar ninguna</option>
+            <option value="attempt_before_help">Hice un intento propio</option>
+            <option value="reasoning_articulated">Expliqué mi razonamiento</option>
+            <option value="source_verified">Verifiqué una fuente</option>
+            <option value="evidence_connected">Relacioné evidencia y criterio</option>
+            <option value="revision_after_feedback">Revisé el trabajo después de observaciones</option>
+            <option value="decision_justified">Justifiqué una decisión académica</option>
+          </select>
         </label>
         <label class="check-row" id="buenaventuraConsentRow" hidden>
           <input id="buenaventuraConsent" type="checkbox">

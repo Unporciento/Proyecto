@@ -4,6 +4,7 @@ function proxyRequest(request) {
   return {
     schemaVersion: 'buenaventura-proxy-request-v1',
     task: request.task,
+    identityStage: request.identityStage,
     activeEvaluation: request.constraints.activeEvaluation,
     consent: {
       externalProvider: request.consent.externalProvider,

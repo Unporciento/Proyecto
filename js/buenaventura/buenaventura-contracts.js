@@ -5,6 +5,9 @@ export const STATUSES = Object.freeze([
   'requires_supervision', 'policy_blocked', 'provider_unavailable', 'offline'
 ]);
 export const PERMISSIONS = Object.freeze(['OBSERVE', 'RECOMMEND']);
+export const IDENTITY_STAGES = Object.freeze([
+  'professor_buenaventura', 'buenaventura', 'professor_tura', 'tura'
+]);
 export const MAX_FRAGMENTS = 4;
 export const MAX_FRAGMENT_CHARS = 2_000;
 export const MAX_TOTAL_CHARS = 8_000;
@@ -64,7 +67,7 @@ export function validateFragment(fragment) {
 
 export function validateRequest(request) {
   exact(request, [
-    'schemaVersion', 'requestId', 'task', 'permissions', 'scope',
+    'schemaVersion', 'requestId', 'task', 'identityStage', 'permissions', 'scope',
     'fragments', 'constraints', 'consent'
   ], 'request');
   if (request.schemaVersion !== 'buenaventura-request-v1') {
@@ -72,6 +75,9 @@ export function validateRequest(request) {
   }
   text(request.requestId, 'requestId', 120);
   if (!TASKS.includes(request.task)) fail('task no está permitida.');
+  if (!IDENTITY_STAGES.includes(request.identityStage)) {
+    fail('identityStage no está permitida.');
+  }
   if (JSON.stringify(request.permissions) !== JSON.stringify(PERMISSIONS)) {
     fail('permissions debe ser exactamente OBSERVE y RECOMMEND.');
   }

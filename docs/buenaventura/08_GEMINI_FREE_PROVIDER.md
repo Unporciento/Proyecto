@@ -32,6 +32,7 @@ bóveda, respaldo o sincronización.
   "schemaVersion": "buenaventura-proxy-request-v1",
   "task": "explain|review|compare|suggest|question",
   "activeEvaluation": false,
+  "identityStage": "professor_buenaventura|buenaventura|professor_tura|tura",
   "consent": {
     "externalProvider": true,
     "deidentified": true,
@@ -50,13 +51,16 @@ bóveda, respaldo o sincronización.
 
 Quedan excluidos `requestId`, `projectId`, IDs de artefactos, `selectionIds`,
 títulos, procedencia, nombres de cuenta, otros proyectos, archivos, historial,
-notas, bóveda, respaldos y credenciales.
+notas, bóveda, respaldos y credenciales. La evolución solo aporta
+`identityStage`: no envía señales, hitos, fechas, historial, configuración ni
+razones de transición.
 
 ## Payload proxy a Gemini
 
 El Worker envía:
 
-- `system_instruction` fija con los límites OBSERVE y RECOMMEND;
+- `system_instruction` compuesta por la política común OBSERVE/RECOMMEND y una
+  instrucción de voz fija y cerrada para `identityStage`;
 - `contents[0]` con un JSON que contiene `task`, `activeEvaluation` y los
   fragmentos mínimos;
 - `generationConfig.maxOutputTokens: 800`;

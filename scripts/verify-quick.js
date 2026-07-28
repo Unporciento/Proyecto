@@ -14,6 +14,14 @@ const MODULE_TESTS = Object.freeze({
     'tests/buenaventura-cloudflare-config.test.js',
     'tests/buenaventura-gemini-provider.test.js',
     'tests/buenaventura-proxy.test.js'
+  ],
+  closure5: [
+    'tests/buenaventura-relationship.test.js',
+    'tests/buenaventura-relationship-store.test.js',
+    'tests/buenaventura-ui.test.js',
+    'tests/buenaventura-gemini-provider.test.js',
+    'tests/buenaventura-proxy.test.js',
+    'tests/db.test.js'
   ]
 });
 

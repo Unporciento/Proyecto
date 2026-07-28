@@ -22,6 +22,7 @@ function request(fragments = [fragment('criterion_one')]) {
     schemaVersion: 'buenaventura-request-v1',
     requestId: 'request_one',
     task: 'compare',
+    identityStage: 'professor_buenaventura',
     permissions: ['OBSERVE', 'RECOMMEND'],
     scope: {
       projectId: 'project_one',

@@ -13,6 +13,7 @@ function payload() {
   return {
     schemaVersion: 'buenaventura-proxy-request-v1',
     task: 'compare',
+    identityStage: 'professor_buenaventura',
     activeEvaluation: false,
     consent: { externalProvider: true, deidentified: true, adultUse: true },
     fragments: [{
@@ -114,7 +115,36 @@ test('fija Gemini Free y envía solo el contexto sintético permitido', async t 
     }]
   });
   assert.equal(call.body.generationConfig.maxOutputTokens, 800);
+  assert.match(call.body.system_instruction.parts[0].text, /Profesor Buenaventura/);
+  assert.match(call.body.system_instruction.parts[0].text, /trate a la persona de usted/);
   assert.equal(body.schemaVersion, 'buenaventura-proxy-response-v1');
+});
+
+test('las cuatro etapas seleccionan voz fija sin recibir señales de evolución', async t => {
+  const stages = [
+    ['professor_buenaventura', 'Profesor Buenaventura'],
+    ['buenaventura', 'Buenaventura'],
+    ['professor_tura', 'Profesor Tura'],
+    ['tura', 'Tura']
+  ];
+  let sent;
+  t.mock.method(globalThis, 'fetch', async (_url, options) => {
+    sent = JSON.parse(options.body);
+    return new Response(JSON.stringify({
+      candidates: [{ content: { parts: [{ text: JSON.stringify({
+        status: 'ok',
+        text: 'Observaciones: revisión sintética. Recomendaciones: verificar F1.',
+        references: ['F1']
+      }) }] } }]
+    }));
+  });
+  for (const [stage, name] of stages) {
+    const value = payload();
+    value.identityStage = stage;
+    assert.equal((await worker.fetch(post(value), env)).status, 200);
+    assert.match(sent.system_instruction.parts[0].text, new RegExp(name));
+    assert.doesNotMatch(JSON.stringify(sent.contents), /milestone|transition|session|date/i);
+  }
 });
 
 test('normaliza fallos de Gemini sin exponer mensajes del proveedor', async t => {

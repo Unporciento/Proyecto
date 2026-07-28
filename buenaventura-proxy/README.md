@@ -54,6 +54,7 @@ $body = @{
   schemaVersion = 'buenaventura-proxy-request-v1'
   task = 'compare'
   activeEvaluation = $false
+  identityStage = 'professor_buenaventura'
   consent = @{
     externalProvider = $true
     deidentified = $true

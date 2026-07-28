@@ -4,6 +4,7 @@ export async function buildBuenaventuraRequest({
   readPorts,
   projectId,
   task,
+  identityStage = 'professor_buenaventura',
   selections,
   activeEvaluation = false,
   offline = typeof navigator !== 'undefined' ? !navigator.onLine : false,
@@ -17,6 +18,7 @@ export async function buildBuenaventuraRequest({
     schemaVersion: 'buenaventura-request-v1',
     requestId,
     task,
+    identityStage,
     permissions: [...PERMISSIONS],
     scope: {
       projectId,

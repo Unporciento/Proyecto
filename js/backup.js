@@ -1,6 +1,10 @@
 const LIMITS = Object.freeze({ subjects: 100, documents: 500, cards: 30_000, attempts: 100_000, settings: 100 });
 const BLOCKED_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
-const SETTING_KEYS = new Set(['examDate', 'dailyGoal', 'studyTime', 'sound', 'profileName', 'avatar', 'themeMode', 'palette', 'customAccent', 'energyMode', 'bestStreak']);
+const SETTING_KEYS = new Set([
+  'examDate', 'dailyGoal', 'studyTime', 'sound', 'profileName', 'avatar',
+  'themeMode', 'palette', 'customAccent', 'energyMode', 'bestStreak',
+  'buenaventuraRelationship'
+]);
 
 function fail(message) {
   throw new Error(`Respaldo no válido: ${message}`);
@@ -36,6 +40,7 @@ function validateRows(name, rows) {
     inspect(row);
     if (name === 'settings') {
       if (!validId(row.key) || !SETTING_KEYS.has(row.key)) fail('hay un ajuste no reconocido.');
+      if (row.key === 'buenaventuraRelationship') validateRelationship(row.value);
     } else if (!validId(row.id)) fail(`${name} contiene un identificador incorrecto.`);
   });
 }
@@ -80,3 +85,4 @@ export function validateBackup(raw) {
   return upgradeBackupV1(validateLegacyBackup(raw));
 }
 import { upgradeBackupV1, validateBackupV2 } from './academic/backup-v2.js';
+import { validateRelationship } from './buenaventura/relationship/relationship-contracts.js';

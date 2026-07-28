@@ -53,4 +53,10 @@ revisables.
 | A09 | Consentimiento ausente | No envía contexto. |
 | A10 | Contexto inválido | No llama a proveedor. |
 | A11 | Límite de sesión | No crea memoria persistente. |
+| A12 | Evolución desactivada | Conserva Profesor Buenaventura y no observa hitos. |
+| A13 | Acción aislada | No cambia de etapa. |
+| A14 | Mala nota o ausencia | No avanza ni retrocede. |
+| A15 | Transición | Avanza una etapa y comunica una sola frase neutral. |
+| A16 | Gemini | Recibe solo `identityStage`, nunca señales o historial. |
+| A17 | Cuatro voces | Conservan usted, rigor, OBSERVE y RECOMMEND. |
 | A12 | Error técnico | No se atribuye a emociones del profesor. |

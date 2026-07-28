@@ -1,4 +1,4 @@
-const RELEASE_VERSION = '2026.07.28-8';
+const RELEASE_VERSION = '2026.07.28-9';
 const CACHE = `forja-shell-${RELEASE_VERSION}`;
 const SHELL = [
   './', './index.html', './404.html', './offline.html',
@@ -21,6 +21,10 @@ const SHELL = [
   './js/buenaventura/providers/provider-factory.js',
   './js/buenaventura/providers/provider-port.js',
   './js/buenaventura/providers/unavailable-provider.js',
+  './js/buenaventura/relationship/identity-profile.js',
+  './js/buenaventura/relationship/relationship-contracts.js',
+  './js/buenaventura/relationship/relationship-policy.js',
+  './js/buenaventura/relationship/relationship-store.js',
   './js/ux/ux-controller.js'
 ];
 

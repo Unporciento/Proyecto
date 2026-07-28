@@ -4,18 +4,82 @@ import { BuenaventuraReadPorts } from './buenaventura-read-ports.js';
 import { ensureBuenaventuraShell } from './buenaventura-shell.js';
 import { renderContextOptions, renderPreview, renderResponse } from './buenaventura-view.js';
 import { createBuenaventuraProvider } from './providers/provider-factory.js';
+import { defaultRelationship } from './relationship/relationship-contracts.js';
+import { identityProfile } from './relationship/identity-profile.js';
+import {
+  observeAutonomy,
+  setEvolutionEnabled
+} from './relationship/relationship-policy.js';
+import { RelationshipStore } from './relationship/relationship-store.js';
 
 const $ = selector => document.querySelector(selector);
 const readPorts = new BuenaventuraReadPorts();
 const orchestrator = new BuenaventuraOrchestrator({
   provider: createBuenaventuraProvider()
 });
+const relationshipStore = new RelationshipStore();
 const state = {
   projectId: null, options: [], fragments: [],
-  returnFocus: null, abortController: null
+  returnFocus: null, abortController: null,
+  relationship: defaultRelationship()
 };
 
 ensureBuenaventuraShell();
+let relationshipReady;
+
+function localDay() {
+  const now = new Date();
+  const offset = now.getTimezoneOffset() * 60_000;
+  return new Date(now.getTime() - offset).toISOString().slice(0, 10);
+}
+
+function paintRelationship() {
+  const profile = identityProfile(state.relationship.stage);
+  $('#buenaventuraTitle').textContent = profile.name;
+  if (state.projectId) $('#viewTitle').textContent = profile.name;
+  $('#buenaventuraIdentitySummary').textContent =
+    `${profile.name} mantiene un trato de usted y una voz ${profile.voice}.`;
+  $('#buenaventuraEvolutionEnabled').checked = state.relationship.evolutionEnabled;
+  $('#buenaventuraAutonomyRow').hidden = !state.relationship.evolutionEnabled;
+  $('#askBuenaventuraBtn').textContent = `Consultar con ${profile.name}`;
+}
+
+async function loadRelationship() {
+  if (!relationshipReady) {
+    relationshipReady = relationshipStore.load()
+      .catch(() => defaultRelationship())
+      .then(value => {
+        state.relationship = value;
+        paintRelationship();
+        return value;
+      });
+  }
+  return relationshipReady;
+}
+
+function clearTransitionNotice() {
+  $('#buenaventuraTransitionNotice').hidden = true;
+  $('#buenaventuraTransitionNotice').textContent = '';
+}
+
+async function recordAutonomy({ response, request, family }) {
+  const result = observeAutonomy(state.relationship, {
+    family,
+    task: request.task,
+    day: localDay(),
+    actionComplete: response.status === 'ok',
+    activeEvaluation: request.constraints.activeEvaluation,
+    technicalError: response.status !== 'ok'
+  });
+  if (JSON.stringify(result.relationship) !== JSON.stringify(state.relationship)) {
+    state.relationship = await relationshipStore.save(result.relationship);
+    paintRelationship();
+  }
+  if (result.transition) {
+    $('#buenaventuraTransitionNotice').textContent = result.transition.message;
+    $('#buenaventuraTransitionNotice').hidden = false;
+  }
+}
 
 function selections() {
   return [...$('#buenaventuraOptions').querySelectorAll('input:checked')]
@@ -61,6 +125,8 @@ async function updatePreview() {
 async function open(projectId, trigger) {
   setBusy(true);
   try {
+    await loadRelationship();
+    clearTransitionNotice();
     state.projectId = projectId;
     state.returnFocus = trigger;
     state.options = await readPorts.list(projectId);
@@ -71,7 +137,7 @@ async function open(projectId, trigger) {
       `${title}. El contexto no se conserva al cerrar esta vista.`;
     $('#projectsOverview').hidden = true;
     $('#buenaventuraWorkspace').hidden = false;
-    $('#viewTitle').textContent = 'Profesor Buenaventura';
+    paintRelationship();
     $('#buenaventuraConsentRow').hidden = !orchestrator.provider.external;
     $('#buenaventuraDeidentifiedRow').hidden = !orchestrator.provider.external;
     $('#buenaventuraAdultRow').hidden = !orchestrator.provider.external;
@@ -109,10 +175,13 @@ async function submit(event) {
   state.abortController?.abort();
   state.abortController = new AbortController();
   try {
+    await loadRelationship();
+    const autonomyFamily = $('#buenaventuraAutonomyFamily').value;
     const request = await buildBuenaventuraRequest({
       readPorts,
       projectId: state.projectId,
       task: $('#buenaventuraTask').value,
+      identityStage: state.relationship.stage,
       selections: values,
       activeEvaluation: $('#buenaventuraEvaluation').checked,
       offline: !navigator.onLine,
@@ -125,9 +194,11 @@ async function submit(event) {
       ? 'Consulta procesada sin modificar sus datos.'
       : 'El proveedor no está disponible. FORJA continúa funcionando localmente.';
     renderResponse($('#buenaventuraResponse'), response);
+    await recordAutonomy({ response, request, family: autonomyFamily });
   } catch (error) {
     if (error.name !== 'AbortError') setError(error.message);
   } finally {
+    $('#buenaventuraAutonomyFamily').value = '';
     resetExternalConsent();
     setBusy(false);
   }
@@ -141,7 +212,26 @@ $('#closeBuenaventuraBtn').addEventListener('click', () => close());
 $('#buenaventuraOptions').addEventListener('change', updatePreview);
 $('#buenaventuraTask').addEventListener('change', resetExternalConsent);
 $('#buenaventuraEvaluation').addEventListener('change', resetExternalConsent);
+$('#buenaventuraEvolutionEnabled').addEventListener('change', async event => {
+  await loadRelationship();
+  state.relationship = await relationshipStore.save(
+    setEvolutionEnabled(state.relationship, event.target.checked)
+  );
+  clearTransitionNotice();
+  paintRelationship();
+});
+$('#clearBuenaventuraEvolution').addEventListener('click', async () => {
+  const confirmed = window.confirm(
+    '¿Eliminar el estado de evolución y volver a Profesor Buenaventura?'
+  );
+  if (!confirmed) return;
+  state.relationship = await relationshipStore.clear();
+  clearTransitionNotice();
+  paintRelationship();
+});
 $('#buenaventuraForm').addEventListener('submit', submit);
 window.addEventListener('forja:viewchange', event => {
   if (event.detail.view !== 'proyectos') close({ restoreFocus: false });
 });
+
+loadRelationship();

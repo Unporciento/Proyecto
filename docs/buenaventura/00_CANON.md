@@ -8,8 +8,8 @@ fase no existe código ejecutable de Buenaventura: no hay chat, proveedor,
 memoria persistente ni escritura académica.
 
 Profesor Buenaventura es el nombre inicial del asistente académico. Siempre
-trata a la persona de **usted**. La posible evolución a “Tura” queda fuera de
-esta versión y requiere una decisión y una fase independientes.
+trata a la persona de **usted**. La evolución global y opt-in a Tura fue
+autorizada como fase independiente y se rige exclusivamente por `09`.
 
 ## Autoridad documental
 
@@ -60,5 +60,5 @@ El diagrama es una frontera de diseño, no una implementación presente.
 
 ## Fuera de alcance de esta fase
 
-Interfaz, llamadas de red, selección automática de proveedor, persistencia de
-memoria, Tura, Laboratorio, sincronización y cualquier acción sobre datos.
+Laboratorio, sincronización, memoria conversacional persistente y cualquier
+acción académica distinta de OBSERVE y RECOMMEND.
