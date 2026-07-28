@@ -68,10 +68,19 @@ código, caché, Batch, Flex ni Priority.
 
 ## Degradación
 
-Un `429`, error de red, respuesta inválida, falta de clave, modelo distinto o
-agotamiento de Workers Free produce `provider_unavailable`. El orquestador
-mantiene disponibles todas las funciones locales y no reintenta con un servicio
-pagado.
+El proxy conserva categorías técnicas cerradas: `invalid_request` (400),
+`permission_denied` (403), `model_not_found` (404), `quota_exhausted` (429) y
+`provider_unavailable` (503). Nunca reenvía el mensaje completo de Gemini. El
+frontend traduce cualquier fallo del proxy a la respuesta técnica local y no
+reintenta con un servicio pagado.
+
+La comprobación del 28 de julio de 2026 confirmó que `v1beta generateContent`
+acepta `system_instruction`, `generationConfig`, `responseMimeType` y
+`responseSchema` con `gemini-3.5-flash-lite`. El falso `provider_unavailable`
+observado durante la activación provenía de JSON deformado por `curl.exe` bajo
+PowerShell: el bloque de captura anterior confundía el error de análisis local
+con una caída de Gemini. El análisis de JSON quedó separado y ahora responde
+`400 invalid_request`.
 
 ## Privacidad pendiente
 

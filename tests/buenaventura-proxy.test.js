@@ -72,6 +72,21 @@ test('rechaza campos arbitrarios y caracteres de control', async () => {
   assert.equal((await worker.fetch(post(controlled), env)).status, 400);
 });
 
+test('un JSON malformado es invalid_request y no simula una caída del proveedor', async t => {
+  const provider = t.mock.method(globalThis, 'fetch', async () => {
+    throw new Error('no debe llamar a Gemini');
+  });
+  const request = new Request('https://proxy.example/v1/buenaventura/recommend', {
+    method: 'POST',
+    headers: { origin, 'content-type': 'application/json' },
+    body: '{invalid'
+  });
+  const response = await worker.fetch(request, env);
+  assert.equal(response.status, 400);
+  assert.deepEqual(await response.json(), { error: 'invalid_request' });
+  assert.equal(provider.mock.callCount(), 0);
+});
+
 test('fija Gemini Free y envía solo el contexto sintético permitido', async t => {
   let call;
   t.mock.method(globalThis, 'fetch', async (url, options) => {
@@ -102,12 +117,25 @@ test('fija Gemini Free y envía solo el contexto sintético permitido', async t 
   assert.equal(body.schemaVersion, 'buenaventura-proxy-response-v1');
 });
 
-test('agotamiento de cuota degrada sin respuesta académica ni fallback', async t => {
-  t.mock.method(globalThis, 'fetch', async () => new Response(
-    JSON.stringify({ error: { status: 'RESOURCE_EXHAUSTED' } }),
-    { status: 429, headers: { 'content-type': 'application/json' } }
-  ));
-  const response = await worker.fetch(post(), env);
-  assert.equal(response.status, 503);
-  assert.deepEqual(await response.json(), { error: 'provider_unavailable' });
+test('normaliza fallos de Gemini sin exponer mensajes del proveedor', async t => {
+  const cases = [
+    [400, 'INVALID_ARGUMENT', 'invalid_request'],
+    [403, 'PERMISSION_DENIED', 'permission_denied'],
+    [404, 'NOT_FOUND', 'model_not_found'],
+    [429, 'RESOURCE_EXHAUSTED', 'quota_exhausted'],
+    [503, 'UNAVAILABLE', 'provider_unavailable']
+  ];
+  let index = 0;
+  t.mock.method(globalThis, 'fetch', async () => {
+    const [status, providerType] = cases[index];
+    return new Response(JSON.stringify({
+      error: { status: providerType, message: 'mensaje que no debe salir' }
+    }), { status, headers: { 'content-type': 'application/json' } });
+  });
+  for (index = 0; index < cases.length; index += 1) {
+    const [status, , category] = cases[index];
+    const response = await worker.fetch(post(), env);
+    assert.equal(response.status, status);
+    assert.deepEqual(await response.json(), { error: category });
+  }
 });

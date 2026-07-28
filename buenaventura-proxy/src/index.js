@@ -96,6 +96,33 @@ function geminiRequest(value) {
   };
 }
 
+function providerCategory(status, providerType = '') {
+  if (status === 400 || providerType === 'INVALID_ARGUMENT') return 'invalid_request';
+  if (status === 403 || providerType === 'PERMISSION_DENIED') return 'permission_denied';
+  if (status === 404 || providerType === 'NOT_FOUND') return 'model_not_found';
+  if (status === 429 || providerType === 'RESOURCE_EXHAUSTED') return 'quota_exhausted';
+  return 'provider_unavailable';
+}
+
+async function providerFailure(provider) {
+  let providerType = '';
+  try {
+    const error = await provider.json();
+    providerType = typeof error?.error?.status === 'string' ? error.error.status : '';
+  } catch {
+    providerType = '';
+  }
+  const knownTypes = new Set([
+    'INVALID_ARGUMENT', 'PERMISSION_DENIED', 'NOT_FOUND',
+    'RESOURCE_EXHAUSTED', 'UNAVAILABLE'
+  ]);
+  return {
+    status: provider.status,
+    category: providerCategory(provider.status, providerType),
+    providerType: knownTypes.has(providerType) ? providerType : ''
+  };
+}
+
 function parseGemini(value, aliases) {
   const text = value?.candidates?.[0]?.content?.parts?.[0]?.text;
   const parsed = JSON.parse(text);
@@ -133,12 +160,17 @@ export default {
     if (!env.GEMINI_API_KEY || (env.GEMINI_MODEL || MODEL) !== MODEL) {
       return json({ error: 'provider_unavailable' }, 503, origin);
     }
+    const raw = await request.text();
+    if (raw.length > 24000) return json({ error: 'request_too_large' }, 413, origin);
+    let payload;
     try {
-      const raw = await request.text();
-      if (raw.length > 24000) return json({ error: 'request_too_large' }, 413, origin);
-      const payload = JSON.parse(raw);
-      if (!validateRequest(payload)) return json({ error: 'invalid_request' }, 400, origin);
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+      payload = JSON.parse(raw);
+    } catch {
+      return json({ error: 'invalid_request' }, 400, origin);
+    }
+    if (!validateRequest(payload)) return json({ error: 'invalid_request' }, 400, origin);
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+    try {
       const provider = await fetch(endpoint, {
         method: 'POST',
         headers: {
@@ -147,7 +179,10 @@ export default {
         },
         body: JSON.stringify(geminiRequest(payload))
       });
-      if (!provider.ok) return json({ error: 'provider_unavailable' }, 503, origin);
+      if (!provider.ok) {
+        const failure = await providerFailure(provider);
+        return json({ error: failure.category }, failure.status, origin);
+      }
       const result = parseGemini(
         await provider.json(),
         new Set(payload.fragments.map(item => item.alias))
